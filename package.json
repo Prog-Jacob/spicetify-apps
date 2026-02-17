@@ -1,0 +1,37 @@
+{
+  "name": "spicetify-apps",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "dev": "node scripts/build.mjs --watch & spicetify watch -a & wait",
+    "build:app": "node scripts/build.mjs --app",
+    "typecheck": "pnpm -r run typecheck",
+    "lint": "eslint .",
+    "format": "prettier --write \"**/*.{ts,tsx,json,css,md}\""
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.2",
+    "@tailwindcss/cli": "^4.1.18",
+    "@types/react": "^18.3.28",
+    "@types/react-dom": "^18.3.7",
+    "@typescript-eslint/eslint-plugin": "^8.56.0",
+    "@typescript-eslint/parser": "^8.56.0",
+    "clsx": "^2.1.1",
+    "esbuild": "^0.24.2",
+    "esbuild-plugin-external-global": "^1.0.1",
+    "eslint": "^9.39.2",
+    "prettier": "^3.8.1",
+    "radix-ui": "^1.4.3",
+    "tailwind-merge": "^2.6.1",
+    "tailwindcss": "^4.1.18",
+    "typescript": "^5.9.3"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "@parcel/watcher"
+    ]
+  }
+}

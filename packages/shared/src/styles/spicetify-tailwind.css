@@ -1,0 +1,22 @@
+@import 'tailwindcss/theme';
+@import 'tailwindcss/utilities';
+
+@theme inline {
+  --color-spice-main: var(--spice-main);
+  --color-spice-sidebar: var(--spice-sidebar);
+  --color-spice-player: var(--spice-player);
+  --color-spice-card: var(--spice-card);
+  --color-spice-shadow: var(--spice-shadow);
+  --color-spice-text: var(--spice-text);
+  --color-spice-subtext: var(--spice-subtext);
+  --color-spice-button: var(--spice-button);
+  --color-spice-button-active: var(--spice-button-active);
+  --color-spice-button-disabled: var(--spice-button-disabled);
+  --color-spice-tab-active: var(--spice-tab-active);
+  --color-spice-notification: var(--spice-notification);
+  --color-spice-notification-error: var(--spice-notification-error);
+  --color-spice-highlight: var(--spice-highlight);
+  --color-spice-highlight-elevated: var(--spice-highlight-elevated);
+  --color-spice-selected-row: var(--spice-selected-row);
+  --color-spice-misc: var(--spice-misc);
+}
