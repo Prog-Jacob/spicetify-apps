@@ -31,6 +31,9 @@ export default [
         URL: 'readonly',
         File: 'readonly',
         FileReader: 'readonly',
+        AbortController: 'readonly',
+        AbortSignal: 'readonly',
+        DOMException: 'readonly',
       },
     },
     plugins: {

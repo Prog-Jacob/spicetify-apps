@@ -1,13 +1,6 @@
 import React from 'react';
+import ExportPage from './pages/export-page';
 
-const { TextComponent } = Spicetify.ReactComponent;
-
-const App = () => (
-  <div className="p-4">
-    <TextComponent variant="canon" weight="bold">
-      Data Porter
-    </TextComponent>
-  </div>
-);
+const App = () => <ExportPage />;
 
 export default App;
