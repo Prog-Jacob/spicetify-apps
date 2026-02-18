@@ -9,7 +9,7 @@ import type {
   ExportedPlaylist,
   ExportedLibrary,
   ExportData,
-  ExportProgress,
+  ProgressInfo,
 } from '../types/export';
 
 const PAGE_SIZE = 200;
@@ -51,7 +51,7 @@ function validatePage<T>(response: unknown, context: string): LibraryPage<T> {
 async function paginate<T>(
   fetch: (params: { limit: number; offset: number }) => Promise<unknown>,
   context: string,
-  onProgress?: (progress: ExportProgress) => void,
+  onProgress?: (progress: ProgressInfo) => void,
   label?: string,
   signal?: AbortSignal,
 ): Promise<T[]> {
@@ -90,7 +90,7 @@ function toExportedPlaylistItem(item: PlaylistItemDetail): ExportedPlaylistItem 
 
 async function buildPlaylists(
   playlistItems: LibraryContentItem[],
-  onProgress?: (progress: ExportProgress) => void,
+  onProgress?: (progress: ProgressInfo) => void,
   signal?: AbortSignal,
 ): Promise<{ playlists: ExportedPlaylist[]; skipped: string[] }> {
   const playlists: ExportedPlaylist[] = [];
@@ -124,7 +124,7 @@ async function buildPlaylists(
 
 export async function exportData(
   selected: Set<DataType>,
-  onProgress: (progress: ExportProgress) => void,
+  onProgress: (progress: ProgressInfo) => void,
   signal: AbortSignal,
 ): Promise<{ data: ExportData; warnings: string[] }> {
   const data: ExportData = {};

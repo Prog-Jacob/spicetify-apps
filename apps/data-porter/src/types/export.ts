@@ -1,25 +1,4 @@
-export type LibraryTrackItem = {
-  type: 'track';
-  uri: string;
-  name: string;
-  album: { uri: string; name: string };
-  artists: { uri: string; name: string }[];
-};
-
-export type LibraryContentItem = {
-  type: 'playlist' | 'album' | 'artist' | 'show' | (string & {});
-  uri: string;
-  name: string;
-  artists?: { uri: string; name: string }[];
-  publisher?: string;
-};
-
-export type LibraryPage<T> = {
-  items: T[];
-  offset: number;
-  limit: number;
-  totalLength: number;
-};
+export type { LibraryTrackItem, LibraryContentItem, LibraryPage } from '@shared/types/platform';
 
 export type PlaylistItemDetail = {
   uri: string;
@@ -71,7 +50,7 @@ export type DataTypeConfig = {
   getCount: (data: ExportData) => number;
 };
 
-export type ExportProgress = {
+export type ProgressInfo = {
   current: number;
   total: number;
   label: string;

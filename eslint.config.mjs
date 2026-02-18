@@ -34,6 +34,7 @@ export default [
         AbortController: 'readonly',
         AbortSignal: 'readonly',
         DOMException: 'readonly',
+        HTMLInputElement: 'readonly',
       },
     },
     plugins: {
