@@ -27,12 +27,7 @@ const ExportSummary = ({ result, warnings, onDownload, onNewExport }: ExportSumm
     <Card className="animate-fade-in-up border-0 py-5">
       <CardContent className="flex flex-col gap-5">
         <StatusHeader
-          icon={isPartial ? 'exclamation-circle' : 'check-alt-fill'}
-          iconClassName={
-            isPartial
-              ? 'bg-spice-notification/20 text-spice-notification'
-              : 'bg-spice-button/20 text-spice-button'
-          }
+          variant={isPartial ? 'warning' : 'success'}
           title={isPartial ? 'Partially Complete' : 'Export Complete'}
         />
 
@@ -46,7 +41,9 @@ const ExportSummary = ({ result, warnings, onDownload, onNewExport }: ExportSumm
               >
                 <SpicetifyIcon icon={icon} className="shrink-0 text-spice-subtext" />
                 <div className="flex flex-col">
-                  <TextComponent variant="mestoBold">{count.toLocaleString()}</TextComponent>
+                  <TextComponent variant="alto" weight="bold">
+                    {count.toLocaleString()}
+                  </TextComponent>
                   <TextComponent variant="minuet" semanticColor="textSubdued">
                     {label}
                   </TextComponent>
@@ -68,7 +65,11 @@ const ExportSummary = ({ result, warnings, onDownload, onNewExport }: ExportSumm
 
         <div className="flex gap-3">
           <ButtonPrimary
-            onClick={onDownload}
+            onClick={() => {
+              onDownload();
+              onNewExport();
+              Spicetify.showNotification('File downloaded');
+            }}
             buttonSize="md"
             iconLeading={() => <SpicetifyIcon icon="download" size={16} />}
           >

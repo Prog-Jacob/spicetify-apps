@@ -1,9 +1,9 @@
 import { platform } from '@shared/api/platform';
+import { BATCH_DELAY_MS, PLAYLIST_BATCH_SIZE, checkAborted, paginate } from './shared';
 import type {
   DataType,
   LibraryTrackItem,
   LibraryContentItem,
-  LibraryPage,
   PlaylistItemDetail,
   ExportedPlaylistItem,
   ExportedPlaylist,
@@ -12,10 +12,6 @@ import type {
   ProgressInfo,
 } from '../types/export';
 
-const PAGE_SIZE = 200;
-const BATCH_DELAY_MS = 500;
-const PLAYLIST_BATCH_SIZE = 10;
-
 function toDateString(ms: number): string {
   const d = new Date(ms);
   return isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10);
@@ -23,51 +19,6 @@ function toDateString(ms: number): string {
 
 function formatArtists(artists?: { name: string }[]): string {
   return artists?.map((a) => a.name).join(', ') ?? '';
-}
-
-function checkAborted(signal?: AbortSignal): void {
-  if (signal?.aborted) throw new DOMException('Export cancelled', 'AbortError');
-}
-
-// Platform APIs resolve with error bodies instead of throwing.
-function validatePage<T>(response: unknown, context: string): LibraryPage<T> {
-  const res = response as Record<string, unknown> | null;
-  if (!res || typeof res !== 'object') throw new Error(`${context}: invalid response`);
-  if (res.error) {
-    const err = res.error as { status?: number; message?: string };
-    throw new Error(
-      `${context}: API error ${err.status ?? 'unknown'} - ${err.message ?? 'no details'}`,
-    );
-  }
-  if (
-    !Array.isArray(res.items) ||
-    typeof res.totalLength !== 'number' ||
-    typeof res.limit !== 'number'
-  )
-    throw new Error(`${context}: invalid page structure`);
-  return response as LibraryPage<T>;
-}
-
-async function paginate<T>(
-  fetch: (params: { limit: number; offset: number }) => Promise<unknown>,
-  context: string,
-  onProgress?: (progress: ProgressInfo) => void,
-  label?: string,
-  signal?: AbortSignal,
-): Promise<T[]> {
-  let offset = 0;
-  const items: T[] = [];
-
-  for (;;) {
-    checkAborted(signal);
-    const page = validatePage<T>(await fetch({ limit: PAGE_SIZE, offset }), context);
-    items.push(...page.items);
-    onProgress?.({ current: items.length, total: page.totalLength, label: label ?? context });
-    offset += page.limit;
-    if (offset >= page.totalLength) break;
-  }
-
-  return items;
 }
 
 function toExportedPlaylistItem(item: PlaylistItemDetail): ExportedPlaylistItem {

@@ -1,4 +1,4 @@
-import type { DataTypeConfig } from './types/export';
+import type { DataType, DataTypeConfig, ExportData } from './types/export';
 
 export const DATA_TYPES: DataTypeConfig[] = [
   {
@@ -37,3 +37,19 @@ export const DATA_TYPES: DataTypeConfig[] = [
     getCount: (d) => d.library?.shows.length ?? 0,
   },
 ];
+
+export function getAvailableCounts(data: ExportData): Map<DataType, number> {
+  const counts = new Map<DataType, number>();
+  for (const dt of DATA_TYPES) {
+    const count = dt.getCount(data);
+    if (count > 0) counts.set(dt.type, count);
+  }
+  return counts;
+}
+
+export function toggleInSet<T>(set: Set<T>, item: T): Set<T> {
+  const next = new Set(set);
+  if (next.has(item)) next.delete(item);
+  else next.add(item);
+  return next;
+}
