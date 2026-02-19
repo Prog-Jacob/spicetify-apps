@@ -4,14 +4,16 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "node scripts/build.mjs",
-    "dev": "node scripts/build.mjs --watch & spicetify watch -a & wait",
+    "build": "node scripts/build.mjs && pnpm symlink",
+    "dev": "pnpm symlink && node scripts/build.mjs --watch & spicetify watch -a & wait",
     "build:app": "node scripts/build.mjs --app",
     "typecheck": "pnpm -r run typecheck",
     "lint": "eslint .",
     "format": "prettier --write \"**/*.{ts,tsx,json,css,md}\"",
     "precommit": "pnpm format && pnpm lint && pnpm typecheck",
-    "release": "node scripts/release.mjs"
+    "release": "node scripts/release.mjs",
+    "download": "pnpm -r run download",
+    "symlink": "pnpm -r run symlink"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",

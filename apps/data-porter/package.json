@@ -4,6 +4,8 @@
   "private": true,
   "main": "dist/index.js",
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "download": "curl -fsSL https://raw.githubusercontent.com/Prog-Jacob/spicetify-apps/main/install.sh | bash -s data-porter",
+    "symlink": "DEST=\"$(dirname $(spicetify -c))/CustomApps/data-porter\" && rm -rf \"$DEST\" && ln -sfn \"$PWD/dist\" \"$DEST\""
   }
 }

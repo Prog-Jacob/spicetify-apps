@@ -35,6 +35,8 @@ export default [
         AbortSignal: 'readonly',
         DOMException: 'readonly',
         HTMLInputElement: 'readonly',
+        navigator: 'readonly',
+        __APP_VERSION__: 'readonly',
       },
     },
     plugins: {
