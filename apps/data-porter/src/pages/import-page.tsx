@@ -22,7 +22,7 @@ const { TextComponent, ButtonPrimary, ButtonSecondary, ButtonTertiary } = Spicet
 
 type Step = 'upload' | 'preview' | 'conflicts' | 'importing' | 'done' | 'error';
 
-const ImportPage = () => {
+const ImportPage = ({ banner }: { banner?: React.ReactNode }) => {
   const [step, setStep] = useState<Step>('upload');
   const [parsed, setParsed] = useState<ParsedFile | null>(null);
   const [selected, setSelected] = useState<Set<DataType>>(new Set());
@@ -115,6 +115,7 @@ const ImportPage = () => {
     <PageShell
       title="Import Data"
       subtitle="Upload a JSON file to restore your Spotify data."
+      banner={banner}
       navButton={
         <ButtonSecondary onClick={() => platform.History.push('/data-porter')} buttonSize="md">
           Export

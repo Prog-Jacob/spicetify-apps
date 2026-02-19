@@ -12,11 +12,12 @@ import type { DataType, ExportData, ProgressInfo } from '../types/export';
 const { TextComponent, ButtonPrimary, ButtonSecondary, ButtonTertiary } = Spicetify.ReactComponent;
 
 type ExportPageProps = {
+  banner?: React.ReactNode;
   onGoToImport?: () => void;
 };
 type Status = 'idle' | 'fetching' | 'done' | 'error';
 
-const ExportPage = ({ onGoToImport }: ExportPageProps) => {
+const ExportPage = ({ banner, onGoToImport }: ExportPageProps) => {
   const aborter = useAbortController();
   const [status, setStatus] = useState<Status>('idle');
   const [progress, setProgress] = useState<ProgressInfo | null>(null);
@@ -53,6 +54,7 @@ const ExportPage = ({ onGoToImport }: ExportPageProps) => {
     <PageShell
       title="Export Your Data"
       subtitle="Choose what to include, then download as JSON."
+      banner={banner}
       navButton={
         onGoToImport ? (
           <ButtonSecondary onClick={onGoToImport} buttonSize="md">
