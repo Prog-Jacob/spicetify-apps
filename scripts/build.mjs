@@ -2,7 +2,7 @@ import { resolve, join } from 'path';
 import { build, context } from 'esbuild';
 import { execSync } from 'child_process';
 import pkg from 'esbuild-plugin-external-global';
-import { cpSync, existsSync, mkdirSync, readdirSync } from 'fs';
+import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync } from 'fs';
 
 const ROOT = resolve(import.meta.dirname, '..');
 const APPS_DIR = join(ROOT, 'apps');
@@ -24,6 +24,8 @@ const discoverApps = () => {
 const buildOptions = (appName) => {
   const appDir = join(APPS_DIR, appName);
   const outDir = join(appDir, 'dist');
+  const appPkg = JSON.parse(readFileSync(join(appDir, 'package.json'), 'utf-8'));
+  const appVersion = appPkg.version ?? '0.0.0';
 
   return {
     entryPoints: [join(appDir, 'src', 'index.tsx')],
@@ -53,6 +55,9 @@ const buildOptions = (appName) => {
         },
       },
     ],
+    define: {
+      __APP_VERSION__: JSON.stringify(appVersion),
+    },
     alias: {
       '@shared': join(ROOT, 'packages', 'shared', 'src'),
       '@ui': join(ROOT, 'packages', 'ui', 'src'),

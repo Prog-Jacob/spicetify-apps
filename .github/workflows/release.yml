@@ -1,0 +1,58 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - '*-v[0-9]*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract app name from tag
+        id: meta
+        run: |
+          TAG="${{ github.ref_name }}"
+          APP="${TAG%-v*}"
+          echo "app=$APP" >> $GITHUB_OUTPUT
+          echo "zip=spicetify-${APP}.release.zip" >> $GITHUB_OUTPUT
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Typecheck & lint
+        run: pnpm typecheck && pnpm lint
+
+      - name: Build ${{ steps.meta.outputs.app }}
+        run: pnpm build:app ${{ steps.meta.outputs.app }}
+
+      - name: Package release zip
+        run: |
+          APP="${{ steps.meta.outputs.app }}"
+          mkdir -p release/$APP
+          cp apps/$APP/dist/index.js release/$APP/
+          cp apps/$APP/dist/manifest.json release/$APP/
+          if [ -f apps/$APP/dist/style.css ]; then
+            cp apps/$APP/dist/style.css release/$APP/
+          fi
+          cd release
+          zip -r ../${{ steps.meta.outputs.zip }} $APP/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ steps.meta.outputs.zip }}
+          generate_release_notes: true
