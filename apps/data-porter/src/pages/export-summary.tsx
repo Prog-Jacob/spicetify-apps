@@ -5,7 +5,7 @@ import type { ExportData } from '../types/export';
 import { SpicetifyIcon } from '@ui/components/ui/icon';
 import { Card, CardContent } from '@ui/components/ui/card';
 
-const { TextComponent, ButtonPrimary, ButtonSecondary } = Spicetify.ReactComponent;
+const { TextComponent, ButtonPrimary, ButtonTertiary } = Spicetify.ReactComponent;
 
 type ExportSummaryProps = {
   result: ExportData;
@@ -75,9 +75,9 @@ const ExportSummary = ({ result, warnings, onDownload, onNewExport }: ExportSumm
           >
             Download
           </ButtonPrimary>
-          <ButtonSecondary onClick={onNewExport} buttonSize="md">
-            Export More
-          </ButtonSecondary>
+          <ButtonTertiary onClick={onNewExport} buttonSize="md">
+            Cancel
+          </ButtonTertiary>
         </div>
       </CardContent>
     </Card>

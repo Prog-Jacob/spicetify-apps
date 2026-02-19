@@ -13,7 +13,7 @@ const VARIANT_STYLES: Record<
   success: { icon: 'check-alt-fill', className: 'bg-spice-button text-spice-main' },
   warning: {
     icon: 'exclamation-circle',
-    className: 'bg-spice-notification/20 text-spice-notification',
+    className: 'text-spice-button',
   },
   error: {
     icon: 'x',
@@ -39,7 +39,7 @@ const StatusHeader = ({ variant, title }: StatusHeaderProps) => {
       >
         <SpicetifyIcon icon={icon} size={18} />
       </div>
-      <TextComponent variant="mesto" weight="bold" semanticColor={semanticColor}>
+      <TextComponent variant="ballad" weight="bold" semanticColor={semanticColor}>
         {title}
       </TextComponent>
     </div>

@@ -14,7 +14,7 @@ type DataTypeGridProps = {
 const DataTypeGrid = ({ selected, onToggle, disabled, counts }: DataTypeGridProps) => (
   <div
     className={cn(
-      'grid grid-cols-1 gap-3 transition-opacity duration-300 sm:grid-cols-2 xl:grid-cols-3',
+      'grid gap-3 transition-opacity duration-300 [grid-template-columns:repeat(auto-fill,minmax(220px,1fr))]',
       disabled && 'pointer-events-none opacity-50',
     )}
   >
