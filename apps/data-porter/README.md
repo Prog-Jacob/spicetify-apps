@@ -2,6 +2,26 @@
 
 A Spicetify custom app to export and import your Spotify library data.
 
+## Preview
+
+### Export
+- Pick individual data types — playlists, liked songs, albums, artists, podcasts
+- Select all or deselect all in one click
+
+![Export page](preview/export.png)
+
+### Import
+- Drag and drop or browse for a file
+- Preview item counts per type before committing
+
+![Import page](preview/import.png)
+
+### Conflict Resolution
+- Per-playlist choice: skip, replace, or duplicate
+- Apply a resolution to all conflicts at once
+
+![Conflict resolution](preview/import-conflict.png)
+
 ### What it does
 
 - **Export** playlists (with tracks), liked songs, saved albums, followed artists, and podcasts to a single JSON file
