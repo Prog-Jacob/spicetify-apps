@@ -1,0 +1,9 @@
+[
+  {
+    "name": "Data Porter",
+    "description": "Export and import your Spotify library — playlists, liked songs, albums, artists, and podcasts — as a portable JSON file.",
+    "preview": "apps/data-porter/preview/export.png",
+    "readme": "apps/data-porter/README.md",
+    "tags": ["export", "import", "backup", "library", "playlists"]
+  }
+]

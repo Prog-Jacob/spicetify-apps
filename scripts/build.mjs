@@ -2,8 +2,9 @@ import { resolve, join } from 'path';
 import { build, context } from 'esbuild';
 import { execSync } from 'child_process';
 import pkg from 'esbuild-plugin-external-global';
-import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync } from 'fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'fs';
 
+const AUTHORS = [{ name: 'Ahmed Abdelaziz', url: 'https://github.com/Prog-Jacob' }];
 const ROOT = resolve(import.meta.dirname, '..');
 const APPS_DIR = join(ROOT, 'apps');
 
@@ -47,10 +48,26 @@ const buildOptions = (appName) => {
         name: 'copy-assets',
         setup(build) {
           build.onEnd(() => {
-            const manifest = join(appDir, 'manifest.json');
-            if (existsSync(manifest)) {
-              cpSync(manifest, join(outDir, 'manifest.json'));
-            }
+            const rootManifest = join(ROOT, 'manifest.json');
+            if (!existsSync(rootManifest)) return;
+
+            const entries = JSON.parse(readFileSync(rootManifest, 'utf-8'));
+            const entry = entries.find((e) => e.preview?.startsWith(`apps/${appName}/`));
+            if (!entry) return;
+
+            const iconPath = join(appDir, 'src', 'styles', 'icon.svg');
+            const iconFilledPath = join(appDir, 'src', 'styles', 'icon-filled.svg');
+            if (!existsSync(iconPath) || !existsSync(iconFilledPath)) return;
+
+            writeFileSync(
+              join(outDir, 'manifest.json'),
+              JSON.stringify({
+                ...entry,
+                authors: AUTHORS,
+                icon: readFileSync(iconPath, 'utf-8').trim(),
+                'active-icon': readFileSync(iconFilledPath, 'utf-8').trim(),
+              }),
+            );
           });
         },
       },
