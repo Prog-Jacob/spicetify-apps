@@ -1,5 +1,3 @@
-export type { LibraryTrackItem, LibraryContentItem, LibraryPage } from '@shared/types/platform';
-
 export type PlaylistItemDetail = {
   uri: string;
   name: string;
@@ -41,17 +39,3 @@ export type ExportData = {
 };
 
 export type DataType = 'playlists' | 'likedSongs' | 'albums' | 'artists' | 'shows';
-
-export type DataTypeConfig = {
-  type: DataType;
-  label: string;
-  description: string;
-  icon: Spicetify.Icon;
-  getCount: (data: ExportData) => number;
-};
-
-export type ProgressInfo = {
-  current: number;
-  total: number;
-  label: string;
-};

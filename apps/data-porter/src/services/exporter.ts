@@ -1,15 +1,13 @@
 import { platform } from '@shared/api/platform';
 import { BATCH_DELAY_MS, PLAYLIST_BATCH_SIZE, checkAborted, paginate } from './shared';
+import type { ProgressInfo, LibraryTrackItem, LibraryContentItem } from '@shared/types/platform';
 import type {
   DataType,
-  LibraryTrackItem,
-  LibraryContentItem,
   PlaylistItemDetail,
   ExportedPlaylistItem,
   ExportedPlaylist,
   ExportedLibrary,
   ExportData,
-  ProgressInfo,
 } from '../types/export';
 
 function toDateString(ms: number): string {

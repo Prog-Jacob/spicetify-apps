@@ -8,8 +8,9 @@ import FileDropZone from './file-drop-zone';
 import ImportSummary from './import-summary';
 import { useAbortController } from '../hooks';
 import { platform } from '@shared/api/platform';
+import type { DataType } from '../types/export';
 import { getAvailableCounts } from '../data-types';
-import type { DataType, ProgressInfo } from '../types/export';
+import type { ProgressInfo } from '@shared/types/platform';
 import { importData, fetchExistingPlaylists } from '../services/importer';
 import type {
   ParsedFile,

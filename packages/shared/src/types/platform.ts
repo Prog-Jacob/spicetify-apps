@@ -20,3 +20,9 @@ export type LibraryPage<T> = {
   limit: number;
   totalLength: number;
 };
+
+export type ProgressInfo = {
+  current: number;
+  total: number;
+  label: string;
+};

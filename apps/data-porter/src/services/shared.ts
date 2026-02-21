@@ -1,4 +1,4 @@
-import type { ProgressInfo, LibraryPage } from '../types/export';
+import type { ProgressInfo, LibraryPage } from '@shared/types/platform';
 
 export const PAGE_SIZE = 200;
 export const BATCH_DELAY_MS = 500;

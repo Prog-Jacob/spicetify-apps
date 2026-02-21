@@ -8,12 +8,11 @@ import {
 import type {
   DataType,
   ExportData,
-  ProgressInfo,
   ExportedPlaylist,
-  LibraryContentItem,
   PlaylistItemDetail,
 } from '../types/export';
 import { platform } from '@shared/api/platform';
+import type { LibraryContentItem, ProgressInfo } from '@shared/types/platform';
 import type { ImportLogEntry, ImportResult, PlaylistConflictResolution } from '../types/import';
 
 const WRITE_BATCH_SIZE = 50;
@@ -144,8 +143,9 @@ export async function importData(
   onProgress: (p: ProgressInfo) => void,
   signal: AbortSignal,
 ): Promise<ImportResult> {
-  const log: ImportLogEntry[] = [];
   const warnings: string[] = [];
+  const log: ImportLogEntry[] = [];
+  const tracks = data.library?.tracks;
 
   const tryWrite = async (label: string, fn: () => Promise<void>): Promise<void> => {
     try {
@@ -159,10 +159,8 @@ export async function importData(
     }
   };
 
-  if (selected.has('likedSongs') && data.library?.tracks.length) {
-    await tryWrite('Liked Songs', () =>
-      importLikedSongs(data.library!.tracks, log, onProgress, signal),
-    );
+  if (selected.has('likedSongs') && tracks?.length) {
+    await tryWrite('Liked Songs', () => importLikedSongs(tracks, log, onProgress, signal));
   }
 
   const uriImports: {

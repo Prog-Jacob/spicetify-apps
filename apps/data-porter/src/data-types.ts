@@ -1,4 +1,12 @@
-import type { DataType, DataTypeConfig, ExportData } from './types/export';
+import type { DataType, ExportData } from './types/export';
+
+type DataTypeConfig = {
+  type: DataType;
+  label: string;
+  description: string;
+  icon: Spicetify.Icon;
+  getCount: (data: ExportData) => number;
+};
 
 export const DATA_TYPES: DataTypeConfig[] = [
   {

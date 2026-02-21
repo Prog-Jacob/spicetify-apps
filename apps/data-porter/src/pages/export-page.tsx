@@ -7,8 +7,9 @@ import DataTypeGrid from './data-type-grid';
 import ExportSummary from './export-summary';
 import { useAbortController } from '../hooks';
 import { SpicetifyIcon } from '@ui/components/ui/icon';
+import type { ProgressInfo } from '@shared/types/platform';
+import type { DataType, ExportData } from '../types/export';
 import { exportData, downloadJson } from '../services/exporter';
-import type { DataType, ExportData, ProgressInfo } from '../types/export';
 
 const { TextComponent, ButtonPrimary, ButtonSecondary, ButtonTertiary } = Spicetify.ReactComponent;
 

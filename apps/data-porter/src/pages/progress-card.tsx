@@ -1,7 +1,7 @@
 import React from 'react';
 import { Progress } from '@ui/components/ui/progress';
 import { Card, CardContent } from '@ui/components/ui/card';
-import type { ProgressInfo } from '../types/export';
+import type { ProgressInfo } from '@shared/types/platform';
 
 const { TextComponent, ButtonTertiary } = Spicetify.ReactComponent;
 
