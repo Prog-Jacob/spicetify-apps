@@ -1,6 +1,6 @@
 import { useRef, useEffect } from 'react';
 
-const useAbortController = () => {
+export const useAbortController = () => {
   const ref = useRef<AbortController | null>(null);
   useEffect(() => () => ref.current?.abort(), []);
   return {
@@ -13,5 +13,3 @@ const useAbortController = () => {
     abort: () => ref.current?.abort(),
   };
 };
-
-export default useAbortController;

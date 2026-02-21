@@ -12,7 +12,7 @@ type FileDropZoneProps = {
 
 const FileDropZone = ({ onFileSelected }: FileDropZoneProps) => {
   const [dragOver, setDragOver] = useState(false);
-  const inputRef = useRef<HTMLInputElement | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const handleFile = async (file: File) => {
     try {

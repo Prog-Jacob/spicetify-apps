@@ -26,7 +26,8 @@ const ResolutionPicker = ({ active, onChange, ariaLabel }: ResolutionPickerProps
         {i > 0 && <span className="text-spice-subtext/30">&middot;</span>}
         <button
           type="button"
-          aria-pressed={active === value}
+          role="radio"
+          aria-checked={active === value}
           onClick={() => onChange(value)}
           className={cn(
             'cursor-pointer border-0 bg-transparent p-0 text-sm transition-colors',
@@ -72,7 +73,7 @@ const ConflictCard = ({
           title={`${conflicts.length} playlist${conflicts.length === 1 ? '' : 's'} already exist`}
         />
 
-        <div className="overflow-hidden rounded-lg border border-spice-highlight/20">
+        <div className="max-h-72 overflow-y-auto overflow-x-hidden rounded-lg border border-spice-highlight/20">
           {conflicts.length >= 2 && (
             <>
               <div className="flex items-center justify-between bg-spice-highlight/20 px-4 py-3">
@@ -86,39 +87,33 @@ const ConflictCard = ({
                 />
               </div>
               <div className="px-4">
-                <div className="border-b border-spice-subtext/20"></div>
+                <div className="border-b border-spice-subtext/20" />
               </div>
             </>
           )}
 
-          <div className="flex max-h-72 flex-col overflow-y-auto">
-            {conflicts.map(({ importedName }, i) => (
-              <div
-                key={importedName}
-                className={cn(
-                  'animate-fade-in-up flex items-center justify-between px-4 py-2.5 transition-colors hover:bg-spice-highlight/10',
-                  i < conflicts.length - 1 && 'border-b border-spice-highlight/15',
-                )}
-                style={{ animationDelay: `${i * 45}ms` }}
-              >
-                <div className="flex min-w-0 items-center gap-2.5">
-                  <SpicetifyIcon
-                    icon="playlist"
-                    size={16}
-                    className="shrink-0 text-spice-subtext"
-                  />
-                  <TextComponent variant="mesto" weight="bold" className="truncate">
-                    {importedName}
-                  </TextComponent>
-                </div>
-                <ResolutionPicker
-                  active={resolutions.get(importedName)}
-                  onChange={(v) => onResolutionChange(importedName, v)}
-                  ariaLabel={`Resolution for ${importedName}`}
-                />
+          {conflicts.map(({ importedName }, i) => (
+            <div
+              key={importedName}
+              className={cn(
+                'animate-fade-in-up flex items-center justify-between px-4 py-2.5 transition-colors hover:bg-spice-highlight/10',
+                i < conflicts.length - 1 && 'border-b border-spice-highlight/15',
+              )}
+              style={{ animationDelay: `${i * 45}ms` }}
+            >
+              <div className="flex min-w-0 items-center gap-2.5">
+                <SpicetifyIcon icon="playlist" size={16} className="shrink-0 text-spice-subtext" />
+                <TextComponent variant="mesto" weight="bold" className="truncate">
+                  {importedName}
+                </TextComponent>
               </div>
-            ))}
-          </div>
+              <ResolutionPicker
+                active={resolutions.get(importedName)}
+                onChange={(v) => onResolutionChange(importedName, v)}
+                ariaLabel={`Resolution for ${importedName}`}
+              />
+            </div>
+          ))}
         </div>
 
         <div className="flex gap-3">

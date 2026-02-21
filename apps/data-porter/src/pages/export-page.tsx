@@ -1,11 +1,12 @@
 import ErrorCard from './error-card';
 import PageShell from './page-shell';
 import React, { useState } from 'react';
-import useAbortController from '../hooks';
 import ProgressCard from './progress-card';
 import { DATA_TYPES } from '../data-types';
 import DataTypeGrid from './data-type-grid';
 import ExportSummary from './export-summary';
+import { useAbortController } from '../hooks';
+import { SpicetifyIcon } from '@ui/components/ui/icon';
 import { exportData, downloadJson } from '../services/exporter';
 import type { DataType, ExportData, ProgressInfo } from '../types/export';
 
@@ -105,7 +106,15 @@ const ExportPage = ({ banner, onGoToImport }: ExportPageProps) => {
         <ExportSummary
           result={result.data}
           warnings={result.warnings}
-          onDownload={() => downloadJson(result.data)}
+          onDownload={() => {
+            downloadJson(result.data);
+            Spicetify.showNotification(
+              <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <SpicetifyIcon icon="check-alt-fill" size={14} />
+                File downloaded
+              </span>,
+            );
+          }}
           onNewExport={resetExport}
         />
       )}

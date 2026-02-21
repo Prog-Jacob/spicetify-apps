@@ -68,7 +68,6 @@ const ExportSummary = ({ result, warnings, onDownload, onNewExport }: ExportSumm
             onClick={() => {
               onDownload();
               onNewExport();
-              Spicetify.showNotification('File downloaded');
             }}
             buttonSize="md"
             iconLeading={() => <SpicetifyIcon icon="download" size={16} />}
