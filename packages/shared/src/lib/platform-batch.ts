@@ -1,7 +1,9 @@
-import type { ProgressInfo, LibraryPage } from '@shared/types/platform';
+import { validateResponse } from '../api/cosmos';
+import type { ProgressInfo, LibraryPage } from '../types/platform';
 
 export const PAGE_SIZE = 200;
 export const BATCH_DELAY_MS = 500;
+export const WRITE_BATCH_SIZE = 50;
 export const PLAYLIST_BATCH_SIZE = 10;
 
 export function checkAborted(signal?: AbortSignal): void {
@@ -15,6 +17,7 @@ export async function batchedWrite(
   signal: AbortSignal,
   onProgress: (p: ProgressInfo) => void,
   write: (batch: string[]) => Promise<void>,
+  delayMs = 0,
 ): Promise<void> {
   for (let i = 0; i < items.length; i += batchSize) {
     checkAborted(signal);
@@ -24,20 +27,12 @@ export async function batchedWrite(
       total: items.length,
       label,
     });
-    if (i + batchSize < items.length) await new Promise<void>((r) => setTimeout(r, BATCH_DELAY_MS));
+    if (i + batchSize < items.length) await new Promise<void>((r) => setTimeout(r, delayMs));
   }
 }
 
-// Platform APIs resolve with error bodies instead of throwing.
 function validatePage<T>(response: unknown, context: string): LibraryPage<T> {
-  const res = response as Record<string, unknown> | null;
-  if (!res || typeof res !== 'object') throw new Error(`${context}: invalid response`);
-  if (res.error) {
-    const err = res.error as { status?: number; message?: string };
-    throw new Error(
-      `${context}: API error ${err.status ?? 'unknown'} - ${err.message ?? 'no details'}`,
-    );
-  }
+  const res = validateResponse<Record<string, unknown>>(response, context);
   if (
     !Array.isArray(res.items) ||
     typeof res.totalLength !== 'number' ||

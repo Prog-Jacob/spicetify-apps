@@ -14,4 +14,7 @@ export const platform = {
   get ClipboardAPI() {
     return Spicetify.Platform.ClipboardAPI;
   },
+  get PlaylistPermissionsAPI() {
+    return Spicetify.Platform.PlaylistPermissionsAPI;
+  },
 };
