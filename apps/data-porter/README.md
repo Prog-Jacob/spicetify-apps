@@ -1,6 +1,6 @@
 # Data Porter
 
-A Spicetify custom app to export and import your Spotify library data.
+A Spicetify custom app to export and import Spotify library data — your own or another user's public data.
 
 ## Preview
 
@@ -8,29 +8,31 @@ A Spicetify custom app to export and import your Spotify library data.
 
 - Pick individual data types — playlists, liked songs, albums, artists, podcasts
 - Select all or deselect all in one click
+- Export another user's public playlists and followed artists by profile URL or user ID
 
 ![Export page](preview/export.png)
 
 ### Import
 
-- Drag and drop or browse for a file
+- Drag and drop, browse for a file, or import from a URL
+- Accepts Data Porter exports and Spotify official data exports
 - Preview item counts per type before committing
 
 ![Import page](preview/import.png)
 
 ### Conflict Resolution
 
-- Per-playlist choice: skip, replace, or duplicate
+- Per-playlist choice: skip, merge, or create new
 - Apply a resolution to all conflicts at once
+- Filter conflicts by name
 
 ![Conflict resolution](preview/import-conflict.png)
 
-### What it does
+### Extras
 
-- **Export** playlists (with tracks), liked songs, saved albums, followed artists, and podcasts to a single JSON file
-- **Import** data back from a Data Porter export or a Spotify official data export
-- Detects playlist conflicts and lets you skip, replace, or create duplicates
-- Progress tracking with cancel support
+- Live progress with cancel support
+- Fully keyboard accessible
+- English and Arabic — auto-detected from Spotify's language setting
 
 ---
 
