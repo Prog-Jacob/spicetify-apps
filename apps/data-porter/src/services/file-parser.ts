@@ -1,16 +1,21 @@
-import type { ExportData, ExportedPlaylist, ExportedLibrary } from '../types/export';
+import { t } from '../i18n';
 import type { ParsedFile } from '../types/import';
+import type { ExportData, ExportedPlaylist, ExportedLibrary } from '../types/export';
+
+const MAX_FILE_SIZE = 20; // in MB
+
+export const checkFileSize = (bytes: number, name: string): void => {
+  const size = Math.floor(bytes / 1024 / 1024);
+  if (size > MAX_FILE_SIZE) throw new Error(t('error.fileTooLargeSize', { name, size }));
+};
 
 function isPlaylistArray(v: unknown): v is ExportedPlaylist[] {
   return (
     Array.isArray(v) &&
-    v.every(
-      (item) =>
-        typeof item === 'object' &&
-        item !== null &&
-        typeof (item as Record<string, unknown>).name === 'string' &&
-        Array.isArray((item as Record<string, unknown>).items),
-    )
+    v.every((item) => {
+      const o = item as Record<string, unknown>;
+      return typeof o?.name === 'string' && Array.isArray(o.items);
+    })
   );
 }
 
@@ -25,17 +30,16 @@ function isLibrary(v: unknown): v is ExportedLibrary {
   );
 }
 
-export async function parseImportFile(file: File): Promise<ParsedFile> {
-  const text = await file.text();
+export function parseImportText(text: string, fileName: string): ParsedFile {
   let raw: unknown;
   try {
     raw = JSON.parse(text);
   } catch {
-    throw new Error(`"${file.name}" is not valid JSON`);
+    throw new Error(t('error.notValidJson', { fileName }));
   }
 
   if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
-    throw new Error(`"${file.name}" must be a JSON object`);
+    throw new Error(t('error.notJsonObject', { fileName }));
   }
 
   const obj = raw as Record<string, unknown>;
@@ -45,14 +49,14 @@ export async function parseImportFile(file: File): Promise<ParsedFile> {
     const data: ExportData = {};
     if ('playlists' in obj) {
       if (!isPlaylistArray(obj.playlists))
-        throw new Error(`"${file.name}": invalid playlists array`);
+        throw new Error(t('error.invalidPlaylists', { fileName }));
       data.playlists = obj.playlists;
     }
     if ('library' in obj) {
-      if (!isLibrary(obj.library)) throw new Error(`"${file.name}": invalid library object`);
+      if (!isLibrary(obj.library)) throw new Error(t('error.invalidLibrary', { fileName }));
       data.library = obj.library;
     }
-    return { data, sourceFormat: 'our-export', fileName: file.name };
+    return { data, sourceFormat: 'our-export', fileName };
   }
 
   // Spotify official YourLibrary.json: top-level tracks/albums/artists/shows
@@ -63,10 +67,13 @@ export async function parseImportFile(file: File): Promise<ParsedFile> {
       artists: Array.isArray(obj.artists) ? obj.artists : [],
       shows: Array.isArray(obj.shows) ? obj.shows : [],
     };
-    return { data: { library }, sourceFormat: 'spotify-official', fileName: file.name };
+    return { data: { library }, sourceFormat: 'spotify-official', fileName };
   }
 
-  throw new Error(
-    `"${file.name}" is not a recognized format. Expected a Data Porter export or Spotify YourLibrary.json / Playlist1.json.`,
-  );
+  throw new Error(t('error.unrecognizedFormat', { fileName }));
+}
+
+export async function parseImportFile(file: File): Promise<ParsedFile> {
+  checkFileSize(file.size, file.name);
+  return parseImportText(await file.text(), file.name);
 }

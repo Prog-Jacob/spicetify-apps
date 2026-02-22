@@ -1,6 +1,14 @@
+import { t } from '../i18n';
 import { platform } from '@shared/api/platform';
-import { BATCH_DELAY_MS, PLAYLIST_BATCH_SIZE, checkAborted, paginate } from './shared';
+import { notifyError } from '@shared/lib/errors';
+import { formatArtists, toDateString } from '@shared/lib/format';
 import type { ProgressInfo, LibraryTrackItem, LibraryContentItem } from '@shared/types/platform';
+import {
+  BATCH_DELAY_MS,
+  PLAYLIST_BATCH_SIZE,
+  checkAborted,
+  paginate,
+} from '@shared/lib/platform-batch';
 import type {
   DataType,
   PlaylistItemDetail,
@@ -8,23 +16,14 @@ import type {
   ExportedPlaylist,
   ExportedLibrary,
   ExportData,
+  ExportResult,
 } from '../types/export';
-
-function toDateString(ms: number): string {
-  const d = new Date(ms);
-  return isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10);
-}
-
-function formatArtists(artists?: { name: string }[]): string {
-  return artists?.map((a) => a.name).join(', ') ?? '';
-}
 
 function toExportedPlaylistItem(item: PlaylistItemDetail): ExportedPlaylistItem {
   const addedDate = item.addedAt ? toDateString(item.addedAt) : '';
-  const base = { track: null, episode: null, localTrack: null, addedDate };
 
   if (item.uri.startsWith('spotify:episode:'))
-    return { ...base, episode: { episodeName: item.name, showName: item.show?.name ?? '' } };
+    return { addedDate, episode: { episodeName: item.name, showName: item.show?.name ?? '' } };
 
   const trackInfo = {
     trackName: item.name,
@@ -32,12 +31,12 @@ function toExportedPlaylistItem(item: PlaylistItemDetail): ExportedPlaylistItem 
     albumName: item.album?.name ?? '',
   };
 
-  if (item.uri.startsWith('spotify:local:')) return { ...base, localTrack: trackInfo };
+  if (item.uri.startsWith('spotify:local:')) return { addedDate, localTrack: trackInfo };
 
-  return { ...base, track: { ...trackInfo, trackUri: item.uri } };
+  return { addedDate, track: { ...trackInfo, trackUri: item.uri } };
 }
 
-async function buildPlaylists(
+export async function buildPlaylists(
   playlistItems: LibraryContentItem[],
   onProgress?: (progress: ProgressInfo) => void,
   signal?: AbortSignal,
@@ -51,7 +50,11 @@ async function buildPlaylists(
       await new Promise<void>((r) => setTimeout(r, BATCH_DELAY_MS));
 
     const row = playlistItems[i];
-    onProgress?.({ current: i + 1, total: playlistItems.length, label: `Playlist: ${row.name}` });
+    onProgress?.({
+      current: i + 1,
+      total: playlistItems.length,
+      label: t('progress.playlist', { name: row.name }),
+    });
 
     const detail = await platform.PlaylistAPI.getPlaylist(row.uri);
     if (!detail || detail.error || !detail.contents) {
@@ -75,7 +78,7 @@ export async function exportData(
   selected: Set<DataType>,
   onProgress: (progress: ProgressInfo) => void,
   signal: AbortSignal,
-): Promise<{ data: ExportData; warnings: string[] }> {
+): Promise<ExportResult> {
   const data: ExportData = {};
   const warnings: string[] = [];
 
@@ -84,26 +87,26 @@ export async function exportData(
       return await fn();
     } catch (e) {
       checkAborted(signal);
-      const msg = `Failed to fetch ${label.toLowerCase()}`;
+      const msg = t('warn.fetchFailed', { label });
       warnings.push(msg);
-      Spicetify.showNotification(`${msg}: ${e}`, true);
+      notifyError(e, msg);
       return null;
     }
   };
 
-  const needsLibraryScan = ['playlists', 'albums', 'artists', 'shows'].some((t) =>
-    selected.has(t as DataType),
+  const needsLibraryScan = (['playlists', 'albums', 'artists', 'shows'] as const).some((dt) =>
+    selected.has(dt),
   );
 
   let libraryContents: LibraryContentItem[] | null = null;
   if (needsLibraryScan) {
-    onProgress({ current: 0, total: 0, label: 'Scanning library...' });
-    libraryContents = await tryFetch('Library', () =>
+    onProgress({ current: 0, total: 0, label: t('progress.scanningLibrary') });
+    libraryContents = await tryFetch(t('progress.scanningLibrary'), () =>
       paginate<LibraryContentItem>(
         (params) => platform.LibraryAPI.getContents(params),
         'LibraryAPI.getContents',
         onProgress,
-        'Scanning library...',
+        t('progress.scanningLibrary'),
         signal,
       ),
     );
@@ -111,15 +114,18 @@ export async function exportData(
 
   if (selected.has('playlists') && libraryContents) {
     const playlistItems = libraryContents.filter((i) => i.type === 'playlist');
-    onProgress({ current: 0, total: playlistItems.length, label: 'Fetching playlists...' });
-    const result = await tryFetch('Playlists', () =>
+    onProgress({ current: 0, total: playlistItems.length, label: t('progress.fetchingPlaylists') });
+    const result = await tryFetch(t('dataType.playlists'), () =>
       buildPlaylists(playlistItems, onProgress, signal),
     );
     if (result) {
       data.playlists = result.playlists;
       if (result.skipped.length > 0)
         warnings.push(
-          `${result.skipped.length} playlist(s) failed to load: ${result.skipped.join(', ')}`,
+          t('warn.playlistsFailed', {
+            count: result.skipped.length,
+            names: result.skipped.join(', '),
+          }),
         );
     }
   }
@@ -127,13 +133,13 @@ export async function exportData(
   const library: ExportedLibrary = { tracks: [], albums: [], artists: [], shows: [] };
 
   if (selected.has('likedSongs')) {
-    onProgress({ current: 0, total: 0, label: 'Fetching liked songs...' });
-    const tracks = await tryFetch('Liked Songs', async () => {
+    onProgress({ current: 0, total: 0, label: t('progress.fetchingLikedSongs') });
+    const tracks = await tryFetch(t('dataType.likedSongs'), async () => {
       const items = await paginate<LibraryTrackItem>(
         (params) => platform.LibraryAPI.getTracks(params),
         'LibraryAPI.getTracks',
         onProgress,
-        'Liked Songs',
+        t('dataType.likedSongs'),
         signal,
       );
       return items.map((item) => ({
@@ -164,14 +170,4 @@ export async function exportData(
   if (Object.values(library).some((arr) => arr.length > 0)) data.library = library;
 
   return { data, warnings };
-}
-
-export function downloadJson(data: ExportData, filename?: string) {
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  Object.assign(document.createElement('a'), {
-    href: url,
-    download: filename ?? `spotify-export-${new Date().toISOString().slice(0, 10)}.json`,
-  }).click();
-  setTimeout(() => URL.revokeObjectURL(url), 10_000);
 }

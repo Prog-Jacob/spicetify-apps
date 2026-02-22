@@ -12,9 +12,9 @@ type EpisodeFields = { episodeName: string; showName: string };
 type TrackFields = LocalTrackFields & { trackUri: string };
 
 export type ExportedPlaylistItem = {
-  track: TrackFields | null;
-  episode: EpisodeFields | null;
-  localTrack: LocalTrackFields | null;
+  track?: TrackFields;
+  episode?: EpisodeFields;
+  localTrack?: LocalTrackFields;
   addedDate: string;
 };
 
@@ -36,6 +36,12 @@ export type ExportedLibrary = {
 export type ExportData = {
   playlists?: ExportedPlaylist[];
   library?: ExportedLibrary;
+};
+
+export type ExportResult = {
+  data: ExportData;
+  warnings: string[];
+  userName?: string;
 };
 
 export type DataType = 'playlists' | 'likedSongs' | 'albums' | 'artists' | 'shows';

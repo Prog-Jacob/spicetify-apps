@@ -1,8 +1,10 @@
 import React from 'react';
+import { t } from '../i18n';
 import { cn } from '@shared/lib/utils';
 import DataTypeCard from './data-type-card';
+import { DATA_TYPES } from '../data-types';
 import type { DataType } from '../types/export';
-import { DATA_TYPES, toggleInSet } from '../data-types';
+import { toggleInSet } from '@shared/lib/utils';
 
 type DataTypeGridProps = {
   selected: Set<DataType>;
@@ -18,15 +20,15 @@ const DataTypeGrid = ({ selected, onToggle, disabled, counts }: DataTypeGridProp
       disabled && 'pointer-events-none opacity-50',
     )}
   >
-    {DATA_TYPES.map(({ type, label, description, icon }) => {
+    {DATA_TYPES.map(({ type, labelKey, descKey, icon }) => {
       const count = counts?.get(type);
       if (counts && count === undefined) return null;
       return (
         <DataTypeCard
           key={type}
           icon={icon}
-          label={label}
-          description={description}
+          label={t(labelKey)}
+          description={t(descKey)}
           selected={selected.has(type)}
           disabled={disabled}
           onToggle={() => onToggle(toggleInSet(selected, type))}

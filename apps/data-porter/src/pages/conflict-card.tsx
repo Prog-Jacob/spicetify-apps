@@ -1,16 +1,18 @@
-import React from 'react';
+import { t as ut } from '@ui/i18n';
 import { cn } from '@shared/lib/utils';
-import StatusHeader from './status-header';
+import { t, type MessageKey } from '../i18n';
+import { Input } from '@ui/components/ui/input';
+import React, { useMemo, useState } from 'react';
 import { SpicetifyIcon } from '@ui/components/ui/icon';
-import { Card, CardContent } from '@ui/components/ui/card';
+import { ResultCard } from '@ui/components/ui/result-card';
 import type { PlaylistConflict, PlaylistConflictResolution } from '../types/import';
 
 const { TextComponent, ButtonPrimary, ButtonTertiary } = Spicetify.ReactComponent;
 
-const RESOLUTION_OPTIONS: { value: PlaylistConflictResolution; label: string }[] = [
-  { value: 'merge', label: 'Merge' },
-  { value: 'skip', label: 'Skip' },
-  { value: 'create-new', label: 'Create New' },
+const RESOLUTIONS: { value: PlaylistConflictResolution; labelKey: MessageKey }[] = [
+  { value: 'skip', labelKey: 'conflict.skip' },
+  { value: 'merge', labelKey: 'conflict.merge' },
+  { value: 'create-new', labelKey: 'conflict.createNew' },
 ];
 
 type ResolutionPickerProps = {
@@ -20,23 +22,23 @@ type ResolutionPickerProps = {
 };
 
 const ResolutionPicker = ({ active, onChange, ariaLabel }: ResolutionPickerProps) => (
-  <div className="flex shrink-0 items-center gap-2" role="radiogroup" aria-label={ariaLabel}>
-    {RESOLUTION_OPTIONS.map(({ value, label }, i) => (
+  <div className="flex items-center gap-2" role="radiogroup" aria-label={ariaLabel}>
+    {RESOLUTIONS.map(({ value, labelKey }, i) => (
       <React.Fragment key={value}>
-        {i > 0 && <span className="text-spice-subtext/30">&middot;</span>}
+        {i > 0 && <span className="text-spice-subtext/50">&middot;</span>}
         <button
           type="button"
           role="radio"
           aria-checked={active === value}
           onClick={() => onChange(value)}
           className={cn(
-            'cursor-pointer border-0 bg-transparent p-0 text-sm transition-colors',
+            'cursor-pointer border-0 bg-transparent p-0 text-sm',
             active === value
               ? 'font-semibold text-spice-button'
               : 'text-spice-subtext hover:text-spice-text',
           )}
         >
-          {label}
+          {t(labelKey)}
         </button>
       </React.Fragment>
     ))}
@@ -47,7 +49,7 @@ type ConflictCardProps = {
   conflicts: PlaylistConflict[];
   resolutions: Map<string, PlaylistConflictResolution>;
   onResolutionChange: (name: string, value: PlaylistConflictResolution) => void;
-  onApplyAll: (value: PlaylistConflictResolution) => void;
+  onApplyAll: (value: PlaylistConflictResolution, names: string[]) => void;
   onContinue: () => void;
   onCancel: () => void;
 };
@@ -60,49 +62,69 @@ const ConflictCard = ({
   onContinue,
   onCancel,
 }: ConflictCardProps) => {
-  const first = resolutions.get(conflicts[0]?.importedName);
-  const allSame = conflicts.every((c) => resolutions.get(c.importedName) === first)
-    ? first
-    : undefined;
+  const l = (s: string) => s.toLowerCase();
+  const [filter, setFilter] = useState('');
+  const filtered = useMemo(
+    () => conflicts.filter((c) => l(c.importedName).includes(l(filter))),
+    [filter, conflicts],
+  );
+  const allSame = useMemo(() => {
+    const first = resolutions.get(filtered[0]?.importedName);
+    return filtered.every((c) => resolutions.get(c.importedName) === first) ? first : undefined;
+  }, [filtered, resolutions]);
 
   return (
-    <Card className="animate-fade-in-up border-0 py-5">
-      <CardContent className="flex flex-col gap-5">
-        <StatusHeader
-          variant="warning"
-          title={`${conflicts.length} playlist${conflicts.length === 1 ? '' : 's'} already exist`}
-        />
+    <ResultCard
+      variant="warning"
+      title={t('conflict.title', { count: conflicts.length })}
+      actions={
+        <>
+          <ButtonPrimary onClick={onContinue} buttonSize="md">
+            {t('conflict.continue')}
+          </ButtonPrimary>
+          <ButtonTertiary onClick={onCancel} buttonSize="md">
+            {ut('cancel')}
+          </ButtonTertiary>
+        </>
+      }
+    >
+      <div className="flex max-h-96 flex-col overflow-hidden rounded-lg border border-spice-highlight/20">
+        <div className="flex items-center gap-3 px-4 py-3">
+          <Input
+            type="text"
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            placeholder={t('conflict.filter')}
+            aria-label={t('conflict.filter')}
+          />
+          <TextComponent variant="minuet" semanticColor="textSubdued">
+            {t('conflict.showing', { filtered: filtered.length, total: conflicts.length })}
+          </TextComponent>
+        </div>
 
-        <div className="max-h-72 overflow-y-auto overflow-x-hidden rounded-lg border border-spice-highlight/20">
-          {conflicts.length >= 2 && (
-            <>
-              <div className="flex items-center justify-between bg-spice-highlight/20 px-4 py-3">
-                <TextComponent variant="ballad" semanticColor="textSubdued">
-                  Apply to all
-                </TextComponent>
-                <ResolutionPicker
-                  active={allSame}
-                  onChange={onApplyAll}
-                  ariaLabel="Apply resolution to all"
-                />
-              </div>
-              <div className="px-4">
-                <div className="border-b border-spice-subtext/20" />
-              </div>
-            </>
-          )}
+        {filtered.length >= 2 && (
+          <div className="mx-4 flex items-center justify-between border-b border-spice-subtext/40 pb-3">
+            <TextComponent variant="ballad" semanticColor="textSubdued">
+              {t('conflict.applyToAll')}
+            </TextComponent>
+            <ResolutionPicker
+              active={allSame}
+              onChange={(v) => onApplyAll(v, filtered.map((c) => c.importedName))}
+              ariaLabel={t('conflict.applyToAll')}
+            />
+          </div>
+        )}
 
-          {conflicts.map(({ importedName }, i) => (
+        <div className="overflow-y-auto" role="list">
+          {filtered.map(({ importedName }, i) => (
             <div
+              role="listitem"
               key={importedName}
-              className={cn(
-                'animate-fade-in-up flex items-center justify-between px-4 py-2.5 transition-colors hover:bg-spice-highlight/10',
-                i < conflicts.length - 1 && 'border-b border-spice-highlight/15',
-              )}
+              className="animate-fade-in-up flex items-center justify-between px-4 py-2.5 hover:bg-spice-highlight/10"
               style={{ animationDelay: `${i * 45}ms` }}
             >
               <div className="flex min-w-0 items-center gap-2.5">
-                <SpicetifyIcon icon="playlist" size={16} className="shrink-0 text-spice-subtext" />
+                <SpicetifyIcon icon="playlist" size={16} className="text-spice-subtext" />
                 <TextComponent variant="mesto" weight="bold" className="truncate">
                   {importedName}
                 </TextComponent>
@@ -110,22 +132,13 @@ const ConflictCard = ({
               <ResolutionPicker
                 active={resolutions.get(importedName)}
                 onChange={(v) => onResolutionChange(importedName, v)}
-                ariaLabel={`Resolution for ${importedName}`}
+                ariaLabel={t('conflict.resolutionFor', { name: importedName })}
               />
             </div>
           ))}
         </div>
-
-        <div className="flex gap-3">
-          <ButtonPrimary onClick={onContinue} buttonSize="md">
-            Continue Import
-          </ButtonPrimary>
-          <ButtonTertiary onClick={onCancel} buttonSize="md">
-            Cancel
-          </ButtonTertiary>
-        </div>
-      </CardContent>
-    </Card>
+      </div>
+    </ResultCard>
   );
 };
 

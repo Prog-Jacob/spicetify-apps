@@ -1,4 +1,5 @@
 import React from 'react';
+import { t } from '../i18n';
 import { cn } from '@shared/lib/utils';
 import { SpicetifyIcon } from '@ui/components/ui/icon';
 
@@ -26,7 +27,7 @@ const DataTypeCard = ({
   <button
     role="switch"
     aria-checked={selected}
-    aria-label={`Include ${label}`}
+    aria-label={t('dataType.include', { label })}
     disabled={disabled}
     onClick={onToggle}
     className={cn(
@@ -56,7 +57,7 @@ const DataTypeCard = ({
       </TextComponent>
       {count !== undefined && (
         <TextComponent variant="minuet" semanticColor="textSubdued">
-          {count.toLocaleString()} items
+          {t('dataType.itemCount', { count })}
         </TextComponent>
       )}
     </div>

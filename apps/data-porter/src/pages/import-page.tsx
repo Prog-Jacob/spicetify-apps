@@ -1,17 +1,20 @@
-import PageShell from './page-shell';
-import ErrorCard from './error-card';
+import { t } from '../i18n';
 import React, { useState } from 'react';
 import ConflictCard from './conflict-card';
-import ProgressCard from './progress-card';
 import DataTypeGrid from './data-type-grid';
 import FileDropZone from './file-drop-zone';
 import ImportSummary from './import-summary';
-import { useAbortController } from '../hooks';
 import { platform } from '@shared/api/platform';
 import type { DataType } from '../types/export';
+import { notifyError } from '@shared/lib/errors';
+import { importData } from '../services/importer';
 import { getAvailableCounts } from '../data-types';
+import { ErrorCard } from '@ui/components/ui/error-card';
+import { PageShell } from '@ui/components/ui/page-shell';
 import type { ProgressInfo } from '@shared/types/platform';
-import { importData, fetchExistingPlaylists } from '../services/importer';
+import { fetchExistingPlaylists } from '@shared/lib/library';
+import { ProgressCard } from '@ui/components/ui/progress-card';
+import { useAbortController } from '@shared/hooks/use-abort-controller';
 import type {
   ParsedFile,
   ImportResult,
@@ -46,7 +49,7 @@ const ImportPage = ({ banner }: { banner?: React.ReactNode }) => {
 
     setStep('importing');
     setResult(null);
-    setProgress({ current: 0, total: 0, label: 'Starting import...' });
+    setProgress({ current: 0, total: 0, label: t('progress.starting') });
 
     try {
       const importResult = await importData(
@@ -61,8 +64,11 @@ const ImportPage = ({ banner }: { banner?: React.ReactNode }) => {
       const allFailed =
         importResult.log.length > 0 && importResult.log.every((e) => e.status === 'error');
       setStep(allFailed ? 'error' : 'done');
-    } catch {
-      if (!controller.signal.aborted) setStep('error');
+    } catch (e) {
+      if (controller.signal.aborted) return;
+      console.error('[data-porter] Import failed:', e);
+      setResult({ log: [], warnings: [e instanceof Error ? e.message : String(e)] });
+      setStep('error');
     } finally {
       setProgress(null);
     }
@@ -75,16 +81,15 @@ const ImportPage = ({ banner }: { banner?: React.ReactNode }) => {
       return;
     }
 
-    setProgress({ current: 0, total: 0, label: 'Checking for existing playlists...' });
+    setProgress({ current: 0, total: 0, label: t('progress.checkingPlaylists') });
     setStep('importing');
 
     try {
       const existing = await fetchExistingPlaylists();
-      const found: PlaylistConflict[] = [];
-      for (const pl of playlists) {
-        const existingUri = existing.get(pl.name);
-        if (existingUri) found.push({ importedName: pl.name, existingUri });
-      }
+      const found = playlists.flatMap(({ name }) => {
+        const uri = existing.get(name);
+        return uri ? { importedName: name, existingUri: uri } : [];
+      });
 
       if (found.length === 0) {
         await runImport(new Map(), existing);
@@ -96,7 +101,7 @@ const ImportPage = ({ banner }: { banner?: React.ReactNode }) => {
         setStep('conflicts');
       }
     } catch (e) {
-      Spicetify.showNotification(`Failed to check playlists: ${e}`, true);
+      notifyError(e, t('progress.checkingPlaylists'));
       await runImport(new Map(), new Map());
     }
   };
@@ -114,12 +119,13 @@ const ImportPage = ({ banner }: { banner?: React.ReactNode }) => {
 
   return (
     <PageShell
-      title="Import Data"
-      subtitle="Upload a JSON file to restore your Spotify data."
+      title={t('import.title')}
+      subtitle={t('import.subtitle')}
+      version={__APP_VERSION__}
       banner={banner}
       navButton={
         <ButtonSecondary onClick={() => platform.History.push('/data-porter')} buttonSize="md">
-          Export
+          {t('nav.export')}
         </ButtonSecondary>
       }
     >
@@ -139,16 +145,16 @@ const ImportPage = ({ banner }: { banner?: React.ReactNode }) => {
             <div className="flex items-center justify-between">
               <div className="flex flex-col gap-1">
                 <TextComponent variant="ballad" weight="bold">
-                  Found in {parsed.fileName}
+                  {t('import.foundIn', { fileName: parsed.fileName })}
                 </TextComponent>
                 <TextComponent variant="minuet" semanticColor="textSubdued">
                   {parsed.sourceFormat === 'spotify-official'
-                    ? 'Spotify official export'
-                    : 'Data Porter export'}
+                    ? t('import.sourceSpotify')
+                    : t('import.sourceDataPorter')}
                 </TextComponent>
               </div>
               <ButtonTertiary onClick={reset} buttonSize="sm">
-                Choose Different File
+                {t('import.chooseDifferent')}
               </ButtonTertiary>
             </div>
 
@@ -160,7 +166,7 @@ const ImportPage = ({ banner }: { banner?: React.ReactNode }) => {
             disabled={selected.size === 0}
             buttonSize="md"
           >
-            Import Selected
+            {t('import.importSelected')}
           </ButtonPrimary>
         </>
       )}
@@ -172,8 +178,10 @@ const ImportPage = ({ banner }: { banner?: React.ReactNode }) => {
           onResolutionChange={(name, value) =>
             setResolutions((prev) => new Map(prev).set(name, value))
           }
-          onApplyAll={(value) =>
-            setResolutions(new Map(conflicts.map((c) => [c.importedName, value])))
+          onApplyAll={(value, names) =>
+            setResolutions(
+              (prev) => new Map([...prev, ...names.map((name) => [name, value] as const)]),
+            )
           }
           onContinue={() => runImport(resolutions, existingUris)}
           onCancel={reset}
@@ -200,7 +208,7 @@ const ImportPage = ({ banner }: { banner?: React.ReactNode }) => {
       )}
 
       {step === 'error' && (
-        <ErrorCard title="Import Failed" warnings={result?.warnings} onRetry={reset} />
+        <ErrorCard title={t('import.failed')} warnings={result?.warnings} onRetry={reset} />
       )}
     </PageShell>
   );

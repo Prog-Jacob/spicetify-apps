@@ -1,9 +1,10 @@
+import type { MessageKey } from './i18n';
 import type { DataType, ExportData } from './types/export';
 
 type DataTypeConfig = {
   type: DataType;
-  label: string;
-  description: string;
+  labelKey: MessageKey;
+  descKey: MessageKey;
   icon: Spicetify.Icon;
   getCount: (data: ExportData) => number;
 };
@@ -11,36 +12,36 @@ type DataTypeConfig = {
 export const DATA_TYPES: DataTypeConfig[] = [
   {
     type: 'playlists',
-    label: 'Playlists',
-    description: 'Playlists with all their tracks',
+    labelKey: 'dataType.playlists',
+    descKey: 'dataType.playlists.desc',
     icon: 'playlist',
     getCount: (d) => d.playlists?.length ?? 0,
   },
   {
     type: 'likedSongs',
-    label: 'Liked Songs',
-    description: 'Songs you\u2019ve liked',
+    labelKey: 'dataType.likedSongs',
+    descKey: 'dataType.likedSongs.desc',
     icon: 'heart',
     getCount: (d) => d.library?.tracks.length ?? 0,
   },
   {
     type: 'albums',
-    label: 'Albums',
-    description: 'Albums you\u2019ve saved',
+    labelKey: 'dataType.albums',
+    descKey: 'dataType.albums.desc',
     icon: 'album',
     getCount: (d) => d.library?.albums.length ?? 0,
   },
   {
     type: 'artists',
-    label: 'Artists',
-    description: 'Artists you follow',
+    labelKey: 'dataType.artists',
+    descKey: 'dataType.artists.desc',
     icon: 'artist',
     getCount: (d) => d.library?.artists.length ?? 0,
   },
   {
     type: 'shows',
-    label: 'Shows',
-    description: 'Podcasts you follow',
+    labelKey: 'dataType.shows',
+    descKey: 'dataType.shows.desc',
     icon: 'podcasts',
     getCount: (d) => d.library?.shows.length ?? 0,
   },
@@ -53,11 +54,4 @@ export function getAvailableCounts(data: ExportData): Map<DataType, number> {
     if (count > 0) counts.set(dt.type, count);
   }
   return counts;
-}
-
-export function toggleInSet<T>(set: Set<T>, item: T): Set<T> {
-  const next = new Set(set);
-  if (next.has(item)) next.delete(item);
-  else next.add(item);
-  return next;
 }
