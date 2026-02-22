@@ -1,0 +1,123 @@
+import type { DataPorterMessages } from './en';
+
+const ar: DataPorterMessages = {
+  // Navigation
+  'nav.import': 'استيراد',
+  'nav.export': 'تصدير',
+
+  // Export page
+  'export.title': 'تصدير بياناتك',
+  'export.subtitle': 'اختر ما تريد تضمينه، ثم حمّل كملف JSON.',
+  'export.myData': 'بياناتي',
+  'export.anotherUser': 'مستخدم آخر',
+  'export.whatToInclude': 'ماذا تريد تضمينه',
+  'export.selectItems': 'اختر العناصر للتصدير',
+  'export.count': 'تصدير {selected} من {total}',
+  'export.spotifyProfile': 'ملف سبوتيفاي الشخصي',
+  'export.profilePlaceholder': 'https://open.spotify.com/user/... أو spotify:user:...',
+  'export.exportUserData': 'تصدير بيانات المستخدم',
+  'export.failed': 'فشل التصدير',
+  'export.downloaded': 'تم تحميل الملف',
+
+  // Import page
+  'import.title': 'استيراد البيانات',
+  'import.subtitle': 'ارفع ملف JSON لاستعادة بيانات سبوتيفاي.',
+  'import.foundIn': 'موجود في {fileName}',
+  'import.sourceSpotify': 'تصدير سبوتيفاي الرسمي',
+  'import.sourceDataPorter': 'تصدير Data Porter',
+  'import.chooseDifferent': 'اختر ملفاً آخر',
+  'import.importSelected': 'استيراد المحدد',
+  'import.failed': 'فشل الاستيراد',
+
+  // File drop zone
+  'dropZone.dropHere': 'أسقط ملف JSON هنا',
+  'dropZone.browse': 'أو انقر للتصفح',
+  'dropZone.orUrl': 'أو أدخل رابطاً',
+  'dropZone.fetch': 'جلب',
+  'dropZone.fetching': 'جارٍ الجلب\u2026',
+  'dropZone.invalidUrl': 'يرجى إدخال رابط HTTP أو HTTPS صالح',
+  'dropZone.urlLabel': 'رابط ملف الاستيراد',
+
+  // Conflicts
+  'conflict.title': {
+    zero: 'لا توجد قوائم تشغيل مكررة',
+    one: 'قائمة تشغيل واحدة موجودة بالفعل',
+    two: 'قائمتا تشغيل موجودتان بالفعل',
+    few: '# قوائم تشغيل موجودة بالفعل',
+    many: '# قائمة تشغيل موجودة بالفعل',
+    other: '# قائمة تشغيل موجودة بالفعل',
+  },
+  'conflict.continue': 'متابعة الاستيراد',
+  'conflict.filter': 'تصفية حسب الاسم\u2026',
+  'conflict.applyToAll': 'تطبيق على الكل',
+  'conflict.showing': '{filtered} من {total}',
+  'conflict.resolutionFor': 'الإجراء لـ {name}',
+  'conflict.skip': 'تخطي',
+  'conflict.merge': 'دمج',
+  'conflict.createNew': 'إنشاء جديدة',
+
+  // Summaries
+  'summary.complete': 'اكتمل',
+  'summary.partial': 'اكتمل جزئياً',
+  'summary.importAgain': 'استيراد مرة أخرى',
+  'summary.goToExport': 'الذهاب إلى التصدير',
+
+  // Data types
+  'dataType.playlists': 'قوائم التشغيل',
+  'dataType.playlists.desc': 'قوائم التشغيل بجميع مقاطعها',
+  'dataType.likedSongs': 'الأغاني المعجبة',
+  'dataType.likedSongs.desc': 'الأغاني التي أعجبتك',
+  'dataType.albums': 'الألبومات',
+  'dataType.albums.desc': 'الألبومات المحفوظة',
+  'dataType.artists': 'الفنانون',
+  'dataType.artists.desc': 'الفنانون الذين تتابعهم',
+  'dataType.shows': 'البرامج',
+  'dataType.shows.desc': 'البودكاست الذي تتابعه',
+  'dataType.itemCount': '{count} عنصر',
+  'dataType.include': 'تضمين {label}',
+
+  // Progress labels
+  'progress.starting': 'جارٍ البدء',
+  'progress.scanningLibrary': 'فحص المكتبة',
+  'progress.fetchingPlaylists': 'جلب قوائم التشغيل',
+  'progress.fetchingLikedSongs': 'جلب الأغاني المعجبة',
+  'progress.playlist': 'قائمة تشغيل: {name}',
+  'progress.savingLikedSongs': 'حفظ الأغاني المعجبة',
+  'progress.savingAlbums': 'حفظ الألبومات',
+  'progress.followingArtists': 'متابعة الفنانين',
+  'progress.savingShows': 'حفظ البرامج',
+  'progress.importingPlaylist': 'استيراد قائمة تشغيل "{name}"',
+  'progress.checkingPlaylists': 'التحقق من قوائم التشغيل الموجودة',
+  'progress.fetchingProfile': 'جلب ملف المستخدم الشخصي',
+  'progress.fetchingPlaylistList': 'جلب قائمة التشغيل',
+  'progress.fetchingArtists': 'جلب الفنانين المتابَعين',
+
+  // Importer log entries
+  'log.localTracks': '{count} مقطع محلي تم تخطيه',
+  'log.playlistSkipped': 'تم تخطي "{name}"',
+  'log.playlistFailed': 'فشل "{name}"',
+  'log.playlistCreated': 'تم إنشاء "{name}" — {count} مقطع',
+  'log.playlistMerged': 'تم الدمج في "{name}" — {count} مقطع',
+  'log.episodesSkipped': '"{name}": {count} حلقة/مقطع محلي تم تخطيه',
+  'log.duplicatesSkipped': '"{name}": {count} مكرر تم تخطيه',
+  'log.saved': '{count} {noun}',
+  'log.failed': 'فشل: {label}',
+  'log.descriptionFailed': '"{name}": فشل تعيين الوصف',
+  'log.permissionFailed': '"{name}": فشل تعيين الأذونات',
+
+  // Warnings and errors
+  'warn.playlistsFailed': '{count} قائمة تشغيل فشل تحميلها: {names}',
+  'warn.noPublicData': 'لا توجد قوائم تشغيل عامة أو فنانون متابَعون لهذا المستخدم.',
+  'warn.fetchFailed': 'فشل جلب {label}',
+  'error.invalidProfile': 'رابط ملف سبوتيفاي الشخصي أو معرّف المستخدم غير صالح.',
+  'error.userNotFound': 'المستخدم "{userId}" غير موجود أو ملفه الشخصي خاص',
+  'error.notValidJson': '"{fileName}" ليس ملف JSON صالحاً',
+  'error.notJsonObject': '"{fileName}" يجب أن يكون كائن JSON',
+  'error.invalidPlaylists': '"{fileName}": مصفوفة قوائم التشغيل غير صالحة',
+  'error.invalidLibrary': '"{fileName}": كائن المكتبة غير صالح',
+  'error.unrecognizedFormat':
+    '"{fileName}" ليس بصيغة معروفة. يُتوقع تصدير Data Porter أو Spotify YourLibrary.json / Playlist1.json.',
+  'error.fileTooLargeSize': '"{name}" كبير جداً ({size} ميغابايت). الحد الأقصى ٢٠ ميغابايت.',
+};
+
+export default ar;
