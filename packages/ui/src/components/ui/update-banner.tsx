@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import { t } from '../../i18n';
 import { SpicetifyIcon } from './icon';
+import React, { useState } from 'react';
 import { platform } from '@shared/api/platform';
 
 const BASE_URL = 'https://raw.githubusercontent.com/Prog-Jacob/spicetify-apps/main';
@@ -41,33 +42,37 @@ const UpdateBanner = ({ appName, releaseUrl }: UpdateBannerProps) => {
       <SpicetifyIcon icon="download" size={16} className="shrink-0 text-spice-notification" />
 
       <TextComponent variant="mesto" semanticColor="textSubdued" className="flex-1">
-        A new version of {toDisplayName(appName)} is available
+        {t('update.available', { appName: toDisplayName(appName) })}
       </TextComponent>
 
       <div className="flex shrink-0 items-center gap-1">
         <ButtonTertiary
           buttonSize="sm"
           onClick={handleCopy}
-          aria-label={copied ? 'Copied' : 'Copy install command'}
+          aria-label={copied ? t('update.copied') : t('update.copyCommand')}
         >
           <span className="flex items-center gap-1.5">
             <SpicetifyIcon icon={copied ? 'check' : 'copy'} size={14} />
-            {copied ? 'Copied!' : 'Update'}
+            {copied ? t('update.copied') : t('update.update')}
           </span>
         </ButtonTertiary>
 
         <ButtonTertiary
           buttonSize="sm"
           onClick={() => window.open(releaseUrl, '_blank')}
-          aria-label="View release"
+          aria-label={t('update.viewRelease')}
         >
           <span className="flex items-center gap-1.5">
             <SpicetifyIcon icon="external-link" size={14} />
-            Release
+            {t('update.release')}
           </span>
         </ButtonTertiary>
 
-        <ButtonTertiary buttonSize="sm" onClick={() => setDismissed(true)} aria-label="Dismiss">
+        <ButtonTertiary
+          buttonSize="sm"
+          onClick={() => setDismissed(true)}
+          aria-label={t('update.dismiss')}
+        >
           <SpicetifyIcon icon="x" size={14} />
         </ButtonTertiary>
       </div>

@@ -37,6 +37,7 @@ export default [
         HTMLInputElement: 'readonly',
         navigator: 'readonly',
         __APP_VERSION__: 'readonly',
+        DOMParser: 'readonly',
       },
     },
     plugins: {
