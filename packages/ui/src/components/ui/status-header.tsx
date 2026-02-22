@@ -1,6 +1,6 @@
 import React from 'react';
 import { cn } from '@shared/lib/utils';
-import { SpicetifyIcon } from '@ui/components/ui/icon';
+import { SpicetifyIcon } from './icon';
 
 const { TextComponent } = Spicetify.ReactComponent;
 
@@ -46,4 +46,4 @@ const StatusHeader = ({ variant, title }: StatusHeaderProps) => {
   );
 };
 
-export default StatusHeader;
+export { StatusHeader };

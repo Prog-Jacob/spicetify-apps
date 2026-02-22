@@ -1,6 +1,7 @@
 import React from 'react';
-import { Progress } from '@ui/components/ui/progress';
-import { Card, CardContent } from '@ui/components/ui/card';
+import { t } from '../../i18n';
+import { Progress } from './progress';
+import { Card, CardContent } from './card';
 import type { ProgressInfo } from '@shared/types/platform';
 
 const { TextComponent, ButtonTertiary } = Spicetify.ReactComponent;
@@ -18,11 +19,11 @@ const ProgressCard = ({ progress, onCancel }: ProgressCardProps) => {
       <CardContent className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <TextComponent variant="mesto" weight="bold">
-            {progress.label}
+            {progress.label}...
           </TextComponent>
           {progress.total > 0 && (
             <TextComponent variant="minuet" semanticColor="textSubdued">
-              {progress.current} / {progress.total}
+              {t('progress.counter', { current: progress.current, total: progress.total })}
             </TextComponent>
           )}
         </div>
@@ -34,11 +35,11 @@ const ProgressCard = ({ progress, onCancel }: ProgressCardProps) => {
         />
 
         <ButtonTertiary onClick={onCancel} buttonSize="sm">
-          Cancel
+          {t('cancel')}
         </ButtonTertiary>
       </CardContent>
     </Card>
   );
 };
 
-export default ProgressCard;
+export { ProgressCard };
