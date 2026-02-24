@@ -1,3 +1,5 @@
+import { REPO } from './repo';
+
 export class ValidationError extends Error {
   constructor(message: string) {
     super(message);
@@ -7,6 +9,6 @@ export class ValidationError extends Error {
 
 export const notifyError = (e: unknown, prefix?: string) => {
   const msg = e instanceof Error ? e.message : String(e);
-  console.error(`[Prog-Jacob App] ${prefix ?? 'Error'}:`, e);
+  console.error(`[${REPO}] ${prefix ?? 'Error'}:`, e);
   Spicetify.showNotification(prefix ? `${prefix}: ${msg}` : msg, true);
 };

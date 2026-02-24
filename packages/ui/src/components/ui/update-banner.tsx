@@ -1,9 +1,8 @@
 import { t } from '../../i18n';
 import { SpicetifyIcon } from './icon';
 import React, { useState } from 'react';
+import { REPO_RAW } from '@shared/lib/repo';
 import { platform } from '@shared/api/platform';
-
-const BASE_URL = 'https://raw.githubusercontent.com/Prog-Jacob/spicetify-apps/main';
 
 const { TextComponent, ButtonTertiary } = Spicetify.ReactComponent;
 
@@ -15,8 +14,8 @@ const toDisplayName = (appName: string) =>
 
 const getInstallCommand = (appName: string) =>
   navigator.userAgent.toLowerCase().includes('windows')
-    ? `iex "& { $(iwr -useb ${BASE_URL}/install.ps1) } ${appName}"`
-    : `curl -fsSL ${BASE_URL}/install.sh | bash -s ${appName}`;
+    ? `iex "& { $(iwr -useb ${REPO_RAW}/install.ps1) } ${appName}"`
+    : `curl -fsSL ${REPO_RAW}/install.sh | bash -s ${appName}`;
 
 type UpdateBannerProps = {
   appName: string;

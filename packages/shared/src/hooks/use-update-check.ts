@@ -1,6 +1,5 @@
+import { REPO_API } from '../lib/repo';
 import { useState, useEffect } from 'react';
-
-const REPO = 'Prog-Jacob/spicetify-apps';
 
 type GithubRelease = {
   tag_name: string;
@@ -26,7 +25,7 @@ export const useUpdateCheck = (appName: string, currentVersion: string): string 
     const tagPrefix = `${appName}-v`;
     const controller = new AbortController();
 
-    fetch(`https://api.github.com/repos/${REPO}/releases`, { signal: controller.signal })
+    fetch(`${REPO_API}/releases`, { signal: controller.signal })
       .then((res) => (res.ok ? (res.json() as Promise<unknown>) : null))
       .then((data) => {
         if (!Array.isArray(data)) return;
