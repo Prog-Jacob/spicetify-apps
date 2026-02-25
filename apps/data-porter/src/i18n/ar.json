@@ -89,6 +89,7 @@
   "log.playlistMerged": "تم الدمج في \"{name}\" — {count} مقطع",
   "log.episodesSkipped": "\"{name}\": {count} حلقة/مقطع محلي تم تخطيه",
   "log.duplicatesSkipped": "\"{name}\": {count} مكرر تم تخطيه",
+  "log.mergeReadFailed": "\"{name}\": تعذرت القراءة للدمج، قد توجد مكررات",
   "log.saved": "{count} {noun}",
   "log.failed": "فشل: {label}",
   "log.descriptionFailed": "\"{name}\": فشل تعيين الوصف",

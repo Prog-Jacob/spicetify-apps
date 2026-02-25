@@ -1,22 +1,17 @@
-import { t as ut } from '@ui/i18n';
 import { cn } from '@shared/lib/utils';
 import React, { useState } from 'react';
 import { DATA_TYPES } from '../data-types';
-import DataTypeGrid from './data-type-grid';
-import ExportSummary from './export-summary';
 import { t, type MessageKey } from '../i18n';
-import { Input } from '@ui/components/ui/input';
 import { exportData } from '../services/exporter';
+import { useAbortController } from '@shared/hooks';
 import { downloadJson } from '@shared/lib/download';
 import { ValidationError } from '@shared/lib/errors';
-import { SpicetifyIcon } from '@ui/components/ui/icon';
-import { exportUserData } from '../services/user-export';
-import { ErrorCard } from '@ui/components/ui/error-card';
-import { PageShell } from '@ui/components/ui/page-shell';
+import DataTypeGrid from '../components/data-type-grid';
+import ExportSummary from '../components/export-summary';
 import type { ProgressInfo } from '@shared/types/platform';
 import type { DataType, ExportResult } from '../types/export';
-import { ProgressCard } from '@ui/components/ui/progress-card';
-import { useAbortController } from '@shared/hooks/use-abort-controller';
+import { exportPublicProfile } from '../services/profile-export';
+import { Input, SpicetifyIcon, ErrorCard, PageShell, ProgressCard } from '@ui/components';
 
 const { TextComponent, ButtonPrimary, ButtonSecondary, ButtonTertiary } = Spicetify.ReactComponent;
 
@@ -55,7 +50,7 @@ const ExportPage = ({ banner, onGoToImport }: ExportPageProps) => {
     try {
       const exportResult =
         mode === 'other-user'
-          ? await exportUserData(userInput, setProgress, controller.signal)
+          ? await exportPublicProfile(userInput, setProgress, controller.signal)
           : await exportData(selected, setProgress, controller.signal);
 
       setResult(exportResult);
@@ -136,7 +131,7 @@ const ExportPage = ({ banner, onGoToImport }: ExportPageProps) => {
                 buttonSize="sm"
                 disabled={isFetching}
               >
-                {allSelected ? ut('deselectAll') : ut('selectAll')}
+                {allSelected ? t('deselectAll') : t('selectAll')}
               </ButtonTertiary>
             </div>
 

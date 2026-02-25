@@ -2,13 +2,8 @@ import { t } from '../i18n';
 import { platform } from '@shared/api/platform';
 import { notifyError } from '@shared/lib/errors';
 import { formatArtists, toDateString } from '@shared/lib/format';
+import { BATCH_DELAY_MS, PLAYLIST_BATCH_SIZE, checkAborted, paginate } from '@shared/api/batch';
 import type { ProgressInfo, LibraryTrackItem, LibraryContentItem } from '@shared/types/platform';
-import {
-  BATCH_DELAY_MS,
-  PLAYLIST_BATCH_SIZE,
-  checkAborted,
-  paginate,
-} from '@shared/lib/platform-batch';
 import type {
   DataType,
   PlaylistItemDetail,
@@ -56,7 +51,13 @@ export async function buildPlaylists(
       label: t('progress.playlist', { name: row.name }),
     });
 
-    const detail = await platform.PlaylistAPI.getPlaylist(row.uri);
+    let detail;
+    try {
+      detail = await platform.PlaylistAPI.getPlaylist(row.uri);
+    } catch {
+      /* Handled in the next if statement */
+    }
+
     if (!detail || detail.error || !detail.contents) {
       skipped.push(row.name);
       continue;
@@ -102,13 +103,12 @@ export async function exportData(
   if (needsLibraryScan) {
     onProgress({ current: 0, total: 0, label: t('progress.scanningLibrary') });
     libraryContents = await tryFetch(t('progress.scanningLibrary'), () =>
-      paginate<LibraryContentItem>(
-        (params) => platform.LibraryAPI.getContents(params),
-        'LibraryAPI.getContents',
+      paginate<LibraryContentItem>((params) => platform.LibraryAPI.getContents(params), {
+        context: 'LibraryAPI.getContents',
         onProgress,
-        t('progress.scanningLibrary'),
+        label: t('progress.scanningLibrary'),
         signal,
-      ),
+      }),
     );
   }
 
@@ -137,10 +137,12 @@ export async function exportData(
     const tracks = await tryFetch(t('dataType.likedSongs'), async () => {
       const items = await paginate<LibraryTrackItem>(
         (params) => platform.LibraryAPI.getTracks(params),
-        'LibraryAPI.getTracks',
-        onProgress,
-        t('dataType.likedSongs'),
-        signal,
+        {
+          context: 'LibraryAPI.getTracks',
+          onProgress,
+          label: t('dataType.likedSongs'),
+          signal,
+        },
       );
       return items.map((item) => ({
         trackUri: item.uri,

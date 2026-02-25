@@ -1,12 +1,10 @@
-import { t } from './i18n';
-import { t as ut } from '@ui/i18n';
+import { loadTranslations } from './i18n';
 import ExportPage from './pages/export-page';
 import ImportPage from './pages/import-page';
+import { UpdateBanner } from '@ui/components';
+import { useUpdateCheck } from '@shared/hooks';
 import { platform } from '@shared/api/platform';
 import React, { useState, useEffect } from 'react';
-import { fetchLocale } from '@shared/i18n/fetch-locale';
-import UpdateBanner from '@ui/components/ui/update-banner';
-import { useUpdateCheck } from '@shared/hooks/use-update-check';
 
 const App = () => {
   const [ready, setReady] = useState(false);
@@ -15,10 +13,7 @@ const App = () => {
   const banner = updateUrl ? <UpdateBanner appName="data-porter" releaseUrl={updateUrl} /> : null;
 
   useEffect(() => {
-    Promise.all([
-      t.load(fetchLocale('apps/data-porter/src/i18n')),
-      ut.load(fetchLocale('packages/ui/src/i18n')),
-    ]).finally(() => setReady(true));
+    loadTranslations().finally(() => setReady(true));
   }, []);
 
   useEffect(() => {

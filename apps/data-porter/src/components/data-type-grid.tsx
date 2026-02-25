@@ -1,10 +1,9 @@
 import React from 'react';
 import { t } from '../i18n';
-import { cn } from '@shared/lib/utils';
-import DataTypeCard from './data-type-card';
 import { DATA_TYPES } from '../data-types';
+import DataTypeCard from './data-type-card';
 import type { DataType } from '../types/export';
-import { toggleInSet } from '@shared/lib/utils';
+import { cn, toggleInSet } from '@shared/lib/utils';
 
 type DataTypeGridProps = {
   selected: Set<DataType>;

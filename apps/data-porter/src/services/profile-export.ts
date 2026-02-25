@@ -3,7 +3,7 @@ import { cosmos } from '@shared/api/cosmos';
 import { buildPlaylists } from './exporter';
 import { parseUserId } from '@shared/lib/format';
 import { ValidationError } from '@shared/lib/errors';
-import { PAGE_SIZE, checkAborted } from '@shared/lib/platform-batch';
+import { PAGE_SIZE, checkAborted } from '@shared/api/batch';
 import type { ExportResult, ExportedPlaylist } from '../types/export';
 import type { ProgressInfo, LibraryContentItem } from '@shared/types/platform';
 
@@ -38,7 +38,7 @@ async function fetchUserPlaylists(
   return items;
 }
 
-export async function exportUserData(
+export async function exportPublicProfile(
   userInput: string,
   onProgress: (progress: ProgressInfo) => void,
   signal: AbortSignal,

@@ -2,8 +2,7 @@ import React from 'react';
 import { t } from '../i18n';
 import { cn } from '@shared/lib/utils';
 import type { ImportResult } from '../types/import';
-import { SpicetifyIcon } from '@ui/components/ui/icon';
-import { ResultCard } from '@ui/components/ui/result-card';
+import { SpicetifyIcon, ResultCard } from '@ui/components';
 
 const { TextComponent, ButtonPrimary, ButtonTertiary } = Spicetify.ReactComponent;
 

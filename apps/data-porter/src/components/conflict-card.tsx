@@ -1,10 +1,7 @@
-import { t as ut } from '@ui/i18n';
 import { cn } from '@shared/lib/utils';
 import { t, type MessageKey } from '../i18n';
-import { Input } from '@ui/components/ui/input';
 import React, { useMemo, useState } from 'react';
-import { SpicetifyIcon } from '@ui/components/ui/icon';
-import { ResultCard } from '@ui/components/ui/result-card';
+import { Input, SpicetifyIcon, ResultCard } from '@ui/components';
 import type { PlaylistConflict, PlaylistConflictResolution } from '../types/import';
 
 const { TextComponent, ButtonPrimary, ButtonTertiary } = Spicetify.ReactComponent;
@@ -83,7 +80,7 @@ const ConflictCard = ({
             {t('conflict.continue')}
           </ButtonPrimary>
           <ButtonTertiary onClick={onCancel} buttonSize="md">
-            {ut('cancel')}
+            {t('cancel')}
           </ButtonTertiary>
         </>
       }
@@ -109,7 +106,12 @@ const ConflictCard = ({
             </TextComponent>
             <ResolutionPicker
               active={allSame}
-              onChange={(v) => onApplyAll(v, filtered.map((c) => c.importedName))}
+              onChange={(v) =>
+                onApplyAll(
+                  v,
+                  filtered.map((c) => c.importedName),
+                )
+              }
               ariaLabel={t('conflict.applyToAll')}
             />
           </div>

@@ -1,20 +1,18 @@
 import { t } from '../i18n';
 import React, { useState } from 'react';
-import ConflictCard from './conflict-card';
-import DataTypeGrid from './data-type-grid';
-import FileDropZone from './file-drop-zone';
-import ImportSummary from './import-summary';
 import { platform } from '@shared/api/platform';
 import type { DataType } from '../types/export';
 import { notifyError } from '@shared/lib/errors';
 import { importData } from '../services/importer';
 import { getAvailableCounts } from '../data-types';
-import { ErrorCard } from '@ui/components/ui/error-card';
-import { PageShell } from '@ui/components/ui/page-shell';
+import { useAbortController } from '@shared/hooks';
+import ConflictCard from '../components/conflict-card';
+import DataTypeGrid from '../components/data-type-grid';
+import FileDropZone from '../components/file-drop-zone';
+import ImportSummary from '../components/import-summary';
 import type { ProgressInfo } from '@shared/types/platform';
-import { fetchExistingPlaylists } from '@shared/lib/library';
-import { ProgressCard } from '@ui/components/ui/progress-card';
-import { useAbortController } from '@shared/hooks/use-abort-controller';
+import { ErrorCard, PageShell, ProgressCard } from '@ui/components';
+import { fetchExistingPlaylists } from '../services/playlist-lookup';
 import type {
   ParsedFile,
   ImportResult,
@@ -75,7 +73,9 @@ const ImportPage = ({ banner }: { banner?: React.ReactNode }) => {
   };
 
   const detectConflictsAndImport = async () => {
+    const controller = aborter.start();
     const playlists = parsed?.data.playlists;
+
     if (!parsed || !selected.has('playlists') || !playlists?.length) {
       await runImport(new Map(), new Map());
       return;
@@ -85,7 +85,7 @@ const ImportPage = ({ banner }: { banner?: React.ReactNode }) => {
     setStep('importing');
 
     try {
-      const existing = await fetchExistingPlaylists();
+      const existing = await fetchExistingPlaylists(controller.signal);
       const found = playlists.flatMap(({ name }) => {
         const uri = existing.get(name);
         return uri ? { importedName: name, existingUri: uri } : [];
@@ -101,8 +101,10 @@ const ImportPage = ({ banner }: { banner?: React.ReactNode }) => {
         setStep('conflicts');
       }
     } catch (e) {
+      if (controller.signal.aborted) return;
       notifyError(e, t('progress.checkingPlaylists'));
-      await runImport(new Map(), new Map());
+      setProgress(null);
+      setStep('preview');
     }
   };
 

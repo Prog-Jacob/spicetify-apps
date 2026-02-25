@@ -1,10 +1,9 @@
 import { t } from '../i18n';
 import { cn } from '@shared/lib/utils';
-import { Input } from '@ui/components/ui/input';
 import React, { useState, useRef } from 'react';
 import { notifyError } from '@shared/lib/errors';
 import type { ParsedFile } from '../types/import';
-import { SpicetifyIcon } from '@ui/components/ui/icon';
+import { Input, SpicetifyIcon } from '@ui/components';
 import { parseImportFile, parseImportText, checkFileSize } from '../services/file-parser';
 
 const { TextComponent } = Spicetify.ReactComponent;

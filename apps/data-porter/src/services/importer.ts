@@ -1,7 +1,7 @@
 import { t } from '../i18n';
 import { platform } from '@shared/api/platform';
 import type { ProgressInfo } from '@shared/types/platform';
-import { checkAborted, batchedWrite, WRITE_BATCH_SIZE } from '@shared/lib/platform-batch';
+import { checkAborted, batchedWrite } from '@shared/api/batch';
 import type { ImportLogEntry, ImportResult, PlaylistConflictResolution } from '../types/import';
 import type { DataType, ExportData, ExportedPlaylist, PlaylistItemDetail } from '../types/export';
 
@@ -57,29 +57,38 @@ async function importPlaylist(
   // On merge, filter out tracks already in the playlist to avoid duplicates.
   if (resolution === 'merge' && trackUris.length > 0) {
     const detail = await platform.PlaylistAPI.getPlaylist(targetUri);
-    const items = (detail?.contents?.items ?? []) as PlaylistItemDetail[];
 
-    if (items.length > 0) {
-      const existing = new Set(items.map((i) => i.uri));
-      const before = trackUris.length;
-      trackUris = trackUris.filter((uri) => !existing.has(uri));
-      const dupes = before - trackUris.length;
-      if (dupes > 0)
-        log.push({
-          label: t('log.duplicatesSkipped', { name: playlist.name, count: dupes }),
-          status: 'skipped',
-        });
+    if (!detail || detail.error || !detail.contents) {
+      log.push({
+        label: t('log.mergeReadFailed', { name: playlist.name }),
+        status: 'skipped',
+      });
+    } else {
+      const items = (detail.contents.items ?? []) as PlaylistItemDetail[];
+
+      if (items.length > 0) {
+        const existing = new Set(items.map((i) => i.uri));
+        const before = trackUris.length;
+        trackUris = trackUris.filter((uri) => !existing.has(uri));
+        const dupes = before - trackUris.length;
+        if (dupes > 0)
+          log.push({
+            label: t('log.duplicatesSkipped', { name: playlist.name, count: dupes }),
+            status: 'skipped',
+          });
+      }
     }
   }
 
   if (trackUris.length > 0) {
     await batchedWrite(
       trackUris,
-      WRITE_BATCH_SIZE,
-      t('progress.importingPlaylist', { name: playlist.name }),
-      signal,
-      onProgress,
       (batch) => platform.PlaylistAPI.add(targetUri, batch, { after: 'end' }),
+      {
+        label: t('progress.importingPlaylist', { name: playlist.name }),
+        signal,
+        onProgress,
+      },
     );
   }
 
@@ -117,7 +126,7 @@ export async function importData(
       await fn();
     } catch (e) {
       checkAborted(signal);
-      const detail = String(e);
+      const detail = e instanceof Error ? e.message : String(e);
       const msg = t('log.failed', { label });
       log.push({ label, status: 'error', detail });
       warnings.push(msg);
@@ -162,9 +171,11 @@ export async function importData(
       if (!selected.has(type) || !items?.length) return [];
       const uris = items.map((i) => i.uri ?? i.trackUri).filter((u): u is string => Boolean(u));
       return tryWrite(noun, async () => {
-        await batchedWrite(uris, WRITE_BATCH_SIZE, progressLabel, signal, onProgress, (batch) =>
-          platform.LibraryAPI.add({ uris: batch }),
-        );
+        await batchedWrite(uris, (batch) => platform.LibraryAPI.add({ uris: batch }), {
+          label: progressLabel,
+          signal,
+          onProgress,
+        });
         log.push({ label: t('log.saved', { count: uris.length, noun }), status: 'ok' });
       });
     }),

@@ -1,10 +1,8 @@
 import React from 'react';
 import { t } from '../i18n';
-import { t as ut } from '@ui/i18n';
 import { DATA_TYPES } from '../data-types';
 import type { ExportData } from '../types/export';
-import { SpicetifyIcon } from '@ui/components/ui/icon';
-import { ResultCard } from '@ui/components/ui/result-card';
+import { SpicetifyIcon, ResultCard } from '@ui/components';
 
 const { TextComponent, ButtonPrimary, ButtonTertiary } = Spicetify.ReactComponent;
 
@@ -38,10 +36,10 @@ const ExportSummary = ({ result, warnings, onDownload, onNewExport }: ExportSumm
             buttonSize="md"
             iconLeading={() => <SpicetifyIcon icon="download" size={16} />}
           >
-            {ut('download')}
+            {t('download')}
           </ButtonPrimary>
           <ButtonTertiary onClick={onNewExport} buttonSize="md">
-            {ut('cancel')}
+            {t('cancel')}
           </ButtonTertiary>
         </>
       }

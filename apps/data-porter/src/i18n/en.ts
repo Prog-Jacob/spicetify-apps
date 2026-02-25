@@ -96,6 +96,7 @@ const en = {
   'log.playlistMerged': 'Merged into "{name}" \u2014 {count} tracks',
   'log.episodesSkipped': '"{name}": {count} episodes/local tracks skipped',
   'log.duplicatesSkipped': '"{name}": {count} duplicates skipped',
+  'log.mergeReadFailed': '"{name}": could not read for merge, duplicates may exist',
   'log.saved': '{count} {noun}',
   'log.failed': 'Failed: {label}',
   'log.descriptionFailed': '"{name}": failed to set description',
