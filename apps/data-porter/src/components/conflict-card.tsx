@@ -117,12 +117,12 @@ const ConflictCard = ({
           </div>
         )}
 
-        <div className="overflow-y-auto" role="list">
+        <div className="overflow-y-auto [scrollbar-gutter:stable]" role="list">
           {filtered.map(({ importedName }, i) => (
             <div
               role="listitem"
               key={importedName}
-              className="animate-fade-in-up flex items-center justify-between px-4 py-2.5 hover:bg-spice-highlight/10"
+              className="animate-fade-in-up flex items-center justify-between pl-4 py-2.5 hover:bg-spice-highlight/10"
               style={{ animationDelay: `${i * 45}ms` }}
             >
               <div className="flex min-w-0 items-center gap-2.5">
