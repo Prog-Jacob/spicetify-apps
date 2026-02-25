@@ -26,4 +26,4 @@ function Progress({ className, indicatorClassName, value, ...props }: ProgressPr
   );
 }
 
-export { Progress };
+export default Progress;

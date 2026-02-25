@@ -1,7 +1,7 @@
 import React from 'react';
 import { cn } from '@shared/lib/utils';
 import { Card, CardContent } from './card';
-import { StatusHeader, type StatusVariant } from './status-header';
+import StatusHeader, { type StatusVariant } from './status-header';
 
 type ResultCardProps = {
   variant: StatusVariant;
@@ -21,4 +21,4 @@ const ResultCard = ({ variant, title, className, children, actions }: ResultCard
   </Card>
 );
 
-export { ResultCard };
+export default ResultCard;

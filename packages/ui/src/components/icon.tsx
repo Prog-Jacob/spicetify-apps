@@ -17,4 +17,4 @@ const SpicetifyIcon = ({ icon, size = 16, className, ...rest }: SpicetifyIconPro
   />
 );
 
-export { SpicetifyIcon };
+export default SpicetifyIcon;

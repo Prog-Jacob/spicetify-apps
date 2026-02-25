@@ -1,5 +1,5 @@
-import { t } from '../../i18n';
-import { SpicetifyIcon } from './icon';
+import { t } from '../i18n';
+import SpicetifyIcon from './icon';
 import React, { useState } from 'react';
 import { REPO_RAW } from '@shared/lib/repo';
 import { platform } from '@shared/api/platform';

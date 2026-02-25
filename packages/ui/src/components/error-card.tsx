@@ -1,6 +1,6 @@
 import React from 'react';
-import { t } from '../../i18n';
-import { ResultCard } from './result-card';
+import { t } from '../i18n';
+import ResultCard from './result-card';
 
 const { TextComponent, ButtonPrimary } = Spicetify.ReactComponent;
 
@@ -29,4 +29,4 @@ const ErrorCard = ({ title, warnings, onRetry }: ErrorCardProps) => (
   </ResultCard>
 );
 
-export { ErrorCard };
+export default ErrorCard;

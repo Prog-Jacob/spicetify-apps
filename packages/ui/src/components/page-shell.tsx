@@ -36,4 +36,4 @@ const PageShell = ({ title, subtitle, version, banner, navButton, children }: Pa
   </div>
 );
 
-export { PageShell };
+export default PageShell;

@@ -11,4 +11,4 @@ const Input = ({ className, ...props }: React.ComponentProps<'input'>) => (
   />
 );
 
-export { Input };
+export default Input;

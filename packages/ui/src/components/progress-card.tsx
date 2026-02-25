@@ -1,6 +1,6 @@
 import React from 'react';
-import { t } from '../../i18n';
-import { Progress } from './progress';
+import { t } from '../i18n';
+import Progress from './progress';
 import { Card, CardContent } from './card';
 import type { ProgressInfo } from '@shared/types/platform';
 
@@ -42,4 +42,4 @@ const ProgressCard = ({ progress, onCancel }: ProgressCardProps) => {
   );
 };
 
-export { ProgressCard };
+export default ProgressCard;
