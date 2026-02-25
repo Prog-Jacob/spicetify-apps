@@ -105,5 +105,6 @@
   "error.invalidPlaylists": "\"{fileName}\": مصفوفة قوائم التشغيل غير صالحة",
   "error.invalidLibrary": "\"{fileName}\": كائن المكتبة غير صالح",
   "error.unrecognizedFormat": "\"{fileName}\" ليس بصيغة معروفة. يُتوقع تصدير Data Porter أو Spotify YourLibrary.json / Playlist1.json.",
-  "error.fileTooLargeSize": "\"{name}\" كبير جداً ({size} ميغابايت). الحد الأقصى ٢٠ ميغابايت."
+  "error.fileTooLargeSize": "\"{name}\" كبير جداً ({size} ميغابايت). الحد الأقصى ٢٠ ميغابايت.",
+  "error.unexpected": "حدث خطأ غير متوقع"
 }

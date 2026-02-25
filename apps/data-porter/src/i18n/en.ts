@@ -115,6 +115,7 @@ const en = {
   'error.unrecognizedFormat':
     '"{fileName}" is not a recognized format. Expected a Data Porter export or Spotify YourLibrary.json / Playlist1.json.',
   'error.fileTooLargeSize': '"{name}" is too large ({size} MB). Maximum is 20 MB.',
+  'error.unexpected': 'Something went wrong',
 } as const;
 
 export type DataPorterMessages = Record<keyof typeof en, MessageValue>;

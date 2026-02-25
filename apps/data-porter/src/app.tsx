@@ -1,10 +1,10 @@
-import { loadTranslations } from './i18n';
+import { t, loadTranslations } from './i18n';
 import ExportPage from './pages/export-page';
 import ImportPage from './pages/import-page';
-import { UpdateBanner } from '@ui/components';
 import { useUpdateCheck } from '@shared/hooks';
 import { platform } from '@shared/api/platform';
 import React, { useState, useEffect } from 'react';
+import { UpdateBanner, ErrorBoundary } from '@ui/components';
 
 const App = () => {
   const [ready, setReady] = useState(false);
@@ -26,10 +26,17 @@ const App = () => {
 
   if (!ready) return null;
 
-  if (path.endsWith('/import')) return <ImportPage banner={banner} />;
-
   return (
-    <ExportPage banner={banner} onGoToImport={() => platform.History.push('/data-porter/import')} />
+    <ErrorBoundary scope="data-porter" title={t('error.unexpected')}>
+      {path.endsWith('/import') ? (
+        <ImportPage banner={banner} />
+      ) : (
+        <ExportPage
+          banner={banner}
+          onGoToImport={() => platform.History.push('/data-porter/import')}
+        />
+      )}
+    </ErrorBoundary>
   );
 };
 
