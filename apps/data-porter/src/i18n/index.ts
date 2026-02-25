@@ -1,23 +1,12 @@
 import en from './en';
 import sharedEn from '@ui/i18n/en';
 import { t as sharedT } from '@ui/i18n';
-import { createTranslator } from '@shared/i18n';
-import { fetchLocale } from '@shared/i18n/fetch-locale';
+import { createTranslator, loadAllTranslations } from '@shared/i18n';
 
-const combinedTranslations = { ...sharedEn, ...en };
+const combinedEnTranslations = { ...sharedEn, ...en };
 
-export const t = createTranslator({ en: combinedTranslations });
+export const t = createTranslator({ en: combinedEnTranslations });
 
-export type MessageKey = keyof typeof combinedTranslations & string;
+export type MessageKey = keyof typeof combinedEnTranslations & string;
 
-export const loadTranslations = () =>
-  Promise.all([
-    t.load(async (locale) => {
-      const [uiStrings, appStrings] = await Promise.all([
-        fetchLocale('packages/ui/src/i18n')(locale).catch(() => ({})),
-        fetchLocale('apps/data-porter/src/i18n')(locale).catch(() => ({})),
-      ]);
-      return { ...uiStrings, ...appStrings };
-    }),
-    sharedT.load(fetchLocale('packages/ui/src/i18n')),
-  ]);
+export const loadTranslations = () => loadAllTranslations(sharedT, t);

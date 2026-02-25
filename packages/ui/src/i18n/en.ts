@@ -1,3 +1,5 @@
+import type { MessageValue } from '@shared/i18n';
+
 const en = {
   tryAgain: 'Try Again',
   cancel: 'Cancel',
@@ -14,5 +16,5 @@ const en = {
   'update.dismiss': 'Dismiss',
 } as const;
 
-export type UiMessages = Record<keyof typeof en, string>;
+export type UiMessages = Record<keyof typeof en, MessageValue>;
 export default en;

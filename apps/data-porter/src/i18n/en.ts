@@ -1,4 +1,4 @@
-import type { MessageValue, PluralEntry } from '@shared/i18n/types';
+import type { MessageValue, PluralEntry } from '@shared/i18n';
 
 const en = {
   // Navigation

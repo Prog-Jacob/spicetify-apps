@@ -1,4 +1,8 @@
-import type { MessageValue, PluralEntry, TranslationDict } from './types';
+import type { MessageValue, PluralEntry, TranslationDict, Translator } from './types';
+
+export type { MessageValue, PluralEntry, TranslationDict, Translator } from './types';
+export { loadAllTranslations } from './load-translations';
+export { fetchLocale } from './fetch-locale';
 
 const getLocale = (): string => {
   try {
@@ -39,14 +43,20 @@ const resolvePlural = (
  * Usage:
  * ```ts
  * import en from './en';
- * const t = createTranslator({ en });
- * await t.load(fetchLocale('apps/my-app/src/i18n'));
+ * import { t as sharedT } from '@ui/i18n';
+ * import { createTranslator, loadAllTranslations } from '@shared/i18n';
+ *
+ * export const t = createTranslator({ en });
+ * export const loadTranslations = () => loadAllTranslations(sharedT, t);
+ *
  * t('export.title');
  * t('export.count', { selected: 3, total: 5 });
  * t('conflict.exists', { count: 2 });
  * ```
  */
-export const createTranslator = <T extends TranslationDict>(locales: Record<string, T>) => {
+export const createTranslator = <T extends TranslationDict>(
+  locales: Record<string, T>,
+): Translator<T> => {
   type Key = keyof T & string;
 
   const locale = getLocale();
