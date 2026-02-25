@@ -40,7 +40,7 @@ async function importPlaylist(
         playlist.description;
       await platform.PlaylistAPI.updateDetails(targetUri, { description });
     } catch (e) {
-      console.warn('[data-porter] Failed to set description:', e);
+      console.warn(`[${__APP_NAME__}] Failed to set description:`, e);
       log.push({ label: t('log.descriptionFailed', { name: playlist.name }), status: 'skipped' });
     }
   }
@@ -96,7 +96,7 @@ async function importPlaylist(
     try {
       await platform.PlaylistPermissionsAPI.setBasePermission(targetUri, 'BLOCKED');
     } catch (e) {
-      console.warn('[data-porter] Failed to set permissions:', e);
+      console.warn(`[${__APP_NAME__}] Failed to set permissions:`, e);
       log.push({ label: t('log.permissionFailed', { name: playlist.name }), status: 'skipped' });
     }
   }

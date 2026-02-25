@@ -8,9 +8,9 @@ import { UpdateBanner, ErrorBoundary } from '@ui/components';
 
 const App = () => {
   const [ready, setReady] = useState(false);
-  const updateUrl = useUpdateCheck('data-porter', __APP_VERSION__);
+  const updateUrl = useUpdateCheck(__APP_NAME__, __APP_VERSION__);
   const [path, setPath] = useState(() => platform.History.location.pathname as string);
-  const banner = updateUrl ? <UpdateBanner appName="data-porter" releaseUrl={updateUrl} /> : null;
+  const banner = updateUrl ? <UpdateBanner appName={__APP_NAME__} releaseUrl={updateUrl} /> : null;
 
   useEffect(() => {
     loadTranslations().finally(() => setReady(true));
@@ -27,13 +27,13 @@ const App = () => {
   if (!ready) return null;
 
   return (
-    <ErrorBoundary scope="data-porter" title={t('error.unexpected')}>
+    <ErrorBoundary scope={__APP_NAME__} title={t('error.unexpected')}>
       {path.endsWith('/import') ? (
         <ImportPage banner={banner} />
       ) : (
         <ExportPage
           banner={banner}
-          onGoToImport={() => platform.History.push('/data-porter/import')}
+          onGoToImport={() => platform.History.push(`/${__APP_NAME__}/import`)}
         />
       )}
     </ErrorBoundary>

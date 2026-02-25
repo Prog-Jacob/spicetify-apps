@@ -64,7 +64,7 @@ const ImportPage = ({ banner }: { banner?: React.ReactNode }) => {
       setStep(allFailed ? 'error' : 'done');
     } catch (e) {
       if (controller.signal.aborted) return;
-      console.error('[data-porter] Import failed:', e);
+      console.error(`[${__APP_NAME__}] Import failed:`, e);
       setResult({ log: [], warnings: [e instanceof Error ? e.message : String(e)] });
       setStep('error');
     } finally {
@@ -126,7 +126,7 @@ const ImportPage = ({ banner }: { banner?: React.ReactNode }) => {
       version={__APP_VERSION__}
       banner={banner}
       navButton={
-        <ButtonSecondary onClick={() => platform.History.push('/data-porter')} buttonSize="md">
+        <ButtonSecondary onClick={() => platform.History.push(`/${__APP_NAME__}`)} buttonSize="md">
           {t('nav.export')}
         </ButtonSecondary>
       }
@@ -205,7 +205,7 @@ const ImportPage = ({ banner }: { banner?: React.ReactNode }) => {
         <ImportSummary
           result={result}
           onImportAgain={reset}
-          onGoToExport={() => platform.History.push('/data-porter')}
+          onGoToExport={() => platform.History.push(`/${__APP_NAME__}`)}
         />
       )}
 

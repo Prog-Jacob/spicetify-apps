@@ -3,6 +3,11 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "repository": "Prog-Jacob/spicetify-apps",
+  "author": {
+    "name": "Ahmed Abdelaziz",
+    "url": "https://github.com/Prog-Jacob"
+  },
   "scripts": {
     "build": "node scripts/build.mjs && pnpm symlink",
     "dev": "pnpm symlink && node scripts/build.mjs --watch & spicetify watch -a & wait",

@@ -4,8 +4,8 @@ import { execSync } from 'child_process';
 import pkg from 'esbuild-plugin-external-global';
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'fs';
 
-const AUTHORS = [{ name: 'Ahmed Abdelaziz', url: 'https://github.com/Prog-Jacob' }];
 const ROOT = resolve(import.meta.dirname, '..');
+const rootPkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf-8'));
 const APPS_DIR = join(ROOT, 'apps');
 
 const { externalGlobalPlugin } = pkg;
@@ -63,7 +63,7 @@ const buildOptions = (appName) => {
               join(outDir, 'manifest.json'),
               JSON.stringify({
                 ...entry,
-                authors: AUTHORS,
+                authors: rootPkg.contributors ?? [rootPkg.author].filter(Boolean),
                 icon: readFileSync(iconPath, 'utf-8').trim(),
                 'active-icon': readFileSync(iconFilledPath, 'utf-8').trim(),
               }),
@@ -74,6 +74,8 @@ const buildOptions = (appName) => {
     ],
     define: {
       __APP_VERSION__: JSON.stringify(appVersion),
+      __APP_NAME__: JSON.stringify(appName),
+      __REPO__: JSON.stringify(rootPkg.repository ?? ''),
     },
     alias: {
       '@shared': join(ROOT, 'packages', 'shared', 'src'),
