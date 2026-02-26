@@ -2,11 +2,11 @@
 
 A Spicetify custom app to export and import Spotify library data — your own or another user's public data.
 
-## Preview
+## Features
 
 ### Export
 
-- Pick individual data types — playlists, liked songs, albums, artists, podcasts
+- Pick individual data types — playlists, liked songs, albums, artists, shows/podcasts
 - Select all or deselect all in one click
 - Export another user's public playlists and followed artists by profile URL or user ID
 
@@ -15,7 +15,7 @@ A Spicetify custom app to export and import Spotify library data — your own or
 ### Import
 
 - Drag and drop, browse for a file, or import from a URL
-- Accepts Data Porter exports and Spotify official data exports
+- Accepts **Data Porter exports** and **Spotify official data exports**
 - Preview item counts per type before committing
 
 ![Import page](preview/import.png)
@@ -31,24 +31,26 @@ A Spicetify custom app to export and import Spotify library data — your own or
 ### Extras
 
 - Live progress with cancel support
+- Error boundaries to prevent crashes from breaking the entire app
 - Fully keyboard accessible
-- English and Arabic — auto-detected from Spotify's language setting
+- Auto-update notifications with one-click install command
+- English and Arabic; auto-detected from Spotify's language setting
 
 ---
 
-### Installation (Linux / macOS)
+## Installation (Linux / macOS)
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/Prog-Jacob/spicetify-apps/main/install.sh | bash -s data-porter
 ```
 
-### Installation (Windows, PowerShell)
+## Installation (Windows, PowerShell)
 
 ```ps1
 iex "& { $(iwr -useb https://raw.githubusercontent.com/Prog-Jacob/spicetify-apps/main/install.ps1) } data-porter"
 ```
 
-### Manual Installation
+## Manual Installation
 
 Download the zip from the [latest release](https://github.com/Prog-Jacob/spicetify-apps/releases?q=data-porter&expanded=true), then place the `data-porter` folder into your Spicetify `CustomApps` directory:
 
@@ -68,7 +70,7 @@ spicetify config custom_apps data-porter
 spicetify apply
 ```
 
-### Uninstallation
+## Uninstallation
 
 ```sh
 spicetify config custom_apps data-porter-
