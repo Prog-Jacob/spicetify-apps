@@ -1,6 +1,6 @@
 import type { MessageValue, PluralEntry, TranslationDict, Translator } from './types';
 
-export type { MessageValue, PluralEntry, TranslationDict, Translator } from './types';
+export type { BundledLocales, MessageValue, PluralEntry, TranslationDict, Translator } from './types';
 export { loadAllTranslations } from './load-translations';
 export { fetchLocale } from './fetch-locale';
 

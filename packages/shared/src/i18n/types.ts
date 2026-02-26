@@ -4,6 +4,11 @@ export type MessageValue = string | PluralEntry;
 
 export type TranslationDict = Record<string, MessageValue>;
 
+export interface BundledLocales {
+  shared?: Record<string, TranslationDict>;
+  app?: Record<string, TranslationDict>;
+}
+
 export interface Translator<T extends TranslationDict = TranslationDict> {
   (key: keyof T & string, params?: Record<string, string | number>): string;
   load(fetcher: (locale: string) => Promise<Partial<T>>): Promise<void>;

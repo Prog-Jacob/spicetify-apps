@@ -38,6 +38,7 @@ export default tseslint.config(
         __APP_VERSION__: 'readonly',
         __APP_NAME__: 'readonly',
         __REPO__: 'readonly',
+        __BUNDLED_LOCALES__: 'readonly',
         DOMParser: 'readonly',
       },
     },

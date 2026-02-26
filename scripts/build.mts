@@ -2,6 +2,7 @@ import { resolve, join } from 'path';
 import { execSync } from 'child_process';
 import pkg from 'esbuild-plugin-external-global';
 import { build, context, type BuildOptions } from 'esbuild';
+import type { BundledLocales } from '../packages/shared/src/i18n/types.ts';
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'fs';
 
 interface Author {
@@ -14,6 +15,7 @@ interface PackageJson {
   repository?: string;
   author?: Author;
   contributors?: Author[];
+  i18n?: { bundleLocales?: string[] };
 }
 
 interface ManifestEntry {
@@ -26,12 +28,14 @@ interface ManifestEntry {
 
 const ROOT = resolve(import.meta.dirname, '..');
 const rootPkg: PackageJson = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf-8'));
+const bundleLocales = rootPkg.i18n?.bundleLocales ?? [];
 const APPS_DIR = join(ROOT, 'apps');
 
 const { externalGlobalPlugin } = pkg;
 const args = process.argv.slice(2);
 const watchMode = args.includes('--watch');
 const appFilterIdx = args.indexOf('--app');
+const bundleI18n = args.includes('--bundle-locales');
 const appFilter = appFilterIdx !== -1 ? args[appFilterIdx + 1] : null;
 
 const discoverApps = (): string[] => {
@@ -40,6 +44,20 @@ const discoverApps = (): string[] => {
     .filter((d) => d.isDirectory())
     .filter((d) => existsSync(join(APPS_DIR, d.name, 'src', 'index.tsx')))
     .map((d) => d.name);
+};
+
+const collectBundledLocales = (appName: string): BundledLocales => {
+  const app: BundledLocales['app'] = {};
+  const shared: BundledLocales['shared'] = {};
+
+  for (const locale of bundleLocales) {
+    const appPath = join(APPS_DIR, appName, 'src/i18n', `${locale}.json`);
+    const sharedPath = join(ROOT, 'packages/ui/src/i18n', `${locale}.json`);
+    if (existsSync(appPath)) app[locale] = JSON.parse(readFileSync(appPath, 'utf-8'));
+    if (existsSync(sharedPath)) shared[locale] = JSON.parse(readFileSync(sharedPath, 'utf-8'));
+  }
+
+  return { shared, app };
 };
 
 const buildOptions = (appName: string): BuildOptions => {
@@ -93,9 +111,10 @@ const buildOptions = (appName: string): BuildOptions => {
       },
     ],
     define: {
-      __APP_VERSION__: JSON.stringify(appVersion),
       __APP_NAME__: JSON.stringify(appName),
+      __APP_VERSION__: JSON.stringify(appVersion),
       __REPO__: JSON.stringify(rootPkg.repository ?? ''),
+      __BUNDLED_LOCALES__: JSON.stringify(bundleI18n ? collectBundledLocales(appName) : {}),
     },
     alias: {
       '@shared': join(ROOT, 'packages', 'shared', 'src'),

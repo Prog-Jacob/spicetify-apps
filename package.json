@@ -44,6 +44,11 @@
       "@parcel/watcher"
     ]
   },
+  "i18n": {
+    "bundleLocales": [
+      "ar"
+    ]
+  },
   "dependencies": {
     "react-error-boundary": "^6.1.1"
   }
