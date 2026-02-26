@@ -2,6 +2,7 @@ import React from 'react';
 import { t } from '../i18n';
 import { DATA_TYPES } from '../data-types';
 import type { ExportData } from '../types/export';
+import { ANIMATION_STAGGER_MS } from '../constants';
 import { SpicetifyIcon, ResultCard } from '@ui/components';
 
 const { TextComponent, ButtonPrimary, ButtonTertiary } = Spicetify.ReactComponent;
@@ -50,7 +51,7 @@ const ExportSummary = ({ result, warnings, onDownload, onNewExport }: ExportSumm
             <div
               key={label}
               className="flex animate-fade-in-up items-center gap-3 rounded-lg bg-spice-highlight/50 p-3"
-              style={{ animationDelay: `${i * 80}ms` }}
+              style={{ animationDelay: `${i * ANIMATION_STAGGER_MS.SUMMARY_ITEM}ms` }}
             >
               <SpicetifyIcon icon={icon} className="shrink-0 text-spice-subtext" />
               <div className="flex flex-col">

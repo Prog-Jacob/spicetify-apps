@@ -2,14 +2,15 @@ import { cn } from '@shared/lib';
 import { t, type MessageKey } from '../i18n';
 import React, { useMemo, useState } from 'react';
 import { Input, SpicetifyIcon, ResultCard } from '@ui/components';
+import { ANIMATION_STAGGER_MS, CONFLICT_RESOLUTION } from '../constants';
 import type { PlaylistConflict, PlaylistConflictResolution } from '../types/import';
 
 const { TextComponent, ButtonPrimary, ButtonTertiary } = Spicetify.ReactComponent;
 
 const RESOLUTIONS: { value: PlaylistConflictResolution; labelKey: MessageKey }[] = [
-  { value: 'skip', labelKey: 'conflict.skip' },
-  { value: 'merge', labelKey: 'conflict.merge' },
-  { value: 'create-new', labelKey: 'conflict.createNew' },
+  { value: CONFLICT_RESOLUTION.SKIP, labelKey: 'conflict.skip' },
+  { value: CONFLICT_RESOLUTION.MERGE, labelKey: 'conflict.merge' },
+  { value: CONFLICT_RESOLUTION.CREATE_NEW, labelKey: 'conflict.createNew' },
 ];
 
 type ResolutionPickerProps = {
@@ -123,7 +124,7 @@ const ConflictCard = ({
               role="listitem"
               key={importedName}
               className="animate-fade-in-up flex items-center justify-between ps-4 py-2.5 hover:bg-spice-highlight/10"
-              style={{ animationDelay: `${i * 45}ms` }}
+              style={{ animationDelay: `${i * ANIMATION_STAGGER_MS.CONFLICT_ITEM}ms` }}
             >
               <div className="flex min-w-0 items-center gap-2.5">
                 <SpicetifyIcon icon="playlist" size={16} className="text-spice-subtext" />

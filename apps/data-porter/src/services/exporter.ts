@@ -1,5 +1,6 @@
 import { t } from '../i18n';
-import { notifyError, formatArtists, toDateString } from '@shared/lib';
+import { DATA_TYPE } from '../constants';
+import { notifyError, formatArtists, toDateString, SPOTIFY_URI } from '@shared/lib';
 import type { ProgressInfo, LibraryTrackItem, LibraryContentItem } from '@shared/types';
 import { platform, BATCH_DELAY_MS, PLAYLIST_BATCH_SIZE, checkAborted, paginate } from '@shared/api';
 import type {
@@ -15,7 +16,7 @@ import type {
 function toExportedPlaylistItem(item: PlaylistItemDetail): ExportedPlaylistItem {
   const addedDate = item.addedAt ? toDateString(item.addedAt) : '';
 
-  if (item.uri.startsWith('spotify:episode:'))
+  if (item.uri.startsWith(SPOTIFY_URI.EPISODE))
     return { addedDate, episode: { episodeName: item.name, showName: item.show?.name ?? '' } };
 
   const trackInfo = {
@@ -24,7 +25,7 @@ function toExportedPlaylistItem(item: PlaylistItemDetail): ExportedPlaylistItem 
     albumName: item.album?.name ?? '',
   };
 
-  if (item.uri.startsWith('spotify:local:')) return { addedDate, localTrack: trackInfo };
+  if (item.uri.startsWith(SPOTIFY_URI.LOCAL)) return { addedDate, localTrack: trackInfo };
 
   return { addedDate, track: { ...trackInfo, trackUri: item.uri } };
 }
@@ -93,9 +94,9 @@ export async function exportData(
     }
   };
 
-  const needsLibraryScan = (['playlists', 'albums', 'artists', 'shows'] as const).some((dt) =>
-    selected.has(dt),
-  );
+  const needsLibraryScan = (
+    [DATA_TYPE.PLAYLISTS, DATA_TYPE.ALBUMS, DATA_TYPE.ARTISTS, DATA_TYPE.SHOWS] as const
+  ).some((dt) => selected.has(dt));
 
   let libraryContents: LibraryContentItem[] | null = null;
   if (needsLibraryScan) {
@@ -110,7 +111,7 @@ export async function exportData(
     );
   }
 
-  if (selected.has('playlists') && libraryContents) {
+  if (selected.has(DATA_TYPE.PLAYLISTS) && libraryContents) {
     const playlistItems = libraryContents.filter((i) => i.type === 'playlist');
     onProgress({ current: 0, total: playlistItems.length, label: t('progress.fetchingPlaylists') });
     const result = await tryFetch(t('dataType.playlists'), () =>
@@ -130,7 +131,7 @@ export async function exportData(
 
   const library: ExportedLibrary = { tracks: [], albums: [], artists: [], shows: [] };
 
-  if (selected.has('likedSongs')) {
+  if (selected.has(DATA_TYPE.LIKED_SONGS)) {
     onProgress({ current: 0, total: 0, label: t('progress.fetchingLikedSongs') });
     const tracks = await tryFetch(t('dataType.likedSongs'), async () => {
       const items = await paginate<LibraryTrackItem>(
@@ -154,15 +155,15 @@ export async function exportData(
 
   if (libraryContents) {
     for (const item of libraryContents) {
-      if (item.type === 'album' && selected.has('albums'))
+      if (item.type === 'album' && selected.has(DATA_TYPE.ALBUMS))
         library.albums.push({
           artist: formatArtists(item.artists),
           album: item.name,
           uri: item.uri,
         });
-      else if (item.type === 'artist' && selected.has('artists'))
+      else if (item.type === 'artist' && selected.has(DATA_TYPE.ARTISTS))
         library.artists.push({ name: item.name, uri: item.uri });
-      else if (item.type === 'show' && selected.has('shows'))
+      else if (item.type === 'show' && selected.has(DATA_TYPE.SHOWS))
         library.shows.push({ name: item.name, publisher: item.publisher ?? '', uri: item.uri });
     }
   }

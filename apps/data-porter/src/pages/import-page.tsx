@@ -13,6 +13,7 @@ import FileDropZone from '../components/file-drop-zone';
 import ImportSummary from '../components/import-summary';
 import { ErrorCard, PageShell, ProgressCard } from '@ui/components';
 import { fetchExistingPlaylists } from '../services/playlist-lookup';
+import { DATA_TYPE, SOURCE_FORMAT, CONFLICT_RESOLUTION, LOG_STATUS } from '../constants';
 import type {
   ParsedFile,
   ImportResult,
@@ -21,11 +22,19 @@ import type {
 } from '../types/import';
 
 const { TextComponent, ButtonPrimary, ButtonSecondary, ButtonTertiary } = Spicetify.ReactComponent;
+const STEP = {
+  DONE: 'done',
+  ERROR: 'error',
+  UPLOAD: 'upload',
+  PREVIEW: 'preview',
+  CONFLICTS: 'conflicts',
+  IMPORTING: 'importing',
+} as const;
 
-type Step = 'upload' | 'preview' | 'conflicts' | 'importing' | 'done' | 'error';
+type Step = (typeof STEP)[keyof typeof STEP];
 
 const ImportPage = ({ banner }: { banner?: React.ReactNode }) => {
-  const [step, setStep] = useState<Step>('upload');
+  const [step, setStep] = useState<Step>(STEP.UPLOAD);
   const [parsed, setParsed] = useState<ParsedFile | null>(null);
   const [selected, setSelected] = useState<Set<DataType>>(new Set());
   const [conflicts, setConflicts] = useState<PlaylistConflict[]>([]);
@@ -45,7 +54,7 @@ const ImportPage = ({ banner }: { banner?: React.ReactNode }) => {
 
     const controller = aborter.start();
 
-    setStep('importing');
+    setStep(STEP.IMPORTING);
     setResult(null);
     setProgress({ current: 0, total: 0, label: t('progress.starting') });
 
@@ -60,13 +69,13 @@ const ImportPage = ({ banner }: { banner?: React.ReactNode }) => {
       );
       setResult(importResult);
       const allFailed =
-        importResult.log.length > 0 && importResult.log.every((e) => e.status === 'error');
-      setStep(allFailed ? 'error' : 'done');
+        importResult.log.length > 0 && importResult.log.every((e) => e.status === LOG_STATUS.ERROR);
+      setStep(allFailed ? STEP.ERROR : STEP.DONE);
     } catch (e) {
       if (controller.signal.aborted) return;
       console.error(`[${__APP_NAME__}] Import failed:`, e);
       setResult({ log: [], warnings: [e instanceof Error ? e.message : String(e)] });
-      setStep('error');
+      setStep(STEP.ERROR);
     } finally {
       setProgress(null);
     }
@@ -76,13 +85,13 @@ const ImportPage = ({ banner }: { banner?: React.ReactNode }) => {
     const controller = aborter.start();
     const playlists = parsed?.data.playlists;
 
-    if (!parsed || !selected.has('playlists') || !playlists?.length) {
+    if (!parsed || !selected.has(DATA_TYPE.PLAYLISTS) || !playlists?.length) {
       await runImport(new Map(), new Map());
       return;
     }
 
     setProgress({ current: 0, total: 0, label: t('progress.checkingPlaylists') });
-    setStep('importing');
+    setStep(STEP.IMPORTING);
 
     try {
       const existing = await fetchExistingPlaylists(controller.signal);
@@ -95,21 +104,21 @@ const ImportPage = ({ banner }: { banner?: React.ReactNode }) => {
         await runImport(new Map(), existing);
       } else {
         setConflicts(found);
-        setResolutions(new Map(found.map((c) => [c.importedName, 'skip'])));
+        setResolutions(new Map(found.map((c) => [c.importedName, CONFLICT_RESOLUTION.SKIP])));
         setExistingUris(existing);
         setProgress(null);
-        setStep('conflicts');
+        setStep(STEP.CONFLICTS);
       }
     } catch (e) {
       if (controller.signal.aborted) return;
       notifyError(e, t('progress.checkingPlaylists'));
       setProgress(null);
-      setStep('preview');
+      setStep(STEP.PREVIEW);
     }
   };
 
   const reset = () => {
-    setStep('upload');
+    setStep(STEP.UPLOAD);
     setParsed(null);
     setSelected(new Set());
     setConflicts([]);
@@ -131,17 +140,17 @@ const ImportPage = ({ banner }: { banner?: React.ReactNode }) => {
         </ButtonSecondary>
       }
     >
-      {step === 'upload' && (
+      {step === STEP.UPLOAD && (
         <FileDropZone
           onFileSelected={(file) => {
             setParsed(file);
             setSelected(new Set(getAvailableCounts(file.data).keys()));
-            setStep('preview');
+            setStep(STEP.PREVIEW);
           }}
         />
       )}
 
-      {step === 'preview' && parsed && (
+      {step === STEP.PREVIEW && parsed && (
         <>
           <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between">
@@ -150,7 +159,7 @@ const ImportPage = ({ banner }: { banner?: React.ReactNode }) => {
                   {t('import.foundIn', { fileName: parsed.fileName })}
                 </TextComponent>
                 <TextComponent variant="minuet" semanticColor="textSubdued">
-                  {parsed.sourceFormat === 'spotify-official'
+                  {parsed.sourceFormat === SOURCE_FORMAT.SPOTIFY_OFFICIAL
                     ? t('import.sourceSpotify')
                     : t('import.sourceDataPorter')}
                 </TextComponent>
@@ -173,7 +182,7 @@ const ImportPage = ({ banner }: { banner?: React.ReactNode }) => {
         </>
       )}
 
-      {step === 'conflicts' && (
+      {step === STEP.CONFLICTS && (
         <ConflictCard
           conflicts={conflicts}
           resolutions={resolutions}
@@ -190,18 +199,18 @@ const ImportPage = ({ banner }: { banner?: React.ReactNode }) => {
         />
       )}
 
-      {step === 'importing' && progress && (
+      {step === STEP.IMPORTING && progress && (
         <ProgressCard
           progress={progress}
           onCancel={() => {
             aborter.abort();
-            setStep('upload');
+            setStep(STEP.UPLOAD);
             setProgress(null);
           }}
         />
       )}
 
-      {step === 'done' && result && (
+      {step === STEP.DONE && result && (
         <ImportSummary
           result={result}
           onImportAgain={reset}
@@ -209,7 +218,7 @@ const ImportPage = ({ banner }: { banner?: React.ReactNode }) => {
         />
       )}
 
-      {step === 'error' && (
+      {step === STEP.ERROR && (
         <ErrorCard title={t('import.failed')} warnings={result?.warnings} onRetry={reset} />
       )}
     </PageShell>

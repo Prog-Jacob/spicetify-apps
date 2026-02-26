@@ -1,4 +1,5 @@
 import { t } from '../i18n';
+import { SOURCE_FORMAT } from '../constants';
 import type { ParsedFile } from '../types/import';
 import type { ExportData, ExportedPlaylist, ExportedLibrary } from '../types/export';
 
@@ -56,7 +57,7 @@ export function parseImportText(text: string, fileName: string): ParsedFile {
       if (!isLibrary(obj.library)) throw new Error(t('error.invalidLibrary', { fileName }));
       data.library = obj.library;
     }
-    return { data, sourceFormat: 'our-export', fileName };
+    return { data, sourceFormat: SOURCE_FORMAT.OUR_EXPORT, fileName };
   }
 
   // Spotify official YourLibrary.json: top-level tracks/albums/artists/shows
@@ -67,7 +68,7 @@ export function parseImportText(text: string, fileName: string): ParsedFile {
       artists: Array.isArray(obj.artists) ? obj.artists : [],
       shows: Array.isArray(obj.shows) ? obj.shows : [],
     };
-    return { data: { library }, sourceFormat: 'spotify-official', fileName };
+    return { data: { library }, sourceFormat: SOURCE_FORMAT.SPOTIFY_OFFICIAL, fileName };
   }
 
   throw new Error(t('error.unrecognizedFormat', { fileName }));

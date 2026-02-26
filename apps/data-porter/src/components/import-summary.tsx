@@ -1,6 +1,7 @@
 import React from 'react';
 import { t } from '../i18n';
 import { cn } from '@shared/lib';
+import { LOG_STATUS } from '../constants';
 import type { ImportResult } from '../types/import';
 import { SpicetifyIcon, ResultCard } from '@ui/components';
 
@@ -10,9 +11,9 @@ const LOG_STATUS_STYLES: Record<
   ImportResult['log'][number]['status'],
   { icon: Spicetify.Icon; colorClass: string }
 > = {
-  ok: { icon: 'check-alt-fill', colorClass: 'text-spice-button' },
-  skipped: { icon: 'minus', colorClass: 'text-spice-subtext' },
-  error: { icon: 'x', colorClass: 'text-spice-notification-error' },
+  [LOG_STATUS.SKIPPED]: { icon: 'minus', colorClass: 'text-spice-subtext' },
+  [LOG_STATUS.OK]: { icon: 'check-alt-fill', colorClass: 'text-spice-button' },
+  [LOG_STATUS.ERROR]: { icon: 'x', colorClass: 'text-spice-notification-error' },
 };
 
 type ImportSummaryProps = {

@@ -1,8 +1,14 @@
 import type { MessageValue, PluralEntry, TranslationDict, Translator } from './types';
 
-export type { BundledLocales, MessageValue, PluralEntry, TranslationDict, Translator } from './types';
-export { loadAllTranslations } from './load-translations';
+export type {
+  Translator,
+  PluralEntry,
+  MessageValue,
+  BundledLocales,
+  TranslationDict,
+} from './types';
 export { fetchLocale } from './fetch-locale';
+export { loadAllTranslations } from './load-translations';
 
 const getLocale = (): string => {
   try {

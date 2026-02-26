@@ -1,3 +1,9 @@
+import type { DATA_TYPE } from '../constants';
+
+type LocalTrackFields = { trackName: string; artistName: string; albumName: string };
+type EpisodeFields = { episodeName: string; showName: string };
+type TrackFields = LocalTrackFields & { trackUri: string };
+
 export type PlaylistItemDetail = {
   uri: string;
   name: string;
@@ -6,10 +12,6 @@ export type PlaylistItemDetail = {
   show?: { name: string };
   addedAt?: number;
 };
-
-type LocalTrackFields = { trackName: string; artistName: string; albumName: string };
-type EpisodeFields = { episodeName: string; showName: string };
-type TrackFields = LocalTrackFields & { trackUri: string };
 
 export type ExportedPlaylistItem = {
   track?: TrackFields;
@@ -44,4 +46,4 @@ export type ExportResult = {
   userName?: string;
 };
 
-export type DataType = 'playlists' | 'likedSongs' | 'albums' | 'artists' | 'shows';
+export type DataType = (typeof DATA_TYPE)[keyof typeof DATA_TYPE];

@@ -1,3 +1,4 @@
+import { ROUTE } from './constants';
 import { platform } from '@shared/api';
 import { t, loadTranslations } from './i18n';
 import ExportPage from './pages/export-page';
@@ -28,12 +29,12 @@ const App = () => {
 
   return (
     <ErrorBoundary scope={__APP_NAME__} title={t('error.unexpected')}>
-      {path.endsWith('/import') ? (
+      {path.endsWith(ROUTE.IMPORT) ? (
         <ImportPage banner={banner} />
       ) : (
         <ExportPage
           banner={banner}
-          onGoToImport={() => platform.History.push(`/${__APP_NAME__}/import`)}
+          onGoToImport={() => platform.History.push(`/${__APP_NAME__}${ROUTE.IMPORT}`)}
         />
       )}
     </ErrorBoundary>

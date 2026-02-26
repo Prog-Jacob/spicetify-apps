@@ -1,9 +1,9 @@
 import { t } from '../i18n';
 import { buildPlaylists } from './exporter';
-import { parseUserId, ValidationError } from '@shared/lib';
 import { cosmos, PAGE_SIZE, checkAborted } from '@shared/api';
 import type { ExportResult, ExportedPlaylist } from '../types/export';
 import type { ProgressInfo, LibraryContentItem } from '@shared/types';
+import { parseUserId, ValidationError, SPOTIFY_URI } from '@shared/lib';
 
 // Internal Spotify endpoint — not publicly documented, may change across client versions.
 const BASE_URL = 'https://spclient.wg.spotify.com/user-profile-view/v3/profile';
@@ -81,7 +81,7 @@ export async function exportPublicProfile(
     `${userUrl(userId)}/following?market=from_token`,
   );
   const artists = profiles
-    .filter((p) => p.uri.startsWith('spotify:artist:'))
+    .filter((p) => p.uri.startsWith(SPOTIFY_URI.ARTIST))
     .map((p) => ({ name: p.name, uri: p.uri }));
 
   if (!playlists.length && !artists.length) {

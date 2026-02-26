@@ -6,11 +6,13 @@ type GithubRelease = {
   html_url: string;
 };
 
+const SEMVER_PARTS = 3;
+
 const isNewer = (remoteTag: string, tagPrefix: string, localVersion: string): boolean => {
   const local = localVersion.split('.').map(Number);
   const remote = remoteTag.replace(tagPrefix, '').split('.').map(Number);
 
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < SEMVER_PARTS; i++) {
     if ((remote[i] ?? 0) > (local[i] ?? 0)) return true;
     if ((remote[i] ?? 0) < (local[i] ?? 0)) return false;
   }

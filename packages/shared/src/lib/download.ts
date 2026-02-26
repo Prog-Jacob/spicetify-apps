@@ -1,7 +1,9 @@
+const URL_REVOKE_DELAY_MS = 10_000;
+
 export const downloadBlob = (blob: Blob, filename: string) => {
   const url = URL.createObjectURL(blob);
   Object.assign(document.createElement('a'), { href: url, download: filename }).click();
-  setTimeout(() => URL.revokeObjectURL(url), 10_000);
+  setTimeout(() => URL.revokeObjectURL(url), URL_REVOKE_DELAY_MS);
 };
 
 export const downloadJson = (data: unknown, filename?: string) =>

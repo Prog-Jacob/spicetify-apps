@@ -9,20 +9,24 @@ import ExportSummary from '../components/export-summary';
 import type { DataType, ExportResult } from '../types/export';
 import { cn, downloadJson, ValidationError } from '@shared/lib';
 import { exportPublicProfile } from '../services/profile-export';
+import { EXPORT_FILENAME_PREFIX, EXPORT_STATUS } from '../constants';
 import { Input, SpicetifyIcon, ErrorCard, PageShell, ProgressCard } from '@ui/components';
 
 const { TextComponent, ButtonPrimary, ButtonSecondary, ButtonTertiary } = Spicetify.ReactComponent;
+const MODE = { MY_DATA: 'my-data', OTHER_USER: 'other-user' } as const;
 
-type Status = 'idle' | 'fetching' | 'done' | 'error';
-type Mode = 'my-data' | 'other-user';
+type Status = (typeof EXPORT_STATUS)[keyof typeof EXPORT_STATUS];
+type Mode = (typeof MODE)[keyof typeof MODE];
 
 const MODES: readonly { value: Mode; labelKey: MessageKey }[] = [
-  { value: 'my-data', labelKey: 'export.myData' },
-  { value: 'other-user', labelKey: 'export.anotherUser' },
+  { value: MODE.OTHER_USER, labelKey: 'export.anotherUser' },
+  { value: MODE.MY_DATA, labelKey: 'export.myData' },
 ];
 
 const resolveStatus = (data: ExportResult['data'], warnings: string[]): Status =>
-  warnings.length > 0 && !data.playlists && !data.library ? 'error' : 'done';
+  warnings.length > 0 && !data.playlists && !data.library
+    ? EXPORT_STATUS.ERROR
+    : EXPORT_STATUS.DONE;
 
 type ExportPageProps = {
   banner?: React.ReactNode;
@@ -32,8 +36,8 @@ type ExportPageProps = {
 const ExportPage = ({ banner, onGoToImport }: ExportPageProps) => {
   const aborter = useAbortController();
   const [userInput, setUserInput] = useState('');
-  const [mode, setMode] = useState<Mode>('my-data');
-  const [status, setStatus] = useState<Status>('idle');
+  const [mode, setMode] = useState<Mode>(MODE.MY_DATA);
+  const [status, setStatus] = useState<Status>(EXPORT_STATUS.IDLE);
   const [result, setResult] = useState<ExportResult | null>(null);
   const [progress, setProgress] = useState<ProgressInfo | null>(null);
   const [selected, setSelected] = useState<Set<DataType>>(new Set(DATA_TYPES.map((d) => d.type)));
@@ -41,13 +45,13 @@ const ExportPage = ({ banner, onGoToImport }: ExportPageProps) => {
   const startExport = async () => {
     const controller = aborter.start();
 
-    setStatus('fetching');
+    setStatus(EXPORT_STATUS.FETCHING);
     setResult(null);
     setProgress({ current: 0, total: 0, label: t('progress.starting') });
 
     try {
       const exportResult =
-        mode === 'other-user'
+        mode === MODE.OTHER_USER
           ? await exportPublicProfile(userInput, setProgress, controller.signal)
           : await exportData(selected, setProgress, controller.signal);
 
@@ -57,10 +61,10 @@ const ExportPage = ({ banner, onGoToImport }: ExportPageProps) => {
       if (controller.signal.aborted) return;
       if (e instanceof ValidationError) {
         Spicetify.showNotification(e.message, true);
-        setStatus('idle');
+        setStatus(EXPORT_STATUS.IDLE);
       } else {
         setResult({ data: {}, warnings: [e instanceof Error ? e.message : String(e)] });
-        setStatus('error');
+        setStatus(EXPORT_STATUS.ERROR);
       }
     } finally {
       setProgress(null);
@@ -68,7 +72,7 @@ const ExportPage = ({ banner, onGoToImport }: ExportPageProps) => {
   };
 
   const resetExport = () => {
-    setStatus('idle');
+    setStatus(EXPORT_STATUS.IDLE);
     setResult(null);
   };
 
@@ -80,7 +84,7 @@ const ExportPage = ({ banner, onGoToImport }: ExportPageProps) => {
     setProgress(null);
   };
 
-  const isFetching = status === 'fetching';
+  const isFetching = status === EXPORT_STATUS.FETCHING;
   const allSelected = selected.size === DATA_TYPES.length;
 
   return (
@@ -115,7 +119,7 @@ const ExportPage = ({ banner, onGoToImport }: ExportPageProps) => {
         ))}
       </div>
 
-      {mode === 'my-data' && (
+      {mode === MODE.MY_DATA && (
         <>
           <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between">
@@ -136,7 +140,7 @@ const ExportPage = ({ banner, onGoToImport }: ExportPageProps) => {
             <DataTypeGrid selected={selected} onToggle={setSelected} disabled={isFetching} />
           </div>
 
-          {status === 'idle' && (
+          {status === EXPORT_STATUS.IDLE && (
             <ButtonPrimary onClick={startExport} disabled={selected.size === 0} buttonSize="md">
               {selected.size === 0
                 ? t('export.selectItems')
@@ -146,7 +150,7 @@ const ExportPage = ({ banner, onGoToImport }: ExportPageProps) => {
         </>
       )}
 
-      {mode === 'other-user' && (
+      {mode === MODE.OTHER_USER && (
         <>
           <div className="flex flex-col gap-3">
             <TextComponent variant="alto" weight="bold">
@@ -164,7 +168,7 @@ const ExportPage = ({ banner, onGoToImport }: ExportPageProps) => {
             />
           </div>
 
-          {status === 'idle' && (
+          {status === EXPORT_STATUS.IDLE && (
             <ButtonPrimary onClick={startExport} disabled={!userInput.trim()} buttonSize="md">
               {t('export.exportUserData')}
             </ButtonPrimary>
@@ -177,17 +181,17 @@ const ExportPage = ({ banner, onGoToImport }: ExportPageProps) => {
           progress={progress}
           onCancel={() => {
             aborter.abort();
-            setStatus('idle');
+            setStatus(EXPORT_STATUS.IDLE);
           }}
         />
       )}
 
-      {status === 'done' && result && (
+      {status === EXPORT_STATUS.DONE && result && (
         <ExportSummary
           result={result.data}
           warnings={result.warnings}
           onDownload={() => {
-            const fileName = `spotify-export-${result.userName ?? 'unknown'}-${new Date().toISOString().slice(0, 10)}.json`;
+            const fileName = `${EXPORT_FILENAME_PREFIX}-${result.userName ?? 'unknown'}-${new Date().toISOString().slice(0, 10)}.json`;
             downloadJson(result.data, fileName);
             Spicetify.showNotification(
               <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -200,7 +204,7 @@ const ExportPage = ({ banner, onGoToImport }: ExportPageProps) => {
         />
       )}
 
-      {status === 'error' && (
+      {status === EXPORT_STATUS.ERROR && (
         <ErrorCard title={t('export.failed')} warnings={result?.warnings} onRetry={resetExport} />
       )}
     </PageShell>

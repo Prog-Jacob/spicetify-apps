@@ -1,5 +1,5 @@
-export { platform } from './platform';
 export { cosmos, validateResponse } from './cosmos';
+export { platform, PLAYLIST_POSITION, PLAYLIST_PERMISSION } from './platform';
 export {
   paginate,
   checkAborted,

@@ -1,14 +1,20 @@
 import type { ExportData } from './export';
+import type { SOURCE_FORMAT, LOG_STATUS, CONFLICT_RESOLUTION } from '../constants';
+
+export type PlaylistConflictResolution =
+  (typeof CONFLICT_RESOLUTION)[keyof typeof CONFLICT_RESOLUTION];
+export type LogStatus = (typeof LOG_STATUS)[keyof typeof LOG_STATUS];
+export type SourceFormat = (typeof SOURCE_FORMAT)[keyof typeof SOURCE_FORMAT];
 
 export type ParsedFile = {
   data: ExportData;
-  sourceFormat: 'our-export' | 'spotify-official';
+  sourceFormat: SourceFormat;
   fileName: string;
 };
 
 export type ImportLogEntry = {
   label: string;
-  status: 'ok' | 'skipped' | 'error';
+  status: LogStatus;
   detail?: string;
 };
 
@@ -16,8 +22,6 @@ export type ImportResult = {
   log: ImportLogEntry[];
   warnings: string[];
 };
-
-export type PlaylistConflictResolution = 'merge' | 'skip' | 'create-new';
 
 export type PlaylistConflict = {
   importedName: string;

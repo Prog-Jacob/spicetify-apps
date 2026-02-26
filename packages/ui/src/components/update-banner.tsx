@@ -4,6 +4,7 @@ import { REPO_RAW } from '@shared/lib';
 import { platform } from '@shared/api';
 import React, { useState } from 'react';
 
+const COPY_FEEDBACK_MS = 2000;
 const { TextComponent, ButtonTertiary } = Spicetify.ReactComponent;
 
 const toDisplayName = (appName: string) =>
@@ -31,7 +32,7 @@ const UpdateBanner = ({ appName, releaseUrl }: UpdateBannerProps) => {
   const handleCopy = () => {
     platform.ClipboardAPI.copy(getInstallCommand(appName));
     setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setTimeout(() => setCopied(false), COPY_FEEDBACK_MS);
   };
 
   return (

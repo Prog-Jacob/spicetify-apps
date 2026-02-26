@@ -1,3 +1,7 @@
+export const PLAYLIST_PERMISSION = { BLOCKED: 'BLOCKED' } as const;
+
+export const PLAYLIST_POSITION = { START: 'start', END: 'end' } as const;
+
 export const platform = {
   get History() {
     return Spicetify.Platform.History;
