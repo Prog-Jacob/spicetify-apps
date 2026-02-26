@@ -1,6 +1,6 @@
 import React from 'react';
 import { t } from '../i18n';
-import { cn } from '@shared/lib/utils';
+import { cn } from '@shared/lib';
 import type { ImportResult } from '../types/import';
 import { SpicetifyIcon, ResultCard } from '@ui/components';
 

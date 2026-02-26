@@ -1,3 +1,4 @@
+export { Card, CardContent } from './card';
 export { default as Input } from './input';
 export { default as SpicetifyIcon } from './icon';
 export { default as ErrorCard } from './error-card';

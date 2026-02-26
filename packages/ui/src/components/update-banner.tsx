@@ -1,8 +1,8 @@
 import { t } from '../i18n';
 import SpicetifyIcon from './icon';
+import { REPO_RAW } from '@shared/lib';
+import { platform } from '@shared/api';
 import React, { useState } from 'react';
-import { REPO_RAW } from '@shared/lib/repo';
-import { platform } from '@shared/api/platform';
 
 const { TextComponent, ButtonTertiary } = Spicetify.ReactComponent;
 

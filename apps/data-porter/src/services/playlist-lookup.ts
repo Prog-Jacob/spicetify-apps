@@ -1,6 +1,5 @@
-import { paginate } from '@shared/api/batch';
-import { platform } from '@shared/api/platform';
-import type { LibraryContentItem } from '@shared/types/platform';
+import { platform, paginate } from '@shared/api';
+import type { LibraryContentItem } from '@shared/types';
 
 export async function fetchExistingPlaylists(signal?: AbortSignal): Promise<Map<string, string>> {
   const items = await paginate<LibraryContentItem>(

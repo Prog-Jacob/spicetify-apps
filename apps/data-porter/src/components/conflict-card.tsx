@@ -1,4 +1,4 @@
-import { cn } from '@shared/lib/utils';
+import { cn } from '@shared/lib';
 import { t, type MessageKey } from '../i18n';
 import React, { useMemo, useState } from 'react';
 import { Input, SpicetifyIcon, ResultCard } from '@ui/components';

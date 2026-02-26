@@ -1,16 +1,16 @@
 import { t } from '../i18n';
+import { platform } from '@shared/api';
 import React, { useState } from 'react';
-import { platform } from '@shared/api/platform';
+import { notifyError } from '@shared/lib';
 import type { DataType } from '../types/export';
-import { notifyError } from '@shared/lib/errors';
 import { importData } from '../services/importer';
+import type { ProgressInfo } from '@shared/types';
 import { getAvailableCounts } from '../data-types';
 import { useAbortController } from '@shared/hooks';
 import ConflictCard from '../components/conflict-card';
 import DataTypeGrid from '../components/data-type-grid';
 import FileDropZone from '../components/file-drop-zone';
 import ImportSummary from '../components/import-summary';
-import type { ProgressInfo } from '@shared/types/platform';
 import { ErrorCard, PageShell, ProgressCard } from '@ui/components';
 import { fetchExistingPlaylists } from '../services/playlist-lookup';
 import type {

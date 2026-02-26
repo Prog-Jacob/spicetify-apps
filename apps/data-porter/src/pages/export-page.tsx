@@ -1,15 +1,13 @@
-import { cn } from '@shared/lib/utils';
 import React, { useState } from 'react';
 import { DATA_TYPES } from '../data-types';
 import { t, type MessageKey } from '../i18n';
 import { exportData } from '../services/exporter';
+import type { ProgressInfo } from '@shared/types';
 import { useAbortController } from '@shared/hooks';
-import { downloadJson } from '@shared/lib/download';
-import { ValidationError } from '@shared/lib/errors';
 import DataTypeGrid from '../components/data-type-grid';
 import ExportSummary from '../components/export-summary';
-import type { ProgressInfo } from '@shared/types/platform';
 import type { DataType, ExportResult } from '../types/export';
+import { cn, downloadJson, ValidationError } from '@shared/lib';
 import { exportPublicProfile } from '../services/profile-export';
 import { Input, SpicetifyIcon, ErrorCard, PageShell, ProgressCard } from '@ui/components';
 

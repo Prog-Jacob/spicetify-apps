@@ -1,7 +1,6 @@
 import { t } from '../i18n';
-import { platform } from '@shared/api/platform';
-import type { ProgressInfo } from '@shared/types/platform';
-import { checkAborted, batchedWrite } from '@shared/api/batch';
+import type { ProgressInfo } from '@shared/types';
+import { platform, checkAborted, batchedWrite } from '@shared/api';
 import type { ImportLogEntry, ImportResult, PlaylistConflictResolution } from '../types/import';
 import type { DataType, ExportData, ExportedPlaylist, PlaylistItemDetail } from '../types/export';
 

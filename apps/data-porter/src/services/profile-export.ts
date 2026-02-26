@@ -1,11 +1,9 @@
 import { t } from '../i18n';
-import { cosmos } from '@shared/api/cosmos';
 import { buildPlaylists } from './exporter';
-import { parseUserId } from '@shared/lib/format';
-import { ValidationError } from '@shared/lib/errors';
-import { PAGE_SIZE, checkAborted } from '@shared/api/batch';
+import { parseUserId, ValidationError } from '@shared/lib';
+import { cosmos, PAGE_SIZE, checkAborted } from '@shared/api';
 import type { ExportResult, ExportedPlaylist } from '../types/export';
-import type { ProgressInfo, LibraryContentItem } from '@shared/types/platform';
+import type { ProgressInfo, LibraryContentItem } from '@shared/types';
 
 // Internal Spotify endpoint — not publicly documented, may change across client versions.
 const BASE_URL = 'https://spclient.wg.spotify.com/user-profile-view/v3/profile';

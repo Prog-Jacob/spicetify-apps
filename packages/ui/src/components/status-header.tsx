@@ -1,6 +1,6 @@
 import React from 'react';
+import { cn } from '@shared/lib';
 import SpicetifyIcon from './icon';
-import { cn } from '@shared/lib/utils';
 
 const { TextComponent } = Spicetify.ReactComponent;
 

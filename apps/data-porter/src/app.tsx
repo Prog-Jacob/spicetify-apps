@@ -1,8 +1,8 @@
+import { platform } from '@shared/api';
 import { t, loadTranslations } from './i18n';
 import ExportPage from './pages/export-page';
 import ImportPage from './pages/import-page';
 import { useUpdateCheck } from '@shared/hooks';
-import { platform } from '@shared/api/platform';
 import React, { useState, useEffect } from 'react';
 import { UpdateBanner, ErrorBoundary } from '@ui/components';
 

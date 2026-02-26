@@ -1,9 +1,7 @@
 import { t } from '../i18n';
-import { platform } from '@shared/api/platform';
-import { notifyError } from '@shared/lib/errors';
-import { formatArtists, toDateString } from '@shared/lib/format';
-import { BATCH_DELAY_MS, PLAYLIST_BATCH_SIZE, checkAborted, paginate } from '@shared/api/batch';
-import type { ProgressInfo, LibraryTrackItem, LibraryContentItem } from '@shared/types/platform';
+import { notifyError, formatArtists, toDateString } from '@shared/lib';
+import type { ProgressInfo, LibraryTrackItem, LibraryContentItem } from '@shared/types';
+import { platform, BATCH_DELAY_MS, PLAYLIST_BATCH_SIZE, checkAborted, paginate } from '@shared/api';
 import type {
   DataType,
   PlaylistItemDetail,

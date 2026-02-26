@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { cn } from '@shared/lib/utils';
+import { cn } from '@shared/lib';
 
 const Input = ({ className, ...props }: React.ComponentProps<'input'>) => (
   <input
