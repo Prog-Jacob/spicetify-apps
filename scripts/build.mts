@@ -1,11 +1,31 @@
 import { resolve, join } from 'path';
-import { build, context } from 'esbuild';
 import { execSync } from 'child_process';
 import pkg from 'esbuild-plugin-external-global';
+import { build, context, type BuildOptions } from 'esbuild';
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'fs';
 
+interface Author {
+  name: string;
+  url?: string;
+}
+
+interface PackageJson {
+  version?: string;
+  repository?: string;
+  author?: Author;
+  contributors?: Author[];
+}
+
+interface ManifestEntry {
+  name: string;
+  description: string;
+  preview: string;
+  readme: string;
+  tags: string[];
+}
+
 const ROOT = resolve(import.meta.dirname, '..');
-const rootPkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf-8'));
+const rootPkg: PackageJson = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf-8'));
 const APPS_DIR = join(ROOT, 'apps');
 
 const { externalGlobalPlugin } = pkg;
@@ -14,7 +34,7 @@ const watchMode = args.includes('--watch');
 const appFilterIdx = args.indexOf('--app');
 const appFilter = appFilterIdx !== -1 ? args[appFilterIdx + 1] : null;
 
-const discoverApps = () => {
+const discoverApps = (): string[] => {
   if (!existsSync(APPS_DIR)) return [];
   return readdirSync(APPS_DIR, { withFileTypes: true })
     .filter((d) => d.isDirectory())
@@ -22,10 +42,10 @@ const discoverApps = () => {
     .map((d) => d.name);
 };
 
-const buildOptions = (appName) => {
+const buildOptions = (appName: string): BuildOptions => {
   const appDir = join(APPS_DIR, appName);
   const outDir = join(appDir, 'dist');
-  const appPkg = JSON.parse(readFileSync(join(appDir, 'package.json'), 'utf-8'));
+  const appPkg: PackageJson = JSON.parse(readFileSync(join(appDir, 'package.json'), 'utf-8'));
   const appVersion = appPkg.version ?? '0.0.0';
 
   return {
@@ -51,7 +71,7 @@ const buildOptions = (appName) => {
             const rootManifest = join(ROOT, 'manifest.json');
             if (!existsSync(rootManifest)) return;
 
-            const entries = JSON.parse(readFileSync(rootManifest, 'utf-8'));
+            const entries: ManifestEntry[] = JSON.parse(readFileSync(rootManifest, 'utf-8'));
             const entry = entries.find((e) => e.preview?.startsWith(`apps/${appName}/`));
             if (!entry) return;
 
@@ -85,7 +105,7 @@ const buildOptions = (appName) => {
   };
 };
 
-const compileTailwind = (appName) => {
+const compileTailwind = (appName: string): void => {
   const appDir = join(APPS_DIR, appName);
   const cssEntry = join(appDir, 'src', 'styles', 'index.css');
   const outDir = join(appDir, 'dist');

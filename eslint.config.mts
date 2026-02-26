@@ -1,16 +1,15 @@
 import js from '@eslint/js';
-import tsPlugin from '@typescript-eslint/eslint-plugin';
-import tsParser from '@typescript-eslint/parser';
+import tseslint from 'typescript-eslint';
 
-export default [
+export default tseslint.config(
   {
-    ignores: ['**/node_modules/', '**/dist/', 'scripts/', '.spotify/', '.plan/', '**/*.d.ts'],
+    ignores: ['**/node_modules/', '**/dist/', '.spotify/', '.plan/', '**/*.d.ts'],
   },
   js.configs.recommended,
   {
-    files: ['**/*.ts', '**/*.tsx'],
+    files: ['**/*.ts', '**/*.tsx', '**/*.mts'],
     languageOptions: {
-      parser: tsParser,
+      parser: tseslint.parser,
       parserOptions: {
         ecmaVersion: 2022,
         sourceType: 'module',
@@ -43,7 +42,7 @@ export default [
       },
     },
     plugins: {
-      '@typescript-eslint': tsPlugin,
+      '@typescript-eslint': tseslint.plugin,
     },
     rules: {
       'no-unused-vars': 'off',
@@ -52,4 +51,15 @@ export default [
       'no-console': ['warn', { allow: ['warn', 'error'] }],
     },
   },
-];
+  {
+    files: ['scripts/**/*.mts'],
+    languageOptions: {
+      globals: {
+        process: 'readonly',
+      },
+    },
+    rules: {
+      'no-console': 'off',
+    },
+  },
+);
