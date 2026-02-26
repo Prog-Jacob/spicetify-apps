@@ -31,7 +31,7 @@ const ProgressCard = ({ progress, onCancel }: ProgressCardProps) => {
         <Progress
           value={percent}
           aria-label={progress.label}
-          indicatorClassName="bg-gradient-to-r from-spice-button via-spice-button-active to-spice-button bg-[length:200%_100%] animate-shimmer"
+          indicatorClassName="bg-gradient-to-r from-spice-button via-spice-button-active to-spice-button bg-[length:200%_100%] animate-shimmer rtl:[animation-direction:reverse]"
         />
 
         <ButtonTertiary onClick={onCancel} buttonSize="sm">

@@ -31,7 +31,7 @@ const DataTypeCard = ({
     disabled={disabled}
     onClick={onToggle}
     className={cn(
-      'group flex items-center gap-4 rounded-xl border p-4 text-left transition-all duration-150',
+      'group flex items-center gap-4 rounded-xl border p-4 text-start transition-all duration-150',
       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-spice-button',
       disabled ? 'cursor-default' : 'cursor-pointer',
       selected

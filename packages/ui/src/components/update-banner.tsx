@@ -35,8 +35,8 @@ const UpdateBanner = ({ appName, releaseUrl }: UpdateBannerProps) => {
   };
 
   return (
-    <div className="flex items-center gap-3 overflow-hidden rounded-lg bg-spice-card py-2.5 pr-2.5 pl-0">
-      <div className="w-1 shrink-0 self-stretch rounded-r-sm bg-spice-notification" />
+    <div className="flex items-center gap-3 overflow-hidden rounded-lg bg-spice-card py-2.5 pe-2.5 ps-0">
+      <div className="w-1 shrink-0 self-stretch rounded-e-sm bg-spice-notification" />
 
       <SpicetifyIcon icon="download" size={16} className="shrink-0 text-spice-notification" />
 
