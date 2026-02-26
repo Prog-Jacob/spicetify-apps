@@ -13,7 +13,13 @@ import FileDropZone from '../components/file-drop-zone';
 import ImportSummary from '../components/import-summary';
 import { ErrorCard, PageShell, ProgressCard } from '@ui/components';
 import { fetchExistingPlaylists } from '../services/playlist-lookup';
-import { DATA_TYPE, SOURCE_FORMAT, CONFLICT_RESOLUTION, LOG_STATUS } from '../constants';
+import {
+  DATA_TYPE,
+  LOG_STATUS,
+  IMPORT_STEP,
+  SOURCE_FORMAT,
+  CONFLICT_RESOLUTION,
+} from '../constants';
 import type {
   ParsedFile,
   ImportResult,
@@ -22,19 +28,11 @@ import type {
 } from '../types/import';
 
 const { TextComponent, ButtonPrimary, ButtonSecondary, ButtonTertiary } = Spicetify.ReactComponent;
-const STEP = {
-  DONE: 'done',
-  ERROR: 'error',
-  UPLOAD: 'upload',
-  PREVIEW: 'preview',
-  CONFLICTS: 'conflicts',
-  IMPORTING: 'importing',
-} as const;
 
-type Step = (typeof STEP)[keyof typeof STEP];
+type Step = (typeof IMPORT_STEP)[keyof typeof IMPORT_STEP];
 
 const ImportPage = ({ banner }: { banner?: React.ReactNode }) => {
-  const [step, setStep] = useState<Step>(STEP.UPLOAD);
+  const [step, setStep] = useState<Step>(IMPORT_STEP.UPLOAD);
   const [parsed, setParsed] = useState<ParsedFile | null>(null);
   const [selected, setSelected] = useState<Set<DataType>>(new Set());
   const [conflicts, setConflicts] = useState<PlaylistConflict[]>([]);
@@ -54,7 +52,7 @@ const ImportPage = ({ banner }: { banner?: React.ReactNode }) => {
 
     const controller = aborter.start();
 
-    setStep(STEP.IMPORTING);
+    setStep(IMPORT_STEP.IMPORTING);
     setResult(null);
     setProgress({ current: 0, total: 0, label: t('progress.starting') });
 
@@ -70,12 +68,12 @@ const ImportPage = ({ banner }: { banner?: React.ReactNode }) => {
       setResult(importResult);
       const allFailed =
         importResult.log.length > 0 && importResult.log.every((e) => e.status === LOG_STATUS.ERROR);
-      setStep(allFailed ? STEP.ERROR : STEP.DONE);
+      setStep(allFailed ? IMPORT_STEP.ERROR : IMPORT_STEP.DONE);
     } catch (e) {
       if (controller.signal.aborted) return;
       console.error(`[${__APP_NAME__}] Import failed:`, e);
       setResult({ log: [], warnings: [e instanceof Error ? e.message : String(e)] });
-      setStep(STEP.ERROR);
+      setStep(IMPORT_STEP.ERROR);
     } finally {
       setProgress(null);
     }
@@ -91,7 +89,7 @@ const ImportPage = ({ banner }: { banner?: React.ReactNode }) => {
     }
 
     setProgress({ current: 0, total: 0, label: t('progress.checkingPlaylists') });
-    setStep(STEP.IMPORTING);
+    setStep(IMPORT_STEP.IMPORTING);
 
     try {
       const existing = await fetchExistingPlaylists(controller.signal);
@@ -107,18 +105,18 @@ const ImportPage = ({ banner }: { banner?: React.ReactNode }) => {
         setResolutions(new Map(found.map((c) => [c.importedName, CONFLICT_RESOLUTION.SKIP])));
         setExistingUris(existing);
         setProgress(null);
-        setStep(STEP.CONFLICTS);
+        setStep(IMPORT_STEP.CONFLICTS);
       }
     } catch (e) {
       if (controller.signal.aborted) return;
       notifyError(e, t('progress.checkingPlaylists'));
       setProgress(null);
-      setStep(STEP.PREVIEW);
+      setStep(IMPORT_STEP.PREVIEW);
     }
   };
 
   const reset = () => {
-    setStep(STEP.UPLOAD);
+    setStep(IMPORT_STEP.UPLOAD);
     setParsed(null);
     setSelected(new Set());
     setConflicts([]);
@@ -140,17 +138,17 @@ const ImportPage = ({ banner }: { banner?: React.ReactNode }) => {
         </ButtonSecondary>
       }
     >
-      {step === STEP.UPLOAD && (
+      {step === IMPORT_STEP.UPLOAD && (
         <FileDropZone
           onFileSelected={(file) => {
             setParsed(file);
             setSelected(new Set(getAvailableCounts(file.data).keys()));
-            setStep(STEP.PREVIEW);
+            setStep(IMPORT_STEP.PREVIEW);
           }}
         />
       )}
 
-      {step === STEP.PREVIEW && parsed && (
+      {step === IMPORT_STEP.PREVIEW && parsed && (
         <>
           <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between">
@@ -182,7 +180,7 @@ const ImportPage = ({ banner }: { banner?: React.ReactNode }) => {
         </>
       )}
 
-      {step === STEP.CONFLICTS && (
+      {step === IMPORT_STEP.CONFLICTS && (
         <ConflictCard
           conflicts={conflicts}
           resolutions={resolutions}
@@ -199,18 +197,18 @@ const ImportPage = ({ banner }: { banner?: React.ReactNode }) => {
         />
       )}
 
-      {step === STEP.IMPORTING && progress && (
+      {step === IMPORT_STEP.IMPORTING && progress && (
         <ProgressCard
           progress={progress}
           onCancel={() => {
             aborter.abort();
-            setStep(STEP.UPLOAD);
+            setStep(IMPORT_STEP.UPLOAD);
             setProgress(null);
           }}
         />
       )}
 
-      {step === STEP.DONE && result && (
+      {step === IMPORT_STEP.DONE && result && (
         <ImportSummary
           result={result}
           onImportAgain={reset}
@@ -218,7 +216,7 @@ const ImportPage = ({ banner }: { banner?: React.ReactNode }) => {
         />
       )}
 
-      {step === STEP.ERROR && (
+      {step === IMPORT_STEP.ERROR && (
         <ErrorCard title={t('import.failed')} warnings={result?.warnings} onRetry={reset} />
       )}
     </PageShell>
