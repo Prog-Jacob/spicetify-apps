@@ -14,7 +14,7 @@ const en = {
   'export.selectItems': 'Select items to export',
   'export.count': 'Export {selected} of {total}',
   'export.spotifyProfile': 'Spotify profile',
-  'export.profilePlaceholder': 'https://open.spotify.com/user/... or spotify:user:...',
+  'export.profilePlaceholder': 'https://open.spotify.com/user/... or spotify:user:... or username',
   'export.exportUserData': 'Export User Data',
   'export.failed': 'Export Failed',
   'export.downloaded': 'File downloaded',

@@ -10,7 +10,7 @@
   "export.selectItems": "اختر العناصر للتصدير",
   "export.count": "تصدير {selected} من {total}",
   "export.spotifyProfile": "ملف سبوتيفاي الشخصي",
-  "export.profilePlaceholder": "https://open.spotify.com/user/... أو spotify:user:...",
+  "export.profilePlaceholder": "https://open.spotify.com/user/... أو spotify:user:... أو معرف المستخدم",
   "export.exportUserData": "تصدير بيانات المستخدم",
   "export.failed": "فشل التصدير",
   "export.downloaded": "تم تحميل الملف",

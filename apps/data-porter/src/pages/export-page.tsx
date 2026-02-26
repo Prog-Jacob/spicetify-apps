@@ -19,8 +19,8 @@ type Status = (typeof EXPORT_STATUS)[keyof typeof EXPORT_STATUS];
 type Mode = (typeof MODE)[keyof typeof MODE];
 
 const MODES: readonly { value: Mode; labelKey: MessageKey }[] = [
-  { value: MODE.OTHER_USER, labelKey: 'export.anotherUser' },
   { value: MODE.MY_DATA, labelKey: 'export.myData' },
+  { value: MODE.OTHER_USER, labelKey: 'export.anotherUser' },
 ];
 
 const resolveStatus = (data: ExportResult['data'], warnings: string[]): Status =>
