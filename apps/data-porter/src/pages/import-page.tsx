@@ -11,8 +11,16 @@ import ConflictCard from '../components/conflict-card';
 import DataTypeGrid from '../components/data-type-grid';
 import FileDropZone from '../components/file-drop-zone';
 import ImportSummary from '../components/import-summary';
-import { ErrorCard, PageShell, ProgressCard } from '@ui/components';
 import { fetchExistingPlaylists } from '../services/playlist-lookup';
+import {
+  ErrorCard,
+  PageShell,
+  ProgressCard,
+  TextComponent,
+  ButtonPrimary,
+  ButtonTertiary,
+  ButtonSecondary,
+} from '@ui/components';
 import {
   DATA_TYPE,
   LOG_STATUS,
@@ -26,8 +34,6 @@ import type {
   PlaylistConflict,
   PlaylistConflictResolution,
 } from '../types/import';
-
-const { TextComponent, ButtonPrimary, ButtonSecondary, ButtonTertiary } = Spicetify.ReactComponent;
 
 type Step = (typeof IMPORT_STEP)[keyof typeof IMPORT_STEP];
 

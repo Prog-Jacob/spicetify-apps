@@ -1,9 +1,7 @@
 import React from 'react';
 import { t } from '../i18n';
 import { cn } from '@shared/lib';
-import { SpicetifyIcon } from '@ui/components';
-
-const { TextComponent } = Spicetify.ReactComponent;
+import { TextComponent, SpicetifyIcon } from '@ui/components';
 
 type DataTypeCardProps = {
   icon: Spicetify.Icon;

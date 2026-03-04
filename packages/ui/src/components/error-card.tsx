@@ -1,8 +1,9 @@
 import React from 'react';
 import { t } from '../i18n';
+import TextComponent from './text';
 import ResultCard from './result-card';
 
-const { TextComponent, ButtonPrimary } = Spicetify.ReactComponent;
+const { ButtonPrimary } = Spicetify.ReactComponent;
 
 type ErrorCardProps = {
   title: string;

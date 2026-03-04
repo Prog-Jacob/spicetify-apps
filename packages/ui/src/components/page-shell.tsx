@@ -1,6 +1,5 @@
 import * as React from 'react';
-
-const { TextComponent } = Spicetify.ReactComponent;
+import TextComponent from './text';
 
 type PageShellProps = {
   title: string;

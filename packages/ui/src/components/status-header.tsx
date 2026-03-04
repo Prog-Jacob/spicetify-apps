@@ -1,8 +1,7 @@
 import React from 'react';
 import { cn } from '@shared/lib';
+import TextComponent from './text';
 import SpicetifyIcon from './icon';
-
-const { TextComponent } = Spicetify.ReactComponent;
 
 export type StatusVariant = 'success' | 'warning' | 'error';
 

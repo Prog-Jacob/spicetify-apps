@@ -3,9 +3,13 @@ import { t } from '../i18n';
 import { DATA_TYPES } from '../data-types';
 import type { ExportData } from '../types/export';
 import { ANIMATION_STAGGER_MS } from '../constants';
-import { SpicetifyIcon, ResultCard } from '@ui/components';
-
-const { TextComponent, ButtonPrimary, ButtonTertiary } = Spicetify.ReactComponent;
+import {
+  ResultCard,
+  TextComponent,
+  ButtonPrimary,
+  SpicetifyIcon,
+  ButtonTertiary,
+} from '@ui/components';
 
 type ExportSummaryProps = {
   result: ExportData;

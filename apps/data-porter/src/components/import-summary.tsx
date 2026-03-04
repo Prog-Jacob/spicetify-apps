@@ -3,9 +3,13 @@ import { t } from '../i18n';
 import { cn } from '@shared/lib';
 import { LOG_STATUS } from '../constants';
 import type { ImportResult } from '../types/import';
-import { SpicetifyIcon, ResultCard } from '@ui/components';
-
-const { TextComponent, ButtonPrimary, ButtonTertiary } = Spicetify.ReactComponent;
+import {
+  ResultCard,
+  TextComponent,
+  ButtonPrimary,
+  SpicetifyIcon,
+  ButtonTertiary,
+} from '@ui/components';
 
 const LOG_STATUS_STYLES: Record<
   ImportResult['log'][number]['status'],

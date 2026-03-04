@@ -2,10 +2,8 @@ import { t } from '../i18n';
 import { cn, notifyError } from '@shared/lib';
 import React, { useState, useRef } from 'react';
 import type { ParsedFile } from '../types/import';
-import { Input, SpicetifyIcon } from '@ui/components';
+import { TextComponent, Input, SpicetifyIcon } from '@ui/components';
 import { parseImportFile, parseImportText, checkFileSize } from '../services/file-parser';
-
-const { TextComponent } = Spicetify.ReactComponent;
 
 type FileDropZoneProps = {
   onFileSelected: (parsed: ParsedFile) => void;

@@ -10,9 +10,18 @@ import type { DataType, ExportResult } from '../types/export';
 import { cn, downloadJson, ValidationError } from '@shared/lib';
 import { exportPublicProfile } from '../services/profile-export';
 import { EXPORT_FILENAME_PREFIX, EXPORT_STATUS } from '../constants';
-import { Input, SpicetifyIcon, ErrorCard, PageShell, ProgressCard } from '@ui/components';
+import {
+  Input,
+  ErrorCard,
+  PageShell,
+  ProgressCard,
+  SpicetifyIcon,
+  TextComponent,
+  ButtonPrimary,
+  ButtonTertiary,
+  ButtonSecondary,
+} from '@ui/components';
 
-const { TextComponent, ButtonPrimary, ButtonSecondary, ButtonTertiary } = Spicetify.ReactComponent;
 const MODE = { MY_DATA: 'my-data', OTHER_USER: 'other-user' } as const;
 
 type Status = (typeof EXPORT_STATUS)[keyof typeof EXPORT_STATUS];

@@ -1,11 +1,12 @@
 import { t } from '../i18n';
+import TextComponent from './text';
 import SpicetifyIcon from './icon';
 import { REPO_RAW } from '@shared/lib';
 import { platform } from '@shared/api';
 import React, { useState } from 'react';
 
 const COPY_FEEDBACK_MS = 2000;
-const { TextComponent, ButtonTertiary } = Spicetify.ReactComponent;
+const { ButtonTertiary } = Spicetify.ReactComponent;
 
 const toDisplayName = (appName: string) =>
   appName

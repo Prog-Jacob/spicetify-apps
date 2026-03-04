@@ -1,11 +1,16 @@
 import { cn } from '@shared/lib';
 import { t, type MessageKey } from '../i18n';
 import React, { useMemo, useState } from 'react';
-import { Input, SpicetifyIcon, ResultCard } from '@ui/components';
 import { ANIMATION_STAGGER_MS, CONFLICT_RESOLUTION } from '../constants';
 import type { PlaylistConflict, PlaylistConflictResolution } from '../types/import';
-
-const { TextComponent, ButtonPrimary, ButtonTertiary } = Spicetify.ReactComponent;
+import {
+  Input,
+  ResultCard,
+  SpicetifyIcon,
+  TextComponent,
+  ButtonPrimary,
+  ButtonTertiary,
+} from '@ui/components';
 
 const RESOLUTIONS: { value: PlaylistConflictResolution; labelKey: MessageKey }[] = [
   { value: CONFLICT_RESOLUTION.SKIP, labelKey: 'conflict.skip' },
