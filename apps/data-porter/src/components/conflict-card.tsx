@@ -105,25 +105,25 @@ const ConflictCard = ({
           </TextComponent>
         </div>
 
-        {filtered.length >= 2 && (
-          <div className="mx-4 flex items-center justify-between border-b border-spice-subtext/40 pb-3">
-            <TextComponent variant="ballad" semanticColor="textSubdued">
-              {t('conflict.applyToAll')}
-            </TextComponent>
-            <ResolutionPicker
-              active={allSame}
-              onChange={(v) =>
-                onApplyAll(
-                  v,
-                  filtered.map((c) => c.importedName),
-                )
-              }
-              ariaLabel={t('conflict.applyToAll')}
-            />
-          </div>
-        )}
+        <div className="overflow-y-auto" role="list">
+          {filtered.length >= 2 && (
+            <div className="sticky top-0 z-10 mx-4 flex items-center justify-between border-b border-spice-subtext/40 bg-spice-card pb-3">
+              <TextComponent variant="ballad" semanticColor="textSubdued">
+                {t('conflict.applyToAll')}
+              </TextComponent>
+              <ResolutionPicker
+                active={allSame}
+                onChange={(v) =>
+                  onApplyAll(
+                    v,
+                    filtered.map((c) => c.importedName),
+                  )
+                }
+                ariaLabel={t('conflict.applyToAll')}
+              />
+            </div>
+          )}
 
-        <div className="overflow-y-auto [scrollbar-gutter:stable]" role="list">
           {filtered.map(({ importedName }, i) => (
             <div
               role="listitem"
