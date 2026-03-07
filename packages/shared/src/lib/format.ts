@@ -1,9 +1,18 @@
+const pad = (n: number) => String(n).padStart(2, '0');
+
 export const formatArtists = (artists?: { name: string }[]): string =>
   artists?.map((a) => a.name).join(', ') ?? '';
 
 export const toDateString = (ms: number): string => {
   const d = new Date(ms);
   return isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10);
+};
+
+export const toDateTimeString = (ms: number): string => {
+  const d = new Date(ms);
+  const dateString = toDateString(ms);
+  if (isNaN(d.getTime()) || !dateString) return '';
+  return `${dateString} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 };
 
 export function parseUserId(input: string): string {

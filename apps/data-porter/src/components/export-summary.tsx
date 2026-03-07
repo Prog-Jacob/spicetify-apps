@@ -1,6 +1,6 @@
 import React from 'react';
 import { t } from '../i18n';
-import { DATA_TYPES } from '../data-types';
+import { EXPORT_DATA_TYPES } from '../data-types';
 import type { ExportData } from '../types/export';
 import { ANIMATION_STAGGER_MS } from '../constants';
 import {
@@ -19,7 +19,7 @@ type ExportSummaryProps = {
 };
 
 const ExportSummary = ({ result, warnings, onDownload, onNewExport }: ExportSummaryProps) => {
-  const items = DATA_TYPES.map(({ labelKey, icon, getCount }) => ({
+  const items = EXPORT_DATA_TYPES.map(({ labelKey, icon, getCount }) => ({
     label: t(labelKey),
     icon,
     count: getCount(result),

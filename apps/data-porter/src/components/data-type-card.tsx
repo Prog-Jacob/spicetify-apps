@@ -11,6 +11,7 @@ type DataTypeCardProps = {
   disabled?: boolean;
   onToggle: () => void;
   count?: number;
+  badge?: string;
 };
 
 const DataTypeCard = ({
@@ -21,6 +22,7 @@ const DataTypeCard = ({
   disabled,
   onToggle,
   count,
+  badge,
 }: DataTypeCardProps) => (
   <button
     role="switch"
@@ -29,7 +31,7 @@ const DataTypeCard = ({
     disabled={disabled}
     onClick={onToggle}
     className={cn(
-      'group flex items-center gap-4 rounded-xl border p-4 text-start transition-all duration-150',
+      'relative group flex items-center gap-4 rounded-xl border p-4 text-start transition-all duration-150',
       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-spice-button',
       disabled ? 'cursor-default' : 'cursor-pointer',
       selected
@@ -45,6 +47,12 @@ const DataTypeCard = ({
     >
       <SpicetifyIcon icon={icon} size={20} />
     </div>
+
+    {badge && (
+      <span className="absolute right-2 bottom-2 rounded-full border border-spice-subtext/20 bg-spice-subtext/10 px-2 py-0.5 text-[10px]">
+        {badge}
+      </span>
+    )}
 
     <div className="flex min-w-0 flex-1 flex-col gap-0.5">
       <TextComponent variant="viola" weight="bold">

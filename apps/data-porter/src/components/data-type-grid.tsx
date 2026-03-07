@@ -1,25 +1,32 @@
 import React from 'react';
 import { t } from '../i18n';
-import { DATA_TYPES } from '../data-types';
 import DataTypeCard from './data-type-card';
 import { cn, toggleInSet } from '@shared/lib';
 import type { DataType } from '../types/export';
+import { DATA_TYPES, type DataTypeConfig } from '../data-types';
 
 type DataTypeGridProps = {
   selected: Set<DataType>;
   onToggle: (next: Set<DataType>) => void;
   disabled?: boolean;
   counts?: Map<DataType, number>;
+  dataTypes?: DataTypeConfig[];
 };
 
-const DataTypeGrid = ({ selected, onToggle, disabled, counts }: DataTypeGridProps) => (
+const DataTypeGrid = ({
+  selected,
+  onToggle,
+  disabled,
+  counts,
+  dataTypes = DATA_TYPES,
+}: DataTypeGridProps) => (
   <div
     className={cn(
-      'grid gap-3 transition-opacity duration-300 [grid-template-columns:repeat(auto-fit,minmax(220px,max-content))]',
+      'grid gap-3 transition-opacity duration-300 [grid-template-columns:repeat(auto-fit,minmax(220px,max-content))] max-w-[940px]',
       disabled && 'pointer-events-none opacity-50',
     )}
   >
-    {DATA_TYPES.map(({ type, labelKey, descKey, icon }) => {
+    {dataTypes.map(({ type, labelKey, descKey, icon, exportOnly }) => {
       const count = counts?.get(type);
       if (counts && count === undefined) return null;
       return (
@@ -32,6 +39,7 @@ const DataTypeGrid = ({ selected, onToggle, disabled, counts }: DataTypeGridProp
           disabled={disabled}
           onToggle={() => onToggle(toggleInSet(selected, type))}
           count={count}
+          badge={exportOnly ? t('dataType.exportOnly') : undefined}
         />
       );
     })}

@@ -23,6 +23,10 @@ export const DATA_TYPE = {
   ALBUMS: 'albums',
   ARTISTS: 'artists',
   SHOWS: 'shows',
+  EPISODES: 'episodes',
+  RECENTLY_PLAYED: 'recentlyPlayed',
+  BANNED_CONTENT: 'bannedContent',
+  PROFILE: 'profile',
 } as const;
 
 export const EXPORT_STATUS = {

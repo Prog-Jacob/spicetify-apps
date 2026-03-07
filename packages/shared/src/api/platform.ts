@@ -21,4 +21,13 @@ export const platform = {
   get PlaylistPermissionsAPI() {
     return Spicetify.Platform.PlaylistPermissionsAPI;
   },
+  get RecentsAPI() {
+    return Spicetify.Platform.RecentsAPI;
+  },
+  get CollectionPlatformAPI() {
+    return Spicetify.Platform.CollectionPlatformAPI;
+  },
+  get UserAPI() {
+    return Spicetify.Platform.UserAPI;
+  },
 };

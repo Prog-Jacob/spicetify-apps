@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { DATA_TYPES } from '../data-types';
 import { t, type MessageKey } from '../i18n';
 import { exportData } from '../services/exporter';
 import type { ProgressInfo } from '@shared/types';
@@ -7,9 +6,10 @@ import { useAbortController } from '@shared/hooks';
 import DataTypeGrid from '../components/data-type-grid';
 import ExportSummary from '../components/export-summary';
 import type { DataType, ExportResult } from '../types/export';
-import { cn, downloadJson, ValidationError } from '@shared/lib';
+import { EXPORT_DATA_TYPES as DATA_TYPES } from '../data-types';
 import { exportPublicProfile } from '../services/profile-export';
 import { EXPORT_FILENAME_PREFIX, EXPORT_STATUS } from '../constants';
+import { cn, downloadJson, notifyError, ValidationError } from '@shared/lib';
 import {
   Input,
   ErrorCard,
@@ -33,9 +33,7 @@ const MODES: readonly { value: Mode; labelKey: MessageKey }[] = [
 ];
 
 const resolveStatus = (data: ExportResult['data'], warnings: string[]): Status =>
-  warnings.length > 0 && !data.playlists && !data.library
-    ? EXPORT_STATUS.ERROR
-    : EXPORT_STATUS.DONE;
+  warnings.length > 0 && Object.keys(data).length === 0 ? EXPORT_STATUS.ERROR : EXPORT_STATUS.DONE;
 
 type ExportPageProps = {
   banner?: React.ReactNode;
@@ -69,7 +67,7 @@ const ExportPage = ({ banner, onGoToImport }: ExportPageProps) => {
     } catch (e) {
       if (controller.signal.aborted) return;
       if (e instanceof ValidationError) {
-        Spicetify.showNotification(e.message, true);
+        notifyError(e);
         setStatus(EXPORT_STATUS.IDLE);
       } else {
         setResult({ data: {}, warnings: [e instanceof Error ? e.message : String(e)] });
@@ -146,7 +144,12 @@ const ExportPage = ({ banner, onGoToImport }: ExportPageProps) => {
               </ButtonTertiary>
             </div>
 
-            <DataTypeGrid selected={selected} onToggle={setSelected} disabled={isFetching} />
+            <DataTypeGrid
+              selected={selected}
+              onToggle={setSelected}
+              disabled={isFetching}
+              dataTypes={DATA_TYPES}
+            />
           </div>
 
           {status === EXPORT_STATUS.IDLE && (

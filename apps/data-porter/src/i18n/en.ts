@@ -69,6 +69,15 @@ const en = {
   'dataType.artists.desc': 'Artists you follow',
   'dataType.shows': 'Shows',
   'dataType.shows.desc': 'Podcasts you follow',
+  'dataType.episodes': 'Episodes',
+  'dataType.episodes.desc': 'Saved podcast episodes',
+  'dataType.recentlyPlayed': 'Recently Played',
+  'dataType.recentlyPlayed.desc': 'Your listening history',
+  'dataType.bannedContent': 'Banned Content',
+  'dataType.bannedContent.desc': 'Blocked tracks and artists',
+  'dataType.profile': 'Profile',
+  'dataType.profile.desc': 'Your account info',
+  'dataType.exportOnly': 'Export Only',
   'dataType.itemCount': '{count} items',
   'dataType.include': 'Include {label}',
 
@@ -87,6 +96,11 @@ const en = {
   'progress.fetchingProfile': 'Fetching user profile',
   'progress.fetchingPlaylistList': 'Fetching playlist list',
   'progress.fetchingArtists': 'Fetching followed artists',
+  'progress.fetchingEpisodes': 'Fetching saved episodes',
+  'progress.savingEpisodes': 'Saving episodes',
+  'progress.fetchingRecentlyPlayed': 'Fetching recently played',
+  'progress.fetchingBannedContent': 'Fetching banned content',
+  'progress.fetchingUserProfile': 'Fetching profile',
 
   // Importer log entries
   'log.localTracks': '{count} local tracks skipped',

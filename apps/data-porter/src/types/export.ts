@@ -1,22 +1,20 @@
 import type { DATA_TYPE } from '../constants';
 
-type LocalTrackFields = { trackName: string; artistName: string; albumName: string };
+type BannedItem = { uri: string; name?: string };
 type EpisodeFields = { episodeName: string; showName: string };
-type TrackFields = LocalTrackFields & { trackUri: string };
-
-export type PlaylistItemDetail = {
-  uri: string;
-  name: string;
-  artists?: { name: string }[];
-  album?: { name: string };
-  show?: { name: string };
-  addedAt?: number;
+type TrackFields = { artist: string; album: string; uri: string };
+type PlaylistTrackFields = {
+  trackName: string;
+  artistName: string;
+  albumName: string;
+  trackUri: string;
 };
 
 export type ExportedPlaylistItem = {
-  track?: TrackFields;
-  episode?: EpisodeFields;
-  localTrack?: LocalTrackFields;
+  track: PlaylistTrackFields | null;
+  episode: EpisodeFields | null;
+  localTrack: PlaylistTrackFields | null;
+  audiobook: null;
   addedDate: string;
 };
 
@@ -28,16 +26,47 @@ export type ExportedPlaylist = {
   numberOfFollowers: number;
 };
 
+export type NamedUri = { name: string; uri: string };
+
 export type ExportedLibrary = {
   tracks: TrackFields[];
-  albums: { artist: string; album: string; uri: string }[];
-  artists: { name: string; uri: string }[];
-  shows: { name: string; publisher: string; uri: string }[];
+  albums: TrackFields[];
+  shows: (NamedUri & { publisher: string })[];
+  episodes: NamedUri[];
+  bannedTracks: BannedItem[];
+  artists: NamedUri[];
+  bannedArtists: BannedItem[];
+  other: unknown[];
+};
+
+export type ExportedRecentTrack = {
+  endTime: string;
+  artistName: string;
+  trackName: string;
+  uri: string;
+  albumName: string;
+};
+
+export type ExportedRecentPodcast = {
+  endTime: string;
+  podcastName: string;
+  episodeName: string;
+  uri: string;
+};
+
+export type ExportedUserProfile = {
+  displayName: string;
+  username: string;
+  uri: string;
+  imageUrl?: string;
+  followingCount?: number;
 };
 
 export type ExportData = {
   playlists?: ExportedPlaylist[];
   library?: ExportedLibrary;
+  recentlyPlayed?: { music: ExportedRecentTrack[]; podcasts: ExportedRecentPodcast[] };
+  profile?: ExportedUserProfile;
 };
 
 export type ExportResult = {
@@ -47,3 +76,14 @@ export type ExportResult = {
 };
 
 export type DataType = (typeof DATA_TYPE)[keyof typeof DATA_TYPE];
+
+export const emptyLibrary = (): ExportedLibrary => ({
+  tracks: [],
+  albums: [],
+  shows: [],
+  episodes: [],
+  bannedTracks: [],
+  artists: [],
+  bannedArtists: [],
+  other: [],
+});

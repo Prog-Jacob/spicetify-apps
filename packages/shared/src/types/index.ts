@@ -1,1 +1,7 @@
-export type { LibraryTrackItem, LibraryContentItem, LibraryPage, ProgressInfo } from './platform';
+export type {
+  LibraryPage,
+  ProgressInfo,
+  LibraryTrackItem,
+  LibraryContentItem,
+  PlaylistItemDetail,
+} from './platform';

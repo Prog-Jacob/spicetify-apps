@@ -1,33 +1,108 @@
 import { t } from '../i18n';
 import { DATA_TYPE } from '../constants';
-import { notifyError, formatArtists, toDateString, SPOTIFY_URI } from '@shared/lib';
-import type { ProgressInfo, LibraryTrackItem, LibraryContentItem } from '@shared/types';
-import { platform, BATCH_DELAY_MS, PLAYLIST_BATCH_SIZE, checkAborted, paginate } from '@shared/api';
+import { userProfileUrl } from './profile-export';
+import {
+  SPOTIFY_URI,
+  notifyError,
+  toDateString,
+  formatArtists,
+  toDateTimeString,
+} from '@shared/lib';
 import type {
-  DataType,
+  ProgressInfo,
+  LibraryTrackItem,
+  LibraryContentItem,
   PlaylistItemDetail,
-  ExportedPlaylistItem,
-  ExportedPlaylist,
-  ExportedLibrary,
-  ExportData,
-  ExportResult,
+} from '@shared/types';
+import {
+  cosmos,
+  paginate,
+  platform,
+  checkAborted,
+  BATCH_DELAY_MS,
+  PLAYLIST_BATCH_SIZE,
+} from '@shared/api';
+import {
+  emptyLibrary,
+  type DataType,
+  type ExportData,
+  type ExportResult,
+  type ExportedPlaylist,
+  type ExportedRecentTrack,
+  type ExportedPlaylistItem,
+  type ExportedRecentPodcast,
 } from '../types/export';
 
 function toExportedPlaylistItem(item: PlaylistItemDetail): ExportedPlaylistItem {
   const addedDate = item.addedAt ? toDateString(item.addedAt) : '';
+  const base = { track: null, episode: null, localTrack: null, audiobook: null, addedDate };
 
   if (item.uri.startsWith(SPOTIFY_URI.EPISODE))
-    return { addedDate, episode: { episodeName: item.name, showName: item.show?.name ?? '' } };
+    return { ...base, episode: { episodeName: item.name, showName: item.show?.name ?? '' } };
 
   const trackInfo = {
     trackName: item.name,
     artistName: formatArtists(item.artists),
     albumName: item.album?.name ?? '',
+    trackUri: item.uri,
   };
 
-  if (item.uri.startsWith(SPOTIFY_URI.LOCAL)) return { addedDate, localTrack: trackInfo };
+  if (item.uri.startsWith(SPOTIFY_URI.LOCAL)) return { ...base, localTrack: trackInfo };
 
-  return { addedDate, track: { ...trackInfo, trackUri: item.uri } };
+  return { ...base, track: trackInfo };
+}
+
+async function fetchBannedItems(set: string) {
+  const result = await platform.CollectionPlatformAPI.get(set);
+  return (Array.isArray(result) ? result : []).map(
+    ({ uri, name }: { uri: string; name?: string }) => ({ uri, ...(name && { name }) }),
+  );
+}
+
+async function fetchRecentlyPlayed() {
+  const result = await platform.RecentsAPI.getContents();
+  const raw = result?.items;
+  const music: ExportedRecentTrack[] = [];
+  const podcasts: ExportedRecentPodcast[] = [];
+  const items = Array.isArray(raw) ? raw : (raw?.items ?? []);
+
+  for (const item of items) {
+    const endTime = toDateTimeString(item.playedAt ?? Date.now());
+    const uri: string = item.uri ?? '';
+    if (uri.startsWith(SPOTIFY_URI.EPISODE)) {
+      podcasts.push({
+        endTime,
+        podcastName: item.showName ?? item.contextName ?? '',
+        episodeName: item.name ?? '',
+        uri,
+      });
+    } else {
+      music.push({
+        endTime,
+        artistName: item.artistName ?? formatArtists(item.artists),
+        trackName: item.name ?? '',
+        uri,
+        albumName: item.albumName ?? item.album?.name ?? '',
+      });
+    }
+  }
+
+  return { music, podcasts };
+}
+
+async function fetchUserProfile() {
+  const user = await platform.UserAPI.getUser();
+  const userId = user.username ?? '';
+  const enriched = await cosmos
+    .get<{ following_count?: number }>(`${userProfileUrl(userId)}?market=from_token`)
+    .catch(() => null);
+  return {
+    displayName: user.displayName ?? user.name ?? '',
+    username: userId,
+    uri: user.uri ?? '',
+    ...(user.imageUrl && { imageUrl: user.imageUrl }),
+    ...(enriched?.following_count != null && { followingCount: enriched.following_count }),
+  };
 }
 
 export async function buildPlaylists(
@@ -50,13 +125,7 @@ export async function buildPlaylists(
       label: t('progress.playlist', { name: row.name }),
     });
 
-    let detail;
-    try {
-      detail = await platform.PlaylistAPI.getPlaylist(row.uri);
-    } catch {
-      /* Handled in the next if statement */
-    }
-
+    const detail = await platform.PlaylistAPI.getPlaylist(row.uri).catch(() => null);
     if (!detail || detail.error || !detail.contents) {
       skipped.push(row.name);
       continue;
@@ -129,7 +198,7 @@ export async function exportData(
     }
   }
 
-  const library: ExportedLibrary = { tracks: [], albums: [], artists: [], shows: [] };
+  const library = emptyLibrary();
 
   if (selected.has(DATA_TYPE.LIKED_SONGS)) {
     onProgress({ current: 0, total: 0, label: t('progress.fetchingLikedSongs') });
@@ -144,10 +213,9 @@ export async function exportData(
         },
       );
       return items.map((item) => ({
-        trackUri: item.uri,
-        trackName: item.name,
-        artistName: formatArtists(item.artists),
-        albumName: item.album?.name ?? '',
+        artist: formatArtists(item.artists),
+        album: item.album?.name ?? '',
+        uri: item.uri,
       }));
     });
     if (tracks) library.tracks = tracks;
@@ -168,7 +236,37 @@ export async function exportData(
     }
   }
 
+  if (selected.has(DATA_TYPE.EPISODES)) {
+    onProgress({ current: 0, total: 0, label: t('progress.fetchingEpisodes') });
+    const eps = await tryFetch(t('dataType.episodes'), async () => {
+      const detail = await platform.PlaylistAPI.getPlaylist(SPOTIFY_URI.YOUR_EPISODES);
+      return ((detail?.contents?.items ?? []) as { name: string; uri: string }[]).map((ep) => ({
+        name: ep.name,
+        uri: ep.uri,
+      }));
+    });
+    if (eps) library.episodes = eps;
+  }
+
+  if (selected.has(DATA_TYPE.BANNED_CONTENT)) {
+    onProgress({ current: 0, total: 0, label: t('progress.fetchingBannedContent') });
+    const label = t('dataType.bannedContent');
+    library.bannedArtists = (await tryFetch(label, () => fetchBannedItems('artistban'))) ?? [];
+    library.bannedTracks = (await tryFetch(label, () => fetchBannedItems('notinterested'))) ?? [];
+  }
+
   if (Object.values(library).some((arr) => arr.length > 0)) data.library = library;
 
-  return { data, warnings };
+  if (selected.has(DATA_TYPE.RECENTLY_PLAYED)) {
+    onProgress({ current: 0, total: 0, label: t('progress.fetchingRecentlyPlayed') });
+    const recents = await tryFetch(t('dataType.recentlyPlayed'), fetchRecentlyPlayed);
+    if (recents) data.recentlyPlayed = recents;
+  }
+  if (selected.has(DATA_TYPE.PROFILE)) {
+    onProgress({ current: 0, total: 0, label: t('progress.fetchingUserProfile') });
+    const profile = await tryFetch(t('dataType.profile'), fetchUserProfile);
+    if (profile) data.profile = profile;
+  }
+
+  return { data, warnings, userName: data.profile?.username };
 }

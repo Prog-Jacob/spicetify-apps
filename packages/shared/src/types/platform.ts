@@ -21,6 +21,15 @@ export type LibraryPage<T> = {
   totalLength: number;
 };
 
+export type PlaylistItemDetail = {
+  uri: string;
+  name: string;
+  artists?: { name: string }[];
+  album?: { name: string };
+  show?: { name: string };
+  addedAt?: number;
+};
+
 export type ProgressInfo = {
   current: number;
   total: number;
