@@ -1,6 +1,6 @@
 import { t } from '../i18n';
+import type { ProgressInfo } from '@shared/types';
 import { SPOTIFY_URI, notifyError } from '@shared/lib';
-import type { ProgressInfo, PlaylistItemDetail } from '@shared/types';
 import { DATA_TYPE, LOG_STATUS, CONFLICT_RESOLUTION } from '../constants';
 import type { DataType, ExportData, ExportedPlaylist } from '../types/export';
 import type { ImportLogEntry, ImportResult, PlaylistConflictResolution } from '../types/import';
@@ -36,7 +36,7 @@ async function importPlaylist(
     const result = await platform.RootlistAPI.createPlaylist(playlist.name, {
       before: PLAYLIST_POSITION.START,
     });
-    targetUri = typeof result === 'string' ? result : ((result as { uri?: string })?.uri ?? '');
+    targetUri = typeof result === 'string' ? result : (result?.uri ?? '');
     if (!targetUri) {
       log.push({
         label: t('log.playlistFailed', { name: playlist.name }),
@@ -92,7 +92,7 @@ async function importPlaylist(
         status: LOG_STATUS.SKIPPED,
       });
     } else {
-      const items = (detail.contents.items ?? []) as PlaylistItemDetail[];
+      const items = detail.contents.items ?? [];
 
       if (items.length > 0) {
         const existing = new Set(items.map((i) => i.uri));

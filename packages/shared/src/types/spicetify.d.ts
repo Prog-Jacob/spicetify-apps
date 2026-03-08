@@ -816,7 +816,19 @@ declare namespace Spicetify {
    * Contains vast array of internal APIs.
    * Please explore in Devtool Console.
    */
-  const Platform: any;
+  const Platform: {
+    LibraryAPI: import('./platform-api').PlatformLibraryAPI;
+    PlaylistAPI: import('./platform-api').PlatformPlaylistAPI;
+    RootlistAPI: import('./platform-api').PlatformRootlistAPI;
+    RecentsAPI: import('./platform-api').PlatformRecentsAPI;
+    CollectionPlatformAPI: import('./platform-api').PlatformCollectionAPI;
+    UserAPI: import('./platform-api').PlatformUserAPI;
+    PlaylistPermissionsAPI: import('./platform-api').PlatformPlaylistPermissionsAPI;
+    ClipboardAPI: import('./platform-api').PlatformClipboardAPI;
+    History: import('./platform-api').PlatformHistory;
+    initialProductState: import('./platform-api').PlatformInitialProductState;
+    [key: string]: unknown;
+  };
   /**
    * Queue object contains list of queuing tracks,
    * history of played tracks and current track metadata.
@@ -2063,6 +2075,7 @@ declare namespace Spicetify {
       | 'queryArtistRelated'
       | 'queryArtistMinimal'
       | 'searchModalResults'
+      | 'recentSearches'
       | 'queryWhatsNewFeed'
       | 'whatsNewFeedNewItems'
       | 'SetItemsStateInWhatsNewFeed'

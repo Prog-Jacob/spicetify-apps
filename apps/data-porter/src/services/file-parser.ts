@@ -20,30 +20,32 @@ function isPlaylistArray(v: unknown): v is ExportedPlaylist[] {
   );
 }
 
-function normalizeLibraryTracks(tracks: unknown[]): ExportedLibrary['tracks'] {
-  return (tracks as Record<string, unknown>[]).map((track) => ({
+function normalizeLibraryTracks(tracks: Record<string, unknown>[]): ExportedLibrary['tracks'] {
+  return tracks.map((track) => ({
     artist: String(track.artist ?? track.artistName ?? ''),
     album: String(track.album ?? track.albumName ?? ''),
     uri: String(track.uri ?? track.trackUri ?? ''),
   }));
 }
 
-function normalizeLibraryAlbums(albums: unknown[]): ExportedLibrary['albums'] {
-  return (albums as Record<string, unknown>[]).map((album) => ({
+function normalizeLibraryAlbums(albums: Record<string, unknown>[]): ExportedLibrary['albums'] {
+  return albums.map((album) => ({
     artist: String(album.artist ?? album.artistName ?? ''),
     album: String(album.album ?? album.albumName ?? album.name ?? ''),
     uri: String(album.uri ?? album.albumUri ?? ''),
   }));
 }
 
-function normalizeLibraryEpisodes(episodes: unknown[]): ExportedLibrary['episodes'] {
-  return (episodes as Record<string, unknown>[]).map((ep) => ({
+function normalizeLibraryEpisodes(
+  episodes: Record<string, unknown>[],
+): ExportedLibrary['episodes'] {
+  return episodes.map((ep) => ({
     name: String(ep.name ?? ep.episodeName ?? ''),
     uri: String(ep.uri ?? ep.episodeUri ?? ''),
   }));
 }
 
-function normalizeLibrary(raw: Record<string, unknown>): ExportedLibrary {
+function normalizeLibrary(raw: ExportedLibrary | Record<string, unknown>): ExportedLibrary {
   const arr = <K extends keyof ExportedLibrary>(k: K): ExportedLibrary[K] =>
     (Array.isArray(raw[k]) ? raw[k] : []) as ExportedLibrary[K];
 
@@ -97,7 +99,7 @@ export function parseImportText(text: string, fileName: string): ParsedFile {
   const libSource = 'library' in obj ? obj.library : hasTopLevel ? obj : null;
   if (libSource) {
     if (!isLibrary(libSource)) throw new Error(t('error.invalidLibrary', { fileName }));
-    data.library = normalizeLibrary(libSource as Record<string, unknown>);
+    data.library = normalizeLibrary(libSource);
   }
 
   return {

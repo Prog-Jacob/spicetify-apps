@@ -10,7 +10,7 @@ import { UpdateBanner, ErrorBoundary } from '@ui/components';
 const App = () => {
   const [ready, setReady] = useState(false);
   const updateUrl = useUpdateCheck(__APP_NAME__, __APP_VERSION__);
-  const [path, setPath] = useState(() => platform.History.location.pathname as string);
+  const [path, setPath] = useState(() => platform.History.location.pathname);
   const banner = updateUrl ? <UpdateBanner appName={__APP_NAME__} releaseUrl={updateUrl} /> : null;
 
   useEffect(() => {
@@ -18,7 +18,7 @@ const App = () => {
   }, []);
 
   useEffect(() => {
-    const unlisten = platform.History.listen(({ pathname }: { pathname: string }) => {
+    const unlisten = platform.History.listen(({ pathname }) => {
       setPath(pathname);
     });
 

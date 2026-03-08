@@ -30,6 +30,47 @@ export type PlaylistItemDetail = {
   addedAt?: number;
 };
 
+export type PlaylistDetail = {
+  error?: unknown;
+  metadata?: {
+    lastModified?: number;
+    description?: string;
+    totalFollowers?: number;
+  };
+  contents?: { items?: PlaylistItemDetail[] };
+};
+
+export type RootlistItem = {
+  type: 'playlist' | 'folder' | (string & {});
+  name: string;
+  uri: string;
+  items?: RootlistItem[];
+};
+
+export type RecentsContentsItem = {
+  uri: string;
+  name: string;
+  type: string;
+  addedAt?: { timestamp: number };
+  playedAt?: number;
+  contributors?: { uri?: string; name?: string }[];
+  parent?: { uri?: string; name?: string };
+};
+
+export type RecentsContents = {
+  items: RecentsContentsItem[] | { items: RecentsContentsItem[] };
+};
+
+export type CollectionItem = { uri: string; name?: string };
+
+export type SpotifyUserProfile = {
+  uri?: string;
+  username?: string;
+  displayName?: string;
+  name?: string;
+  imageUrl?: string;
+};
+
 export type ProgressInfo = {
   current: number;
   total: number;

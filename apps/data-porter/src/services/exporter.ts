@@ -58,9 +58,10 @@ function toExportedPlaylistItem(item: PlaylistItemDetail): ExportedPlaylistItem 
 
 async function fetchBannedItems(set: string) {
   const result = await platform.CollectionPlatformAPI.get(set);
-  return (Array.isArray(result) ? result : []).map(
-    ({ uri, name }: { uri: string; name?: string }) => ({ uri, ...(name && { name }) }),
-  );
+  return (Array.isArray(result) ? result : []).map((item) => ({
+    uri: item.uri,
+    ...(item.name && { name: item.name }),
+  }));
 }
 
 async function fetchRecentlyPlayed() {
@@ -71,12 +72,12 @@ async function fetchRecentlyPlayed() {
   const items = Array.isArray(raw) ? raw : (raw?.items ?? []);
 
   for (const item of items) {
-    const uri: string = item.uri ?? '';
-    const type: string = item.type ?? '';
+    const uri = item.uri ?? '';
+    const type = item.type ?? '';
     if (type !== 'track' && type !== 'episode') continue;
 
-    const contributors = (item.contributors ?? []).filter(({ name }: { name?: string }) =>
-      Boolean(name),
+    const contributors = (item.contributors ?? []).filter(
+      (c): c is { name: string; uri?: string } => Boolean(c.name),
     );
     const endTime = toDateTimeString(item.addedAt?.timestamp ?? item.playedAt ?? Date.now());
 
@@ -165,7 +166,7 @@ export async function buildPlaylists(
     playlists.push({
       name: row.name,
       lastModifiedDate: toDateString(detail.metadata?.lastModified ?? Date.now()),
-      items: ((detail.contents.items ?? []) as PlaylistItemDetail[]).map(toExportedPlaylistItem),
+      items: (detail.contents.items ?? []).map(toExportedPlaylistItem),
       description: detail.metadata?.description ?? null,
       numberOfFollowers: detail.metadata?.totalFollowers ?? 0,
     });
@@ -271,7 +272,7 @@ export async function exportData(
     onProgress({ current: 0, total: 0, label: t('progress.fetchingEpisodes') });
     const eps = await tryFetch(t('dataType.episodes'), async () => {
       const detail = await platform.PlaylistAPI.getPlaylist(SPOTIFY_URI.YOUR_EPISODES);
-      return ((detail?.contents?.items ?? []) as { name: string; uri: string }[]).map((ep) => ({
+      return (detail?.contents?.items ?? []).map((ep) => ({
         name: ep.name,
         uri: ep.uri,
       }));
