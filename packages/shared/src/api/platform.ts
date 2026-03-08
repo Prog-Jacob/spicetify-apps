@@ -30,4 +30,7 @@ export const platform = {
   get UserAPI() {
     return Spicetify.Platform.UserAPI;
   },
+  get initialProductState() {
+    return Spicetify.Platform.initialProductState;
+  },
 };

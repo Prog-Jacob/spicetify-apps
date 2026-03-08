@@ -27,6 +27,7 @@ export const DATA_TYPE = {
   RECENTLY_PLAYED: 'recentlyPlayed',
   BANNED_CONTENT: 'bannedContent',
   PROFILE: 'profile',
+  SEARCH_HISTORY: 'searchHistory',
 } as const;
 
 export const EXPORT_STATUS = {

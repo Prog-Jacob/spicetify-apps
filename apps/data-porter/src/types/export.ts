@@ -60,6 +60,14 @@ export type ExportedUserProfile = {
   uri: string;
   imageUrl?: string;
   followingCount?: number;
+  country?: string;
+  product?: string;
+};
+
+export type SearchHistoryItem = {
+  type: string;
+  name: string;
+  uri: string;
 };
 
 export type ExportData = {
@@ -67,6 +75,7 @@ export type ExportData = {
   library?: ExportedLibrary;
   recentlyPlayed?: { music: ExportedRecentTrack[]; podcasts: ExportedRecentPodcast[] };
   profile?: ExportedUserProfile;
+  searchHistory?: SearchHistoryItem[];
 };
 
 export type ExportResult = {

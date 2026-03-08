@@ -67,6 +67,14 @@ export const DATA_TYPES: DataTypeConfig[] = [
 export const EXPORT_DATA_TYPES: DataTypeConfig[] = [
   ...DATA_TYPES,
   {
+    type: DATA_TYPE.SEARCH_HISTORY,
+    labelKey: 'dataType.searchHistory',
+    descKey: 'dataType.searchHistory.desc',
+    icon: 'search',
+    getCount: (d) => d.searchHistory?.length ?? 0,
+    exportOnly: true,
+  },
+  {
     type: DATA_TYPE.PROFILE,
     labelKey: 'dataType.profile',
     descKey: 'dataType.profile.desc',

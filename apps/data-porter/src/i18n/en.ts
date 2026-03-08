@@ -77,6 +77,8 @@ const en = {
   'dataType.bannedContent.desc': 'Blocked tracks and artists',
   'dataType.profile': 'Profile',
   'dataType.profile.desc': 'Your account info',
+  'dataType.searchHistory': 'Search History',
+  'dataType.searchHistory.desc': 'Your recent searches',
   'dataType.exportOnly': 'Export Only',
   'dataType.itemCount': '{count} items',
   'dataType.include': 'Include {label}',
@@ -102,6 +104,7 @@ const en = {
   'progress.fetchingRecentlyPlayed': 'Fetching recently played',
   'progress.fetchingBannedContent': 'Fetching banned content',
   'progress.fetchingUserProfile': 'Fetching profile',
+  'progress.fetchingSearchHistory': 'Fetching search history',
 
   // Importer log entries
   'log.localTracks': '{count} local tracks skipped',
@@ -110,6 +113,7 @@ const en = {
   'log.playlistCreated': 'Created "{name}" \u2014 {count} tracks',
   'log.playlistMerged': 'Merged into "{name}" \u2014 {count} tracks',
   'log.localSkipped': '"{name}": {count} local tracks skipped',
+  'log.episodesNoUri': '"{name}": {count} episodes skipped (no URI in Spotify export)',
   'log.duplicatesSkipped': '"{name}": {count} duplicates skipped',
   'log.mergeReadFailed': '"{name}": could not read for merge, duplicates may exist',
   'log.saved': '{count} {noun}',

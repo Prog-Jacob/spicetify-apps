@@ -28,6 +28,7 @@ import {
   type ExportData,
   type ExportResult,
   type ExportedPlaylist,
+  type SearchHistoryItem,
   type ExportedRecentTrack,
   type ExportedPlaylistItem,
   type ExportedRecentPodcast,
@@ -106,13 +107,33 @@ async function fetchUserProfile() {
   const enriched = await cosmos
     .get<{ following_count?: number }>(`${userProfileUrl(userId)}?market=from_token`)
     .catch(() => null);
+  const ps = platform.initialProductState;
   return {
     displayName: user.displayName ?? user.name ?? '',
     username: userId,
     uri: user.uri ?? '',
     ...(user.imageUrl && { imageUrl: user.imageUrl }),
     ...(enriched?.following_count != null && { followingCount: enriched.following_count }),
+    ...(ps.country && { country: ps.country }),
+    ...(ps.product && { product: ps.product }),
   };
+}
+
+async function fetchSearchHistory(): Promise<SearchHistoryItem[]> {
+  const res = await Spicetify.GraphQL.Request(Spicetify.GraphQL.Definitions.recentSearches, {
+    limit: 50,
+    includeAuthors: false,
+  });
+  const items = res?.data?.recentSearches?.recentSearchesItems?.items ?? [];
+
+  return items.map((item: { data?: { __typename?: string; uri?: string; name?: string } }) => {
+    const d = item.data ?? {};
+    return {
+      type: String(d.__typename ?? '').toLowerCase(),
+      name: String(d.name ?? ''),
+      uri: String(d.uri ?? ''),
+    };
+  });
 }
 
 export async function buildPlaylists(
@@ -276,6 +297,11 @@ export async function exportData(
     onProgress({ current: 0, total: 0, label: t('progress.fetchingUserProfile') });
     const profile = await tryFetch(t('dataType.profile'), fetchUserProfile);
     if (profile) data.profile = profile;
+  }
+  if (selected.has(DATA_TYPE.SEARCH_HISTORY)) {
+    onProgress({ current: 0, total: 0, label: t('progress.fetchingSearchHistory') });
+    const history = await tryFetch(t('dataType.searchHistory'), fetchSearchHistory);
+    if (history?.length) data.searchHistory = history;
   }
 
   return { data, warnings, userName: data.profile?.username };

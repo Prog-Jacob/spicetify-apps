@@ -61,14 +61,24 @@ async function importPlaylist(
     }
   }
 
-  let trackUris = playlist.items.flatMap(({ track, episode }) =>
-    [track?.trackUri ?? episode?.episodeUri].filter((uri): uri is string => Boolean(uri)),
-  );
-  const skippedCount = playlist.items.length - trackUris.length;
+  let localCount = 0;
+  let episodesWithoutUri = 0;
+  let trackUris: string[] = [];
+  playlist.items.forEach(({ track, episode, localTrack }) => {
+    const uri = track?.trackUri ?? episode?.episodeUri;
+    if (localTrack) localCount++;
+    if (uri) trackUris.push(uri);
+    else if (episode) episodesWithoutUri++;
+  });
 
-  if (skippedCount > 0)
+  if (localCount > 0)
     log.push({
-      label: t('log.localSkipped', { name: playlist.name, count: skippedCount }),
+      label: t('log.localSkipped', { name: playlist.name, count: localCount }),
+      status: LOG_STATUS.SKIPPED,
+    });
+  if (episodesWithoutUri > 0)
+    log.push({
+      label: t('log.episodesNoUri', { name: playlist.name, count: episodesWithoutUri }),
       status: LOG_STATUS.SKIPPED,
     });
 
