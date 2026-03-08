@@ -1,6 +1,7 @@
 import { t } from '../i18n';
 import { DATA_TYPE } from '../constants';
 import { userProfileUrl } from './profile-export';
+import { fetchRootlistPlaylists, type PlaylistRef } from './playlist-lookup';
 import {
   SPOTIFY_URI,
   notifyError,
@@ -138,7 +139,7 @@ async function fetchSearchHistory(): Promise<SearchHistoryItem[]> {
 }
 
 export async function buildPlaylists(
-  playlistItems: LibraryContentItem[],
+  playlistItems: PlaylistRef[],
   onProgress?: (progress: ProgressInfo) => void,
   signal?: AbortSignal,
 ): Promise<{ playlists: ExportedPlaylist[]; skipped: string[] }> {
@@ -195,9 +196,9 @@ export async function exportData(
     }
   };
 
-  const needsLibraryScan = (
-    [DATA_TYPE.PLAYLISTS, DATA_TYPE.ALBUMS, DATA_TYPE.ARTISTS, DATA_TYPE.SHOWS] as const
-  ).some((dt) => selected.has(dt));
+  const needsLibraryScan = ([DATA_TYPE.ALBUMS, DATA_TYPE.ARTISTS, DATA_TYPE.SHOWS] as const).some(
+    (dt) => selected.has(dt),
+  );
 
   let libraryContents: LibraryContentItem[] | null = null;
   if (needsLibraryScan) {
@@ -212,21 +213,30 @@ export async function exportData(
     );
   }
 
-  if (selected.has(DATA_TYPE.PLAYLISTS) && libraryContents) {
-    const playlistItems = libraryContents.filter((i) => i.type === 'playlist');
-    onProgress({ current: 0, total: playlistItems.length, label: t('progress.fetchingPlaylists') });
-    const result = await tryFetch(t('dataType.playlists'), () =>
-      buildPlaylists(playlistItems, onProgress, signal),
+  if (selected.has(DATA_TYPE.PLAYLISTS)) {
+    onProgress({ current: 0, total: 0, label: t('progress.fetchingPlaylistList') });
+    const playlistItems = await tryFetch(t('dataType.playlists'), () =>
+      fetchRootlistPlaylists(signal),
     );
-    if (result) {
-      data.playlists = result.playlists;
-      if (result.skipped.length > 0)
-        warnings.push(
-          t('warn.playlistsFailed', {
-            count: result.skipped.length,
-            names: result.skipped.join(', '),
-          }),
-        );
+    if (playlistItems) {
+      onProgress({
+        current: 0,
+        total: playlistItems.length,
+        label: t('progress.fetchingPlaylists'),
+      });
+      const result = await tryFetch(t('dataType.playlists'), () =>
+        buildPlaylists(playlistItems, onProgress, signal),
+      );
+      if (result) {
+        data.playlists = result.playlists;
+        if (result.skipped.length > 0)
+          warnings.push(
+            t('warn.playlistsFailed', {
+              count: result.skipped.length,
+              names: result.skipped.join(', '),
+            }),
+          );
+      }
     }
   }
 

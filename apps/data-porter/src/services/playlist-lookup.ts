@@ -1,11 +1,24 @@
-import { platform, paginate } from '@shared/api';
-import type { LibraryContentItem } from '@shared/types';
+import type { RootlistItem } from '@shared/types';
+import { platform, checkAborted } from '@shared/api';
+
+export type PlaylistRef = Pick<RootlistItem, 'name' | 'uri'>;
+
+function collect(items: RootlistItem[], out: PlaylistRef[]): void {
+  for (const item of items) {
+    if (item.type === 'playlist') out.push({ name: item.name, uri: item.uri });
+    else if (item.type === 'folder' && item.items) collect(item.items, out);
+  }
+}
+
+export async function fetchRootlistPlaylists(signal?: AbortSignal): Promise<PlaylistRef[]> {
+  const { items = [] } = await platform.RootlistAPI.getContents();
+  checkAborted(signal);
+  const out: PlaylistRef[] = [];
+  collect(items, out);
+  return out;
+}
 
 export async function fetchExistingPlaylists(signal?: AbortSignal): Promise<Map<string, string>> {
-  const items = await paginate<LibraryContentItem>(
-    (params) => platform.LibraryAPI.getContents(params),
-    { context: 'LibraryAPI.getContents', signal },
-  );
-
-  return new Map(items.filter((i) => i.type === 'playlist').map((i) => [i.name, i.uri]));
+  const playlists = await fetchRootlistPlaylists(signal);
+  return new Map(playlists.map((p) => [p.name, p.uri]));
 }
