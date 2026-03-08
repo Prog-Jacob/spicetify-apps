@@ -38,7 +38,10 @@ function toExportedPlaylistItem(item: PlaylistItemDetail): ExportedPlaylistItem 
   const base = { track: null, episode: null, localTrack: null, audiobook: null, addedDate };
 
   if (item.uri.startsWith(SPOTIFY_URI.EPISODE))
-    return { ...base, episode: { episodeName: item.name, showName: item.show?.name ?? '' } };
+    return {
+      ...base,
+      episode: { episodeName: item.name, showName: item.show?.name ?? '', episodeUri: item.uri },
+    };
 
   const trackInfo = {
     trackName: item.name,
@@ -67,22 +70,29 @@ async function fetchRecentlyPlayed() {
   const items = Array.isArray(raw) ? raw : (raw?.items ?? []);
 
   for (const item of items) {
-    const endTime = toDateTimeString(item.playedAt ?? Date.now());
     const uri: string = item.uri ?? '';
-    if (uri.startsWith(SPOTIFY_URI.EPISODE)) {
+    const type: string = item.type ?? '';
+    if (type !== 'track' && type !== 'episode') continue;
+
+    const contributors = (item.contributors ?? []).filter(({ name }: { name?: string }) =>
+      Boolean(name),
+    );
+    const endTime = toDateTimeString(item.addedAt?.timestamp ?? item.playedAt ?? Date.now());
+
+    if (type === 'episode') {
       podcasts.push({
         endTime,
-        podcastName: item.showName ?? item.contextName ?? '',
+        podcastName: item.parent?.name ?? '',
         episodeName: item.name ?? '',
         uri,
       });
     } else {
       music.push({
         endTime,
-        artistName: item.artistName ?? formatArtists(item.artists),
+        artistName: formatArtists(contributors) || '',
         trackName: item.name ?? '',
         uri,
-        albumName: item.albumName ?? item.album?.name ?? '',
+        albumName: item.parent?.name ?? '',
       });
     }
   }

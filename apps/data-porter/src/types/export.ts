@@ -1,7 +1,7 @@
 import type { DATA_TYPE } from '../constants';
 
 type BannedItem = { uri: string; name?: string };
-type EpisodeFields = { episodeName: string; showName: string };
+type EpisodeFields = { episodeName: string; showName: string; episodeUri?: string };
 type TrackFields = { artist: string; album: string; uri: string };
 type PlaylistTrackFields = {
   trackName: string;

@@ -1,9 +1,9 @@
 import { t } from '../i18n';
-import { SPOTIFY_URI } from '@shared/lib';
-import type { ProgressInfo } from '@shared/types';
+import { SPOTIFY_URI, notifyError } from '@shared/lib';
+import type { ProgressInfo, PlaylistItemDetail } from '@shared/types';
 import { DATA_TYPE, LOG_STATUS, CONFLICT_RESOLUTION } from '../constants';
+import type { DataType, ExportData, ExportedPlaylist } from '../types/export';
 import type { ImportLogEntry, ImportResult, PlaylistConflictResolution } from '../types/import';
-import type { DataType, ExportData, ExportedPlaylist, PlaylistItemDetail } from '../types/export';
 import {
   platform,
   checkAborted,
@@ -61,12 +61,14 @@ async function importPlaylist(
     }
   }
 
-  let trackUris = playlist.items.flatMap((i) => (i.track?.trackUri ? [i.track.trackUri] : []));
+  let trackUris = playlist.items.flatMap(({ track, episode }) =>
+    [track?.trackUri ?? episode?.episodeUri].filter((uri): uri is string => Boolean(uri)),
+  );
   const skippedCount = playlist.items.length - trackUris.length;
 
   if (skippedCount > 0)
     log.push({
-      label: t('log.episodesSkipped', { name: playlist.name, count: skippedCount }),
+      label: t('log.localSkipped', { name: playlist.name, count: skippedCount }),
       status: LOG_STATUS.SKIPPED,
     });
 
@@ -142,7 +144,7 @@ export async function importData(
   const warnings: string[] = [];
   const log: ImportLogEntry[] = [];
   const allTracks = data.library?.tracks;
-  const tracks = allTracks?.filter((tr) => tr.trackUri.startsWith(SPOTIFY_URI.TRACK));
+  const tracks = allTracks?.filter((tr) => tr.uri.startsWith(SPOTIFY_URI.TRACK));
   const localCount = (allTracks?.length ?? 0) - (tracks?.length ?? 0);
   if (localCount > 0)
     log.push({ label: t('log.localTracks', { count: localCount }), status: LOG_STATUS.SKIPPED });
@@ -156,13 +158,13 @@ export async function importData(
       const msg = t('log.failed', { label });
       log.push({ label, status: LOG_STATUS.ERROR, detail });
       warnings.push(msg);
-      Spicetify.showNotification(msg, true);
+      notifyError(e, msg);
     }
   };
 
   const libraryImports: {
     type: DataType;
-    items?: { uri?: string; trackUri?: string }[];
+    items?: { uri: string }[];
     noun: string;
     progressLabel: string;
   }[] = [
@@ -190,12 +192,18 @@ export async function importData(
       noun: t('dataType.albums'),
       progressLabel: t('progress.savingAlbums'),
     },
+    {
+      type: DATA_TYPE.EPISODES,
+      items: data.library?.episodes,
+      noun: t('dataType.episodes'),
+      progressLabel: t('progress.savingEpisodes'),
+    },
   ];
 
   await Promise.all(
     libraryImports.flatMap(({ type, items, noun, progressLabel }) => {
       if (!selected.has(type) || !items?.length) return [];
-      const uris = items.map((i) => i.uri ?? i.trackUri).filter((u): u is string => Boolean(u));
+      const uris = items.map((i) => i.uri);
       return tryWrite(noun, async () => {
         await batchedWrite(uris, (batch) => platform.LibraryAPI.add({ uris: batch }), {
           label: progressLabel,
@@ -206,6 +214,30 @@ export async function importData(
       });
     }),
   );
+
+  if (selected.has(DATA_TYPE.BANNED_CONTENT)) {
+    const noun = t('dataType.bannedContent');
+    const bannedTracks = data.library?.bannedTracks;
+    const bannedArtists = data.library?.bannedArtists;
+    onProgress({ current: 0, total: 0, label: t('progress.banningContent') });
+
+    const banSets: [typeof bannedTracks, string][] = [
+      [bannedTracks, 'notinterested'],
+      [bannedArtists, 'artistban'],
+    ];
+    for (const [items, set] of banSets) {
+      if (!items?.length) continue;
+      await tryWrite(noun, async () => {
+        const uris = items.map((i) => i.uri);
+        await batchedWrite(uris, (batch) => platform.CollectionPlatformAPI.add(set, batch), {
+          label: t('progress.banningContent'),
+          signal,
+          onProgress,
+        });
+        log.push({ label: t('log.saved', { count: uris.length, noun }), status: LOG_STATUS.OK });
+      });
+    }
+  }
 
   if (selected.has(DATA_TYPE.PLAYLISTS) && data.playlists?.length) {
     for (let i = 0; i < data.playlists.length; i++) {
