@@ -60,7 +60,9 @@ export const DATA_TYPES: DataTypeConfig[] = [
     descKey: 'dataType.bannedContent.desc',
     icon: 'block',
     getCount: (d) =>
-      (d.library?.bannedTracks?.length ?? 0) + (d.library?.bannedArtists?.length ?? 0),
+      (d.library?.bannedTracks?.length ?? 0) +
+      (d.library?.bannedArtists?.length ?? 0) +
+      (d.library?.excludedFromTaste?.length ?? 0),
   },
 ];
 

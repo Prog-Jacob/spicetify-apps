@@ -57,6 +57,7 @@ function normalizeLibrary(raw: ExportedLibrary | Record<string, unknown>): Expor
     bannedTracks: arr('bannedTracks'),
     artists: arr('artists'),
     bannedArtists: arr('bannedArtists'),
+    excludedFromTaste: arr('excludedFromTaste'),
     other: arr('other'),
   };
 }

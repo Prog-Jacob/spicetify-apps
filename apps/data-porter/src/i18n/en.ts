@@ -74,7 +74,7 @@ const en = {
   'dataType.recentlyPlayed': 'Recently Played',
   'dataType.recentlyPlayed.desc': 'Your listening history',
   'dataType.bannedContent': 'Banned Content',
-  'dataType.bannedContent.desc': 'Blocked tracks and artists',
+  'dataType.bannedContent.desc': 'Blocked tracks, artists, and taste exclusions',
   'dataType.profile': 'Profile',
   'dataType.profile.desc': 'Your account info',
   'dataType.searchHistory': 'Search History',

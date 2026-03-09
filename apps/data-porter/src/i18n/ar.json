@@ -69,7 +69,7 @@
   "dataType.recentlyPlayed": "المُشغّلة مؤخراً",
   "dataType.recentlyPlayed.desc": "سجل الاستماع الخاص بك",
   "dataType.bannedContent": "المحتوى المحظور",
-  "dataType.bannedContent.desc": "المقاطع والفنانون المحظورون",
+  "dataType.bannedContent.desc": "المقاطع والفنانون المحظورون واستثناءات الذوق",
   "dataType.profile": "الملف الشخصي",
   "dataType.profile.desc": "معلومات حسابك",
   "dataType.searchHistory": "سجل البحث",

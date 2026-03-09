@@ -229,11 +229,13 @@ export async function importData(
     const noun = t('dataType.bannedContent');
     const bannedTracks = data.library?.bannedTracks;
     const bannedArtists = data.library?.bannedArtists;
+    const excludedFromTaste = data.library?.excludedFromTaste;
     onProgress({ current: 0, total: 0, label: t('progress.banningContent') });
 
     const banSets: [typeof bannedTracks, string][] = [
-      [bannedTracks, 'notinterested'],
       [bannedArtists, 'artistban'],
+      [bannedTracks, 'notinterested'],
+      [excludedFromTaste, 'ignoreinrecs'],
     ];
     for (const [items, set] of banSets) {
       if (!items?.length) continue;

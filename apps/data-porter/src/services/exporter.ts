@@ -295,6 +295,8 @@ export async function exportData(
     const label = t('dataType.bannedContent');
     library.bannedArtists = (await tryFetch(label, () => fetchBannedItems('artistban'))) ?? [];
     library.bannedTracks = (await tryFetch(label, () => fetchBannedItems('notinterested'))) ?? [];
+    library.excludedFromTaste =
+      (await tryFetch(label, () => fetchBannedItems('ignoreinrecs'))) ?? [];
   }
 
   if (Object.values(library).some((arr) => arr.length > 0)) data.library = library;

@@ -36,6 +36,7 @@ export type ExportedLibrary = {
   bannedTracks: BannedItem[];
   artists: NamedUri[];
   bannedArtists: BannedItem[];
+  excludedFromTaste: BannedItem[];
   other: unknown[];
 };
 
@@ -94,5 +95,6 @@ export const emptyLibrary = (): ExportedLibrary => ({
   bannedTracks: [],
   artists: [],
   bannedArtists: [],
+  excludedFromTaste: [],
   other: [],
 });
