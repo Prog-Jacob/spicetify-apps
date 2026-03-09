@@ -1,5 +1,11 @@
 # @spicetify-apps/data-porter
 
+## 2.1.0
+
+### Minor Changes
+
+- feat(data-porter): export/import taste exclusions (ignoreinrecs) with banned content
+
 ## 2.0.0
 
 ### Major Changes
