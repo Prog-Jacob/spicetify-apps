@@ -1,24 +1,15 @@
-# Spicetify Apps
+<h3 align="center">Spicetify Apps</h3>
+<p align="center">
+  Custom apps for <a href="https://spicetify.app">Spicetify</a>, built with React, TypeScript, and Tailwind CSS.
+</p>
 
-Custom apps for [Spicetify](https://spicetify.app), built with React, TypeScript, and Tailwind CSS.
+---
 
-| App                                 | Description                                                                                                                                    |
-| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| [**Data Porter**](apps/data-porter) | Export and import your Spotify library — playlists, liked songs, albums, artists, and podcasts. Supports exporting another user's public data. |
+## Apps
 
-### Install
-
-**Linux / macOS:**
-
-```sh
-curl -fsSL https://raw.githubusercontent.com/Prog-Jacob/spicetify-apps/main/install.sh | bash -s <app-name>
-```
-
-**Windows (PowerShell):**
-
-```ps1
-iex "& { $(iwr -useb https://raw.githubusercontent.com/Prog-Jacob/spicetify-apps/main/install.ps1) } <app-name>"
-```
+|                                                                | App                                 | Description                                                                                           |
+| -------------------------------------------------------------- | ----------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| <img src="apps/data-porter/preview/thumbnail.png" width="120"> | [**Data Porter**](apps/data-porter) | Export and import your Spotify library — playlists, liked songs, albums, artists, podcasts, and more. |
 
 ---
 
@@ -27,19 +18,17 @@ iex "& { $(iwr -useb https://raw.githubusercontent.com/Prog-Jacob/spicetify-apps
 ### Structure
 
 ```
-apps/
-  data-porter/           # Import/export Spotify library data
-packages/
-  shared/                # @shared/* — API wrappers, hooks, i18n, types, utilities
-  ui/                    # @ui/* — shared UI components (shadcn-style)
-scripts/
-  build.mts              # esbuild bundler (auto-discovers apps by src/index.tsx)
-  release.mts            # Interactive release: bump, commit, tag, push
+├── apps/
+│   └── data-porter/        # Import/export Spotify library data
+├── packages/
+│   ├── shared/              # API wrappers, hooks, i18n, types, utilities (@shared/*)
+│   └── ui/                  # Shared UI components, shadcn-style (@ui/*)
+└── scripts/                 # esbuild bundler + changeset-based release tooling
 ```
 
 ### Setup
 
-Requires [Node.js](https://nodejs.org/) >= 18, [pnpm](https://pnpm.io/) >= 9, and [Spicetify](https://spicetify.app/docs/advanced-usage/installation).
+You'll need [Node.js](https://nodejs.org/) >= 18, [pnpm](https://pnpm.io/) >= 9, and [Spicetify](https://spicetify.app/docs/advanced-usage/installation).
 
 ```sh
 git clone https://github.com/Prog-Jacob/spicetify-apps.git
@@ -50,34 +39,36 @@ pnpm dev          # watch-build + spicetify watch
 
 ### Commands
 
-| Command                 | Description                                          |
-| ----------------------- | ---------------------------------------------------- |
-| `pnpm dev`              | Watch-build all apps + spicetify watch (live reload) |
-| `pnpm build`            | Build all apps                                       |
-| `pnpm build:app <name>` | Build a single app                                   |
-| `pnpm typecheck`        | `tsc --noEmit` across all packages                   |
-| `pnpm lint`             | ESLint                                               |
-| `pnpm format`           | Prettier (writes in-place)                           |
-| `pnpm precommit`        | format + lint + typecheck                            |
-| `pnpm release`          | Interactive release: bump, commit, tag, push         |
-| `pnpm symlink`          | Symlink dist/ into Spicetify's CustomApps dir        |
+```sh
+pnpm dev              # watch-build all apps + spicetify watch (live reload)
+pnpm build            # build all apps (or pnpm build:app <name> for one)
+pnpm precommit        # format + lint + typecheck
+pnpm release          # interactive release: bump, commit, tag, push
+```
 
 ### Architecture
 
-This is a **pnpm monorepo** with esbuild bundling each app as an IIFE. React and React DOM are externalized to `Spicetify.React`/`Spicetify.ReactDOM` at runtime.
+This is a **pnpm monorepo**. esbuild bundles each app as an IIFE, with React and React DOM pulled from `Spicetify.React` / `Spicetify.ReactDOM` at runtime (never bundled).
 
-**Path aliases** (resolved at build time):
+Two path aliases are resolved at build time:
 
-- `@shared/*` → `packages/shared/src/*` — API wrappers, hooks, i18n, utilities
-- `@ui/*` → `packages/ui/src/*` — shadcn-style UI components
+- `@shared/*` maps to `packages/shared/src/*`
+- `@ui/*` maps to `packages/ui/src/*`
 
 ### Adding a New App
 
 1. Create `apps/<name>/src/index.tsx` exporting a default `render()` function
-2. Add `package.json` (with `version`) and `tsconfig.json` (extending `../../tsconfig.base.json`)
-3. Optionally add `src/styles/index.css` for Tailwind CSS
-4. `pnpm build` — apps are auto-discovered by `src/index.tsx`
+2. Add a `package.json` with a `version` field and a `tsconfig.json` extending `../../tsconfig.base.json`
+3. Optionally add `src/styles/index.css` if you want Tailwind
+4. Run `pnpm build`. Apps are auto-discovered by their `src/index.tsx`
+
+### Releasing
+
+Releases are handled with [changesets](https://github.com/changesets/changesets).
+
+1. Run `pnpm release <app-name>`. This generates a draft changeset from commits since the last tag, opens your editor to pick the bump type and write release notes, then bumps the version, updates `CHANGELOG.md`, tags, and pushes.
+2. When a tag matching `*-v[0-9]*` is pushed, the [release workflow](.github/workflows/release.yml) builds the app, packages a zip, and creates a GitHub Release.
 
 ---
 
-[Issues](https://github.com/Prog-Jacob/spicetify-apps/issues) · [MIT License](LICENSE)
+[Issues](https://github.com/Prog-Jacob/spicetify-apps/issues) · [Releases](https://github.com/Prog-Jacob/spicetify-apps/releases) · [MIT License](LICENSE)
