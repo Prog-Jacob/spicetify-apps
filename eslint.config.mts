@@ -3,7 +3,7 @@ import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
   {
-    ignores: ['**/node_modules/', '**/dist/', '.spotify/', '.plan/', '**/*.d.ts'],
+    ignores: ['**/node_modules/', '**/dist/', '.spotify/', '.plan/', '**/*.d.ts', 'scripts/cdp-*'],
   },
   js.configs.recommended,
   {

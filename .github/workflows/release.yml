@@ -51,8 +51,21 @@ jobs:
           cd release
           zip -r ../${{ steps.meta.outputs.zip }} $APP/
 
+      - name: Extract changelog entry
+        id: changelog
+        run: |
+          VERSION="${{ github.ref_name }}"
+          VERSION="${VERSION#*-v}"
+          CHANGELOG="apps/${{ steps.meta.outputs.app }}/CHANGELOG.md"
+          [ -f "$CHANGELOG" ] || { echo "body=" >> $GITHUB_OUTPUT; exit 0; }
+          {
+            echo "body<<EOF"
+            awk -v ver="$VERSION" '/^## /{if(found)exit;if($0~ver){found=1;next}}found' "$CHANGELOG"
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: ${{ steps.meta.outputs.zip }}
-          generate_release_notes: true
+          body: ${{ steps.changelog.outputs.body }}

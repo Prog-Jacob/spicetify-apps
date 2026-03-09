@@ -3,67 +3,32 @@
  * Release script for monorepo apps.
  *
  * Usage:
- *   tsx scripts/release.mts <app-name> [patch|minor|major|x.y.z]
+ *   tsx scripts/release.mts <app-name>
  *
  * Example:
- *   tsx scripts/release.mts data-porter          # interactive bump type prompt
- *   tsx scripts/release.mts data-porter patch     # 1.0.0 → 1.0.1
- *   tsx scripts/release.mts data-porter minor     # 1.0.0 → 1.1.0
- *   tsx scripts/release.mts data-porter 1.2.3     # explicit version
+ *   tsx scripts/release.mts data-porter
+ *
+ * If no pending changesets exist, a draft is generated from commits since
+ * the last release tag and opened in $EDITOR. Then `changeset version`
+ * bumps versions, writes CHANGELOGs, and commits. The script tags and pushes.
  */
 
 import { resolve, join } from 'path';
-import { execSync } from 'child_process';
-import { createInterface } from 'readline';
-import { existsSync, readFileSync, writeFileSync } from 'fs';
-
-interface PackageJson {
-  version: string;
-  [key: string]: unknown;
-}
-
-type BumpType = 'major' | 'minor' | 'patch';
+import { execSync, spawnSync } from 'child_process';
+import { existsSync, readFileSync, readdirSync, writeFileSync } from 'fs';
 
 const ROOT = resolve(import.meta.dirname, '..');
+const CHANGESET_DIR = join(ROOT, '.changeset');
 const APPS_DIR = join(ROOT, 'apps');
 
+const appName = process.argv[2];
 const run = (cmd: string) => execSync(cmd, { cwd: ROOT, stdio: 'inherit' });
+const hasChangesets = (): boolean =>
+  readdirSync(CHANGESET_DIR).some((f) => f.endsWith('.md') && f !== 'README.md');
 const capture = (cmd: string): string => execSync(cmd, { cwd: ROOT }).toString().trim();
 
-const ask = (question: string): Promise<string> =>
-  new Promise((resolve) => {
-    const rl = createInterface({ input: process.stdin, output: process.stdout });
-    rl.question(question, (answer) => {
-      rl.close();
-      resolve(answer.trim());
-    });
-  });
-
-const BUMP_ALIASES: Record<string, BumpType> = {
-  patch: 'patch',
-  minor: 'minor',
-  major: 'major',
-  '1': 'patch',
-  '2': 'minor',
-  '3': 'major',
-};
-
-const bump = (version: string, type: BumpType): string => {
-  const [major, minor, patch] = version.split('.').map(Number);
-  if (type === 'major') return `${major + 1}.0.0`;
-  if (type === 'minor') return `${major}.${minor + 1}.0`;
-  return `${major}.${minor}.${patch + 1}`;
-};
-
-const resolveVersion = (current: string, input: string): string | null => {
-  if (/^\d+\.\d+\.\d+$/.test(input)) return input;
-  const type = BUMP_ALIASES[input];
-  return type ? bump(current, type) : null;
-};
-const [appName, versionArg] = process.argv.slice(2);
-
 if (!appName) {
-  console.error('Usage: tsx scripts/release.mts <app-name> [patch|minor|major|x.y.z]');
+  console.error('Usage: tsx scripts/release.mts <app-name>');
   process.exit(1);
 }
 
@@ -73,48 +38,39 @@ if (!existsSync(appDir)) {
   process.exit(1);
 }
 
-// Check working tree is clean (fail fast before interactive prompts)
-const dirty = capture('git status --porcelain');
-if (dirty) {
-  console.error('\nWorking tree is dirty. Commit or stash changes first.');
-  process.exit(1);
-}
-
 const pkgPath = join(appDir, 'package.json');
-const pkg: PackageJson = JSON.parse(readFileSync(pkgPath, 'utf-8'));
-const currentVersion = pkg.version;
+const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'));
+const currentVersion: string = pkg.version;
+const pkgName: string = pkg.name;
 
-if (!versionArg) {
-  console.log(`\nCurrent version: ${currentVersion}`);
-  console.log('  1) patch  →  ' + bump(currentVersion, 'patch'));
-  console.log('  2) minor  →  ' + bump(currentVersion, 'minor'));
-  console.log('  3) major  →  ' + bump(currentVersion, 'major'));
+// Draft a changeset from commits if none exist yet
+if (!hasChangesets()) {
+  const lastTag = capture(`git describe --tags --match "${appName}-v*" --abbrev=0`);
+  const log = capture(`git log ${lastTag}..HEAD --pretty=format:"%s"`);
+  const draftPath = join(CHANGESET_DIR, `draft-${appName}.md`);
+
+  if (!log) {
+    console.log('No commits since last release.');
+    process.exit(0);
+  }
+
+  writeFileSync(draftPath, `---\n"${pkgName}": minor\n---\n\n${log}\n`);
+  spawnSync(process.env.EDITOR || 'vim', [draftPath], { stdio: 'inherit' });
+  console.log(`\nDraft from ${log.split('\n').length} commit(s) since ${lastTag}.`);
+
+  if (!hasChangesets()) {
+    console.log('Aborted.');
+    process.exit(0);
+  }
 }
 
-const input = versionArg ?? (await ask('\nBump type (patch/minor/major or x.y.z): '));
-const newVersion = resolveVersion(currentVersion, input);
-if (!newVersion) {
-  console.error(`Invalid bump type or version: ${input}`);
-  process.exit(1);
-}
+run('pnpm changeset version');
 
+const newVersion: string = JSON.parse(readFileSync(pkgPath, 'utf-8')).version;
 const tag = `${appName}-v${newVersion}`;
 console.log(`\n  ${appName}: ${currentVersion} → ${newVersion}  (tag: ${tag})\n`);
 
-const confirm = await ask('Proceed? (y/N): ');
-if (confirm.toLowerCase() !== 'y') {
-  console.log('Aborted.');
-  process.exit(0);
-}
-
-// Bump version in package.json
-pkg.version = newVersion;
-writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
-console.log(`Updated ${pkgPath}`);
-
-// Commit + tag + push
-run(`git add apps/${appName}/package.json`);
-run(`git commit -m "chore(${appName}): release v${newVersion}"`);
+// Tag + push
 run(`git tag -a ${tag} -m "${appName} v${newVersion}"`);
 run('git push --follow-tags');
 
