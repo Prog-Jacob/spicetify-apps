@@ -1,4 +1,8 @@
 {
+  "download": "تحميل",
+  "selectAll": "تحديد الكل",
+  "deselectAll": "إلغاء تحديد الكل",
+
   "nav.import": "استيراد",
   "nav.export": "تصدير",
 
@@ -49,6 +53,7 @@
   "conflict.merge": "دمج",
   "conflict.createNew": "إنشاء جديدة",
 
+  "summary.newExport": "تصدير جديد",
   "summary.complete": "اكتمل",
   "summary.partial": "اكتمل جزئياً",
   "summary.importAgain": "استيراد مرة أخرى",

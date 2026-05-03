@@ -7,10 +7,6 @@ settings:
 importers:
 
   .:
-    dependencies:
-      react-error-boundary:
-        specifier: ^6.1.1
-        version: 6.1.1(react@19.2.4)
     devDependencies:
       '@changesets/cli':
         specifier: ^2.30.0
@@ -48,6 +44,9 @@ importers:
       radix-ui:
         specifier: ^1.4.3
         version: 1.4.3(@types/react-dom@18.3.7(@types/react@18.3.28))(@types/react@18.3.28)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      react-error-boundary:
+        specifier: ^6.1.1
+        version: 6.1.1(react@19.2.4)
       tailwind-merge:
         specifier: ^2.6.1
         version: 2.6.1

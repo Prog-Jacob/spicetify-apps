@@ -70,6 +70,10 @@ const newVersion: string = JSON.parse(readFileSync(pkgPath, 'utf-8')).version;
 const tag = `${appName}-v${newVersion}`;
 console.log(`\n  ${appName}: ${currentVersion} → ${newVersion}  (tag: ${tag})\n`);
 
+// Commit the version bump, CHANGELOG, and consumed changesets
+run('git add -A');
+run(`git commit -m "chore(${appName}): release v${newVersion}"`);
+
 // Tag + push
 run(`git tag -a ${tag} -m "${appName} v${newVersion}"`);
 run('git push --follow-tags');

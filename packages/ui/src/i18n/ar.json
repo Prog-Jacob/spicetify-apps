@@ -1,9 +1,6 @@
 {
   "tryAgain": "حاول مجدداً",
   "cancel": "إلغاء",
-  "download": "تحميل",
-  "selectAll": "تحديد الكل",
-  "deselectAll": "إلغاء تحديد الكل",
   "update.available": "يتوفر إصدار جديد من {appName}",
   "update.copied": "تم النسخ!",
   "update.update": "تحديث",

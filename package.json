@@ -9,7 +9,7 @@
     "url": "https://github.com/Prog-Jacob"
   },
   "scripts": {
-    "build": "tsx scripts/build.mts && pnpm symlink",
+    "build": "tsx scripts/build.mts --bundle-locales && pnpm symlink",
     "dev": "pnpm symlink && tsx scripts/build.mts --watch & spicetify watch -a & wait",
     "build:app": "tsx scripts/build.mts --app",
     "typecheck": "tsc -p scripts/tsconfig.json && pnpm -r run typecheck",
@@ -38,6 +38,7 @@
     "tailwindcss": "^4.2.1",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
+    "react-error-boundary": "^6.1.1",
     "typescript-eslint": "^8.56.1"
   },
   "pnpm": {
@@ -50,8 +51,5 @@
     "bundleLocales": [
       "ar"
     ]
-  },
-  "dependencies": {
-    "react-error-boundary": "^6.1.1"
   }
 }

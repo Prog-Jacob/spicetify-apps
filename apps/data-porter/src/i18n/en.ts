@@ -1,6 +1,11 @@
 import type { MessageValue, PluralEntry } from '@shared/i18n';
 
 const en = {
+  // Common
+  download: 'Download',
+  selectAll: 'Select All',
+  deselectAll: 'Deselect All',
+
   // Navigation
   'nav.import': 'Import',
   'nav.export': 'Export',
@@ -55,6 +60,7 @@ const en = {
   // Summaries
   'summary.complete': 'Complete',
   'summary.partial': 'Partially Complete',
+  'summary.newExport': 'New Export',
   'summary.importAgain': 'Import Again',
   'summary.goToExport': 'Go to Export',
 
