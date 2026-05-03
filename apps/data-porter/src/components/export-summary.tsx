@@ -1,6 +1,6 @@
 import React from 'react';
 import { t } from '../i18n';
-import { EXPORT_DATA_TYPES } from '../data-types';
+import { ALL_DATA_TYPES } from '../data-types';
 import type { ExportData } from '../types/export';
 import { ANIMATION_STAGGER_MS } from '../constants';
 import {
@@ -19,7 +19,7 @@ type ExportSummaryProps = {
 };
 
 const ExportSummary = ({ result, warnings, onDownload, onNewExport }: ExportSummaryProps) => {
-  const items = EXPORT_DATA_TYPES.map(({ labelKey, icon, getCount }) => ({
+  const items = ALL_DATA_TYPES.map(({ labelKey, icon, getCount }) => ({
     label: t(labelKey),
     icon,
     count: getCount(result),
@@ -34,17 +34,14 @@ const ExportSummary = ({ result, warnings, onDownload, onNewExport }: ExportSumm
       actions={
         <>
           <ButtonPrimary
-            onClick={() => {
-              onDownload();
-              onNewExport();
-            }}
+            onClick={onDownload}
             buttonSize="md"
             iconLeading={() => <SpicetifyIcon icon="download" size={16} />}
           >
             {t('download')}
           </ButtonPrimary>
           <ButtonTertiary onClick={onNewExport} buttonSize="md">
-            {t('cancel')}
+            {t('summary.newExport')}
           </ButtonTertiary>
         </>
       }
@@ -73,8 +70,8 @@ const ExportSummary = ({ result, warnings, onDownload, onNewExport }: ExportSumm
 
       {warnings.length > 0 && (
         <div className="flex flex-col gap-1.5 rounded-lg bg-spice-notification-error/10 p-3">
-          {warnings.map((w) => (
-            <TextComponent key={w} variant="minuet" semanticColor="textNegative">
+          {warnings.map((w, i) => (
+            <TextComponent key={i} variant="minuet" semanticColor="textNegative">
               {w}
             </TextComponent>
           ))}

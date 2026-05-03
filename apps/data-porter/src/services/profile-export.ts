@@ -1,13 +1,10 @@
 import { t } from '../i18n';
-import { buildPlaylists } from './exporter';
+import { userProfileUrl } from './spotify-urls';
+import { buildPlaylists, emptyLibrary } from './exporter';
 import { cosmos, PAGE_SIZE, checkAborted } from '@shared/api';
 import type { ProgressInfo, LibraryContentItem } from '@shared/types';
 import { parseUserId, ValidationError, SPOTIFY_URI } from '@shared/lib';
-import { emptyLibrary, type ExportResult, type ExportedPlaylist } from '../types/export';
-
-// Internal Spotify endpoint — not publicly documented, may change across client versions.
-const BASE_URL = 'https://spclient.wg.spotify.com/user-profile-view/v3/profile';
-export const userProfileUrl = (userId: string) => `${BASE_URL}/${encodeURIComponent(userId)}`;
+import type { ExportResult, ExportedPlaylist } from '../types/export';
 
 type FollowingResponse = { profiles: { uri: string; name: string }[] };
 type UserProfile = { name: string; total_public_playlists_count: number };

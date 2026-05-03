@@ -1,6 +1,6 @@
 import { t } from '../i18n';
 import { DATA_TYPE } from '../constants';
-import { userProfileUrl } from './profile-export';
+import { userProfileUrl } from './spotify-urls';
 import { fetchRootlistPlaylists, type PlaylistRef } from './playlist-lookup';
 import {
   SPOTIFY_URI,
@@ -23,21 +23,32 @@ import {
   BATCH_DELAY_MS,
   PLAYLIST_BATCH_SIZE,
 } from '@shared/api';
-import {
-  emptyLibrary,
-  type DataType,
-  type ExportData,
-  type ExportResult,
-  type ExportedPlaylist,
-  type SearchHistoryItem,
-  type ExportedRecentTrack,
-  type ExportedPlaylistItem,
-  type ExportedRecentPodcast,
+import type {
+  DataType,
+  ExportData,
+  ExportResult,
+  ExportedLibrary,
+  ExportedPlaylist,
+  SearchHistoryItem,
+  ExportedRecentTrack,
+  ExportedPlaylistItem,
+  ExportedRecentPodcast,
 } from '../types/export';
+
+export const emptyLibrary = (): ExportedLibrary => ({
+  tracks: [],
+  albums: [],
+  shows: [],
+  episodes: [],
+  bannedTracks: [],
+  artists: [],
+  bannedArtists: [],
+  excludedFromTaste: [],
+});
 
 function toExportedPlaylistItem(item: PlaylistItemDetail): ExportedPlaylistItem {
   const addedDate = item.addedAt ? toDateString(item.addedAt) : '';
-  const base = { track: null, episode: null, localTrack: null, audiobook: null, addedDate };
+  const base = { track: null, episode: null, localTrack: null, addedDate };
 
   if (item.uri.startsWith(SPOTIFY_URI.EPISODE))
     return {

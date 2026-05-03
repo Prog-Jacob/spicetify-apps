@@ -3,7 +3,7 @@ import { t } from '../i18n';
 import DataTypeCard from './data-type-card';
 import { cn, toggleInSet } from '@shared/lib';
 import type { DataType } from '../types/export';
-import { DATA_TYPES, type DataTypeConfig } from '../data-types';
+import { IMPORTABLE_DATA_TYPES, type DataTypeConfig } from '../data-types';
 
 type DataTypeGridProps = {
   selected: Set<DataType>;
@@ -18,7 +18,7 @@ const DataTypeGrid = ({
   onToggle,
   disabled,
   counts,
-  dataTypes = DATA_TYPES,
+  dataTypes = IMPORTABLE_DATA_TYPES,
 }: DataTypeGridProps) => (
   <div
     className={cn(

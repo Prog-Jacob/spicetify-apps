@@ -14,7 +14,6 @@ export type ExportedPlaylistItem = {
   track: PlaylistTrackFields | null;
   episode: EpisodeFields | null;
   localTrack: PlaylistTrackFields | null;
-  audiobook: null;
   addedDate: string;
 };
 
@@ -37,7 +36,6 @@ export type ExportedLibrary = {
   artists: NamedUri[];
   bannedArtists: BannedItem[];
   excludedFromTaste: BannedItem[];
-  other: unknown[];
 };
 
 export type ExportedRecentTrack = {
@@ -86,15 +84,3 @@ export type ExportResult = {
 };
 
 export type DataType = (typeof DATA_TYPE)[keyof typeof DATA_TYPE];
-
-export const emptyLibrary = (): ExportedLibrary => ({
-  tracks: [],
-  albums: [],
-  shows: [],
-  episodes: [],
-  bannedTracks: [],
-  artists: [],
-  bannedArtists: [],
-  excludedFromTaste: [],
-  other: [],
-});

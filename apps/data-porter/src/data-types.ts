@@ -11,7 +11,7 @@ export type DataTypeConfig = {
   exportOnly?: boolean;
 };
 
-export const DATA_TYPES: DataTypeConfig[] = [
+export const ALL_DATA_TYPES: DataTypeConfig[] = [
   {
     type: DATA_TYPE.PLAYLISTS,
     labelKey: 'dataType.playlists',
@@ -64,10 +64,6 @@ export const DATA_TYPES: DataTypeConfig[] = [
       (d.library?.bannedArtists?.length ?? 0) +
       (d.library?.excludedFromTaste?.length ?? 0),
   },
-];
-
-export const EXPORT_DATA_TYPES: DataTypeConfig[] = [
-  ...DATA_TYPES,
   {
     type: DATA_TYPE.SEARCH_HISTORY,
     labelKey: 'dataType.searchHistory',
@@ -95,9 +91,11 @@ export const EXPORT_DATA_TYPES: DataTypeConfig[] = [
   },
 ];
 
+export const IMPORTABLE_DATA_TYPES = ALL_DATA_TYPES.filter((dt) => !dt.exportOnly);
+
 export function getAvailableCounts(data: ExportData): Map<DataType, number> {
   const counts = new Map<DataType, number>();
-  for (const dt of DATA_TYPES) {
+  for (const dt of IMPORTABLE_DATA_TYPES) {
     const count = dt.getCount(data);
     if (count > 0) counts.set(dt.type, count);
   }
