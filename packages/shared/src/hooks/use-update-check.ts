@@ -31,7 +31,9 @@ export const useUpdateCheck = (appName: string, currentVersion: string): string 
       .then((res) => (res.ok ? (res.json() as Promise<unknown>) : null))
       .then((data) => {
         if (!Array.isArray(data)) return;
-        const latest = (data as GithubRelease[]).find((r) => r.tag_name.startsWith(tagPrefix));
+        const latest = (data as GithubRelease[]).find(
+          (r) => typeof r.tag_name === 'string' && r.tag_name.startsWith(tagPrefix),
+        );
         if (latest && isNewer(latest.tag_name, tagPrefix, currentVersion)) {
           setUpdateUrl(latest.html_url);
         }

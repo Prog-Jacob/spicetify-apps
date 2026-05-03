@@ -2,7 +2,10 @@ type Body = Spicetify.CosmosAsync.Body;
 
 // CosmosAsync may resolve with error bodies instead of throwing.
 export const validateResponse = <T>(response: unknown, context: string, rejectNull = false): T => {
-  if (response == null && !rejectNull) return response as T;
+  if (response == null) {
+    if (rejectNull) throw new Error(`${context}: empty response`);
+    return response as T;
+  }
   if (typeof response !== 'object') throw new Error(`${context}: empty response`);
 
   const res = response as Record<string, unknown>;

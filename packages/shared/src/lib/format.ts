@@ -12,7 +12,7 @@ export const toDateTimeString = (ms: number): string => {
   const d = new Date(ms);
   const dateString = toDateString(ms);
   if (isNaN(d.getTime()) || !dateString) return '';
-  return `${dateString} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  return `${dateString} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`;
 };
 
 export function parseUserId(input: string): string {

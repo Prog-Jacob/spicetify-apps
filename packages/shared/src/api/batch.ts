@@ -49,6 +49,7 @@ function validatePage<T>(response: unknown, context: string): LibraryPage<T> {
   if (
     !Array.isArray(res.items) ||
     typeof res.totalLength !== 'number' ||
+    typeof res.offset !== 'number' ||
     typeof res.limit !== 'number' ||
     res.limit <= 0
   )
@@ -69,8 +70,8 @@ export async function paginate<T>(
     const page = validatePage<T>(await fetch({ limit: PAGE_SIZE, offset }), context);
     items.push(...page.items);
     onProgress?.({ current: items.length, total: page.totalLength, label });
-    offset += page.limit;
-    if (offset >= page.totalLength) break;
+    if (page.items.length === 0 || offset + page.items.length >= page.totalLength) break;
+    offset += page.items.length;
   }
 
   return items;
