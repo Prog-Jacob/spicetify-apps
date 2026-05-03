@@ -208,7 +208,7 @@ const ImportPage = ({ banner }: { banner?: React.ReactNode }) => {
           progress={progress}
           onCancel={() => {
             aborter.abort();
-            setStep(IMPORT_STEP.UPLOAD);
+            setStep(parsed ? IMPORT_STEP.PREVIEW : IMPORT_STEP.UPLOAD);
             setProgress(null);
           }}
         />

@@ -37,7 +37,9 @@ const FileDropZone = ({ onFileSelected }: FileDropZoneProps) => {
       const length = Number(res.headers.get('content-length'));
       if (length) checkFileSize(length, fileName);
 
-      onFileSelected(parseImportText(await res.text(), fileName));
+      const text = await res.text();
+      checkFileSize(text.length, fileName);
+      onFileSelected(parseImportText(text, fileName));
     } catch (e) {
       notifyError(e);
     } finally {

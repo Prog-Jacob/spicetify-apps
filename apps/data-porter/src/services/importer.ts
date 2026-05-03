@@ -34,7 +34,7 @@ async function importPlaylist(
     targetUri = existingUri;
   } else {
     const result = await platform.RootlistAPI.createPlaylist(playlist.name, {
-      before: PLAYLIST_POSITION.START,
+      before: PLAYLIST_POSITION.END,
     });
     targetUri = typeof result === 'string' ? result : (result?.uri ?? '');
     if (!targetUri) {
@@ -210,20 +210,19 @@ export async function importData(
     },
   ];
 
-  await Promise.all(
-    libraryImports.flatMap(({ type, items, noun, progressLabel }) => {
-      if (!selected.has(type) || !items?.length) return [];
-      const uris = items.map((i) => i.uri);
-      return tryWrite(noun, async () => {
-        await batchedWrite(uris, (batch) => platform.LibraryAPI.add({ uris: batch }), {
-          label: progressLabel,
-          signal,
-          onProgress,
-        });
-        log.push({ label: t('log.saved', { count: uris.length, noun }), status: LOG_STATUS.OK });
+  for (const { type, items, noun, progressLabel } of libraryImports) {
+    if (!selected.has(type) || !items?.length) continue;
+    const uris = items.map((i) => i.uri).filter(Boolean);
+    if (!uris.length) continue;
+    await tryWrite(noun, async () => {
+      await batchedWrite(uris, (batch) => platform.LibraryAPI.add({ uris: batch }), {
+        label: progressLabel,
+        signal,
+        onProgress,
       });
-    }),
-  );
+      log.push({ label: t('log.saved', { count: uris.length, noun }), status: LOG_STATUS.OK });
+    });
+  }
 
   if (selected.has(DATA_TYPE.BANNED_CONTENT)) {
     const noun = t('dataType.bannedContent');

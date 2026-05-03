@@ -6,7 +6,7 @@ import type { ExportData, ExportedLibrary, ExportedPlaylist } from '../types/exp
 const MAX_FILE_SIZE = 20; // in MB
 
 export const checkFileSize = (bytes: number, name: string): void => {
-  const size = Math.floor(bytes / 1024 / 1024);
+  const size = Math.ceil(bytes / 1024 / 1024);
   if (size > MAX_FILE_SIZE) throw new Error(t('error.fileTooLargeSize', { name, size }));
 };
 
@@ -58,7 +58,6 @@ function normalizeLibrary(raw: ExportedLibrary | Record<string, unknown>): Expor
     artists: arr('artists'),
     bannedArtists: arr('bannedArtists'),
     excludedFromTaste: arr('excludedFromTaste'),
-    other: arr('other'),
   };
 }
 
