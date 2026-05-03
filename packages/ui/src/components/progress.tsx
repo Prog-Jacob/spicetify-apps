@@ -6,27 +6,25 @@ type ProgressProps = React.ComponentProps<'div'> & {
   indicatorClassName?: string;
 };
 
-function Progress({ className, indicatorClassName, value, ...props }: ProgressProps) {
-  return (
+const Progress = ({ className, indicatorClassName, value, ...props }: ProgressProps) => (
+  <div
+    role="progressbar"
+    aria-valuenow={value ?? 0}
+    aria-valuemin={0}
+    aria-valuemax={100}
+    data-slot="progress"
+    className={cn('bg-spice-sidebar relative h-2 w-full overflow-hidden rounded-full', className)}
+    {...props}
+  >
     <div
-      role="progressbar"
-      aria-valuenow={value ?? 0}
-      aria-valuemin={0}
-      aria-valuemax={100}
-      data-slot="progress"
-      className={cn('bg-spice-sidebar relative h-2 w-full overflow-hidden rounded-full', className)}
-      {...props}
-    >
-      <div
-        data-slot="progress-indicator"
-        className={cn(
-          'bg-spice-button absolute inset-y-0 start-0 transition-all',
-          indicatorClassName,
-        )}
-        style={{ width: `${value || 0}%` }}
-      />
-    </div>
-  );
-}
+      data-slot="progress-indicator"
+      className={cn(
+        'bg-spice-button absolute inset-y-0 start-0 transition-all',
+        indicatorClassName,
+      )}
+      style={{ width: `${value ?? 0}%` }}
+    />
+  </div>
+);
 
 export default Progress;

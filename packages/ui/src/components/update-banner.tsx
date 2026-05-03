@@ -3,7 +3,7 @@ import TextComponent from './text';
 import SpicetifyIcon from './icon';
 import { REPO_RAW } from '@shared/lib';
 import { platform } from '@shared/api';
-import React, { useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 
 const COPY_FEEDBACK_MS = 2000;
 const { ButtonTertiary } = Spicetify.ReactComponent;
@@ -27,13 +27,16 @@ type UpdateBannerProps = {
 const UpdateBanner = ({ appName, releaseUrl }: UpdateBannerProps) => {
   const [dismissed, setDismissed] = useState(false);
   const [copied, setCopied] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout>>();
+  useEffect(() => () => clearTimeout(timerRef.current), []);
 
   if (dismissed) return null;
 
   const handleCopy = () => {
     platform.ClipboardAPI.copy(getInstallCommand(appName));
     setCopied(true);
-    setTimeout(() => setCopied(false), COPY_FEEDBACK_MS);
+    clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => setCopied(false), COPY_FEEDBACK_MS);
   };
 
   return (

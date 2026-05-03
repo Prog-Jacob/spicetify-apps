@@ -8,7 +8,7 @@ const { ButtonPrimary } = Spicetify.ReactComponent;
 type ErrorCardProps = {
   title: string;
   warnings?: string[];
-  onRetry: () => void;
+  onRetry?: () => void;
 };
 
 const ErrorCard = ({ title, warnings, onRetry }: ErrorCardProps) => (
@@ -17,13 +17,15 @@ const ErrorCard = ({ title, warnings, onRetry }: ErrorCardProps) => (
     title={title}
     className="bg-spice-notification-error/10"
     actions={
-      <ButtonPrimary onClick={onRetry} buttonSize="md">
-        {t('tryAgain')}
-      </ButtonPrimary>
+      onRetry ? (
+        <ButtonPrimary onClick={onRetry} buttonSize="md">
+          {t('tryAgain')}
+        </ButtonPrimary>
+      ) : null
     }
   >
-    {warnings?.map((w) => (
-      <TextComponent key={w} variant="mesto" semanticColor="textNegative">
+    {warnings?.map((w, i) => (
+      <TextComponent key={i} variant="mesto" semanticColor="textNegative">
         {w}
       </TextComponent>
     ))}

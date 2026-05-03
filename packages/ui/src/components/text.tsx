@@ -32,6 +32,7 @@ const FallbackText = forwardRef<React.ElementRef<'span'>, TextProps>(
     />
   ),
 );
+FallbackText.displayName = 'TextComponent';
 
 // Broken ones are Proxy(Function) wrappers (typeof 'function').
 // Working Spicetify components are forwardRef objects (typeof 'object').
