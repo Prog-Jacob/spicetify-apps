@@ -1,5 +1,18 @@
 # @spicetify-apps/data-porter
 
+## 2.2.0
+
+### Minor Changes
+
+- fix(release): conditionally commit version bump and changesets
+- docs: rewrite root and data-porter READMEs
+- feat(data-porter): playlist review step before import
+- fix: relocate app i18n, enable bundled locales, fix release script
+- refactor(data-porter): unify data type registry and break circular dep
+- fix(ui): fix duplicate keys, timer leak, and conventions
+- fix(data-porter): fix import order, progress, size check, and cancel
+- fix(shared): fix null handling, pagination, and timezone bugs
+
 ## 2.1.0
 
 ### Minor Changes
