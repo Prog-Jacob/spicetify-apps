@@ -70,9 +70,12 @@ const newVersion: string = JSON.parse(readFileSync(pkgPath, 'utf-8')).version;
 const tag = `${appName}-v${newVersion}`;
 console.log(`\n  ${appName}: ${currentVersion} → ${newVersion}  (tag: ${tag})\n`);
 
-// Commit the version bump, CHANGELOG, and consumed changesets
-run('git add -A');
-run(`git commit -m "chore(${appName}): release v${newVersion}"`);
+// Commit the version bump, CHANGELOG, and consumed changesets.
+// Skip if changeset's commit handler already committed (commit.mts is configured).
+if (capture('git status --porcelain')) {
+  run('git add -A');
+  run(`git commit -m "chore(${appName}): release v${newVersion}"`);
+}
 
 // Tag + push
 run(`git tag -a ${tag} -m "${appName} v${newVersion}"`);
