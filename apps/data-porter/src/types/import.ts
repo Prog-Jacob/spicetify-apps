@@ -23,7 +23,9 @@ export type ImportResult = {
   warnings: string[];
 };
 
-export type PlaylistConflict = {
-  importedName: string;
-  existingUri: string;
+export type PlaylistReviewItem = {
+  index: number;
+  name: string;
+  trackCount: number;
+  existingUri?: string;
 };

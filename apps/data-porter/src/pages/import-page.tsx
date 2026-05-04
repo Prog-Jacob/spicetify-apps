@@ -7,10 +7,10 @@ import { importData } from '../services/importer';
 import type { ProgressInfo } from '@shared/types';
 import { getAvailableCounts } from '../data-types';
 import { useAbortController } from '@shared/hooks';
-import ConflictCard from '../components/conflict-card';
 import DataTypeGrid from '../components/data-type-grid';
 import FileDropZone from '../components/file-drop-zone';
 import ImportSummary from '../components/import-summary';
+import PlaylistReviewCard from '../components/playlist-review-card';
 import { fetchExistingPlaylists } from '../services/playlist-lookup';
 import {
   ErrorCard,
@@ -31,7 +31,7 @@ import {
 import type {
   ParsedFile,
   ImportResult,
-  PlaylistConflict,
+  PlaylistReviewItem,
   PlaylistConflictResolution,
 } from '../types/import';
 
@@ -41,8 +41,8 @@ const ImportPage = ({ banner }: { banner?: React.ReactNode }) => {
   const [step, setStep] = useState<Step>(IMPORT_STEP.UPLOAD);
   const [parsed, setParsed] = useState<ParsedFile | null>(null);
   const [selected, setSelected] = useState<Set<DataType>>(new Set());
-  const [conflicts, setConflicts] = useState<PlaylistConflict[]>([]);
-  const [resolutions, setResolutions] = useState<Map<string, PlaylistConflictResolution>>(
+  const [reviewItems, setReviewItems] = useState<PlaylistReviewItem[]>([]);
+  const [resolutions, setResolutions] = useState<Map<number, PlaylistConflictResolution>>(
     new Map(),
   );
   const [existingUris, setExistingUris] = useState<Map<string, string>>(new Map());
@@ -51,7 +51,7 @@ const ImportPage = ({ banner }: { banner?: React.ReactNode }) => {
   const [progress, setProgress] = useState<ProgressInfo | null>(null);
 
   const runImport = async (
-    resolvedConflicts: Map<string, PlaylistConflictResolution>,
+    resolvedConflicts: Map<number, PlaylistConflictResolution>,
     existingMap: Map<string, string>,
   ) => {
     if (!parsed) return;
@@ -99,20 +99,26 @@ const ImportPage = ({ banner }: { banner?: React.ReactNode }) => {
 
     try {
       const existing = await fetchExistingPlaylists(controller.signal);
-      const found = playlists.flatMap(({ name }) => {
-        const uri = existing.get(name);
-        return uri ? { importedName: name, existingUri: uri } : [];
-      });
 
-      if (found.length === 0) {
-        await runImport(new Map(), existing);
-      } else {
-        setConflicts(found);
-        setResolutions(new Map(found.map((c) => [c.importedName, CONFLICT_RESOLUTION.SKIP])));
-        setExistingUris(existing);
-        setProgress(null);
-        setStep(IMPORT_STEP.CONFLICTS);
-      }
+      const items: PlaylistReviewItem[] = playlists.map(({ name, items: playlistItems }, i) => ({
+        index: i,
+        name,
+        trackCount: playlistItems.length,
+        existingUri: existing.get(name),
+      }));
+
+      setReviewItems(items);
+      setResolutions(
+        new Map(
+          items.map((item) => [
+            item.index,
+            item.existingUri ? CONFLICT_RESOLUTION.SKIP : CONFLICT_RESOLUTION.CREATE_NEW,
+          ]),
+        ),
+      );
+      setExistingUris(existing);
+      setProgress(null);
+      setStep(IMPORT_STEP.PLAYLISTS);
     } catch (e) {
       if (controller.signal.aborted) return;
       notifyError(e, t('progress.checkingPlaylists'));
@@ -125,7 +131,7 @@ const ImportPage = ({ banner }: { banner?: React.ReactNode }) => {
     setStep(IMPORT_STEP.UPLOAD);
     setParsed(null);
     setSelected(new Set());
-    setConflicts([]);
+    setReviewItems([]);
     setResolutions(new Map());
     setResult(null);
   };
@@ -186,20 +192,20 @@ const ImportPage = ({ banner }: { banner?: React.ReactNode }) => {
         </>
       )}
 
-      {step === IMPORT_STEP.CONFLICTS && (
-        <ConflictCard
-          conflicts={conflicts}
+      {step === IMPORT_STEP.PLAYLISTS && (
+        <PlaylistReviewCard
+          items={reviewItems}
           resolutions={resolutions}
-          onResolutionChange={(name, value) =>
-            setResolutions((prev) => new Map(prev).set(name, value))
+          onResolutionChange={(index, value) =>
+            setResolutions((prev) => new Map(prev).set(index, value))
           }
-          onApplyAll={(value, names) =>
+          onApplyAll={(value, indices) =>
             setResolutions(
-              (prev) => new Map([...prev, ...names.map((name) => [name, value] as const)]),
+              (prev) => new Map([...prev, ...indices.map((idx) => [idx, value] as const)]),
             )
           }
           onContinue={() => runImport(resolutions, existingUris)}
-          onCancel={reset}
+          onCancel={() => setStep(IMPORT_STEP.PREVIEW)}
         />
       )}
 

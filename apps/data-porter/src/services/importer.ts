@@ -1,9 +1,9 @@
 import { t } from '../i18n';
 import type { ProgressInfo } from '@shared/types';
 import { SPOTIFY_URI, notifyError } from '@shared/lib';
-import { DATA_TYPE, LOG_STATUS, CONFLICT_RESOLUTION } from '../constants';
 import type { DataType, ExportData, ExportedPlaylist } from '../types/export';
 import type { ImportLogEntry, ImportResult, PlaylistConflictResolution } from '../types/import';
+import { DATA_TYPE, LOG_STATUS, CONFLICT_RESOLUTION, PERMISSION_SETTLE_MS } from '../constants';
 import {
   platform,
   checkAborted,
@@ -19,7 +19,7 @@ async function importPlaylist(
   log: ImportLogEntry[],
   onProgress: (p: ProgressInfo) => void,
   signal: AbortSignal,
-): Promise<void> {
+): Promise<string | undefined> {
   if (resolution === CONFLICT_RESOLUTION.SKIP) {
     log.push({
       label: t('log.playlistSkipped', { name: playlist.name }),
@@ -120,33 +120,20 @@ async function importPlaylist(
     );
   }
 
-  if (resolution !== CONFLICT_RESOLUTION.MERGE) {
-    try {
-      await platform.PlaylistPermissionsAPI.setBasePermission(
-        targetUri,
-        PLAYLIST_PERMISSION.BLOCKED,
-      );
-    } catch (e) {
-      console.warn(`[${__APP_NAME__}] Failed to set permissions:`, e);
-      log.push({
-        label: t('log.permissionFailed', { name: playlist.name }),
-        status: LOG_STATUS.SKIPPED,
-      });
-    }
-  }
-
   const logKey =
     resolution === CONFLICT_RESOLUTION.MERGE ? 'log.playlistMerged' : 'log.playlistCreated';
   log.push({
     label: t(logKey, { name: playlist.name, count: trackUris.length }),
     status: LOG_STATUS.OK,
   });
+
+  return resolution !== CONFLICT_RESOLUTION.MERGE ? targetUri : undefined;
 }
 
 export async function importData(
   data: ExportData,
   selected: Set<DataType>,
-  conflictResolutions: Map<string, PlaylistConflictResolution>,
+  conflictResolutions: Map<number, PlaylistConflictResolution>,
   existingPlaylistUris: Map<string, string>,
   onProgress: (p: ProgressInfo) => void,
   signal: AbortSignal,
@@ -250,6 +237,8 @@ export async function importData(
     }
   }
 
+  const privatePlaylists: { uri: string; name: string }[] = [];
+
   if (selected.has(DATA_TYPE.PLAYLISTS) && data.playlists?.length) {
     for (let i = 0; i < data.playlists.length; i++) {
       checkAborted(signal);
@@ -261,16 +250,38 @@ export async function importData(
         label: t('progress.importingPlaylist', { name: playlist.name }),
       });
 
-      await tryWrite(playlist.name, () =>
-        importPlaylist(
+      try {
+        const uri = await importPlaylist(
           playlist,
-          conflictResolutions.get(playlist.name),
+          conflictResolutions.get(i),
           existingPlaylistUris.get(playlist.name),
           log,
           onProgress,
           signal,
-        ),
-      );
+        );
+        if (uri) privatePlaylists.push({ uri, name: playlist.name });
+      } catch (e) {
+        checkAborted(signal);
+        const detail = e instanceof Error ? e.message : String(e);
+        const msg = t('log.failed', { label: playlist.name });
+        log.push({ label: playlist.name, status: LOG_STATUS.ERROR, detail });
+        warnings.push(msg);
+        notifyError(e, msg);
+      }
+    }
+  }
+
+  // Spotify's backend overwrites permissions set immediately after track addition.
+  // Wait briefly so the last playlist's tracks have time to settle before we lock them.
+  if (privatePlaylists.length > 0) {
+    await new Promise<void>((r) => setTimeout(r, PERMISSION_SETTLE_MS));
+    for (const { uri, name } of privatePlaylists) {
+      try {
+        await platform.PlaylistPermissionsAPI.setBasePermission(uri, PLAYLIST_PERMISSION.BLOCKED);
+      } catch (e) {
+        console.warn(`[${__APP_NAME__}] Failed to set permissions:`, e);
+        log.push({ label: t('log.permissionFailed', { name }), status: LOG_STATUS.SKIPPED });
+      }
     }
   }
 

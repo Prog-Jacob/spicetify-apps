@@ -43,10 +43,10 @@ const en = {
   'dropZone.invalidUrl': 'Please enter a valid HTTP or HTTPS URL',
   'dropZone.urlLabel': 'Import file URL',
 
-  // Conflicts
+  // Playlist review
   'conflict.title': {
-    one: '# playlist already exists',
-    other: '# playlists already exist',
+    one: 'Review # playlist',
+    other: 'Review # playlists',
   } as PluralEntry,
   'conflict.continue': 'Continue Import',
   'conflict.filter': 'Filter by name\u2026',
@@ -56,6 +56,7 @@ const en = {
   'conflict.skip': 'Skip',
   'conflict.merge': 'Merge',
   'conflict.createNew': 'Create New',
+  'conflict.exists': 'Exists',
 
   // Summaries
   'summary.complete': 'Complete',

@@ -1,5 +1,7 @@
 export const ROUTE = { IMPORT: '/import' } as const;
 
+export const PERMISSION_SETTLE_MS = 1000;
+
 export const EXPORT_FILENAME_PREFIX = 'spotify-export';
 
 export const LOG_STATUS = { OK: 'ok', SKIPPED: 'skipped', ERROR: 'error' } as const;
@@ -42,6 +44,6 @@ export const IMPORT_STEP = {
   ERROR: 'error',
   UPLOAD: 'upload',
   PREVIEW: 'preview',
-  CONFLICTS: 'conflicts',
+  PLAYLISTS: 'playlists',
   IMPORTING: 'importing',
 } as const;
