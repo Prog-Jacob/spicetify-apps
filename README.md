@@ -1,74 +1,75 @@
-<h3 align="center">Spicetify Apps</h3>
+<div align="center">
+  <h1>Spicetify Apps</h1>
+
+  <p>Custom apps for the <a href="https://spicetify.app">Spotify desktop client</a>, powered by Spicetify.</p>
+
+  <p>
+    <a href="https://github.com/Prog-Jacob/spicetify-apps/releases"><img src="https://img.shields.io/github/v/release/Prog-Jacob/spicetify-apps?style=for-the-badge&colorA=1e1e2e&colorB=a6e3a1&label=latest" alt="Latest release" /></a>
+    <a href="https://github.com/Prog-Jacob/spicetify-apps/releases"><img src="https://img.shields.io/github/downloads/Prog-Jacob/spicetify-apps/total?style=for-the-badge&colorA=1e1e2e&colorB=89b4fa&label=downloads" alt="Total downloads" /></a>
+    <a href="LICENSE"><img src="https://img.shields.io/github/license/Prog-Jacob/spicetify-apps?style=for-the-badge&colorA=1e1e2e&colorB=cba6f7" alt="MIT License" /></a>
+  </p>
+
+<a href="https://github.com/Prog-Jacob/spicetify-apps/releases" title="Latest release">Releases</a>
+<span>&nbsp;&middot;&nbsp;</span>
+<a href="https://github.com/Prog-Jacob/spicetify-apps/issues" title="Report a bug">Issues</a>
+<span>&nbsp;&middot;&nbsp;</span>
+<a href="#development" title="Contributing">Development</a>
+
+<br /><br />
+
+</div>
+
+## Data Porter
+
+> Export and import your Spotify library: playlists, liked songs, albums, artists, podcasts, and more.
+
+<a href="apps/data-porter"><img src="apps/data-porter/preview/preview.gif" width="100%" alt="Data Porter demo" /></a>
+
 <p align="center">
-  Custom apps for <a href="https://spicetify.app">Spicetify</a>, built with React, TypeScript, and Tailwind CSS.
+  <a href="apps/data-porter">View README</a>
+  <span>&nbsp;&middot;&nbsp;</span>
+  <a href="https://github.com/Prog-Jacob/spicetify-apps/releases?q=data-porter">Download</a>
 </p>
-
----
-
-## Apps
-
-|                                                                | App                                 | Description                                                                                           |
-| -------------------------------------------------------------- | ----------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| <img src="apps/data-porter/preview/thumbnail.png" width="120"> | [**Data Porter**](apps/data-porter) | Export and import your Spotify library — playlists, liked songs, albums, artists, podcasts, and more. |
 
 ---
 
 ## Development
 
-### Structure
-
 ```
-├── apps/
-│   └── data-porter/        # Import/export Spotify library data
-├── packages/
-│   ├── shared/              # API wrappers, hooks, i18n, types, utilities (@shared/*)
-│   └── ui/                  # Shared UI components, shadcn-style (@ui/*)
-└── scripts/                 # esbuild bundler + changeset-based release tooling
+apps/
+  data-porter/           Import/export Spotify library data
+packages/
+  shared/                API wrappers, hooks, i18n, types, utilities
+  ui/                    Shared UI components (shadcn-style)
+scripts/
+  build.mts              esbuild bundler (auto-discovers apps)
 ```
 
-### Setup
+### Quick Start
 
-You'll need [Node.js](https://nodejs.org/) >= 18, [pnpm](https://pnpm.io/) >= 9, and [Spicetify](https://spicetify.app/docs/advanced-usage/installation).
+Requires [Node.js](https://nodejs.org/) &ge; 18, [pnpm](https://pnpm.io/) &ge; 9, and [Spicetify](https://spicetify.app/docs/advanced-usage/installation).
 
 ```sh
 git clone https://github.com/Prog-Jacob/spicetify-apps.git
 cd spicetify-apps
 pnpm install
-pnpm dev          # watch-build + spicetify watch
+pnpm dev              # watch-build all apps + spicetify watch
 ```
 
 ### Commands
 
-```sh
-pnpm dev              # watch-build all apps + spicetify watch (live reload)
-pnpm build            # build all apps (or pnpm build:app <name> for one)
-pnpm precommit        # format + lint + typecheck
-pnpm release          # interactive release: bump, commit, tag, push
-```
-
-### Architecture
-
-This is a **pnpm monorepo**. esbuild bundles each app as an IIFE, with React and React DOM pulled from `Spicetify.React` / `Spicetify.ReactDOM` at runtime (never bundled).
-
-Two path aliases are resolved at build time:
-
-- `@shared/*` maps to `packages/shared/src/*`
-- `@ui/*` maps to `packages/ui/src/*`
+| Command                 | What it does                                    |
+| ----------------------- | ----------------------------------------------- |
+| `pnpm dev`              | Watch-build all apps with live reload           |
+| `pnpm build`            | Production build (all apps)                     |
+| `pnpm build:app <name>` | Build a single app                              |
+| `pnpm precommit`        | Format + lint + typecheck                       |
+| `pnpm release`          | Interactive release: bump, changelog, tag, push |
 
 ### Adding a New App
 
-1. Create `apps/<name>/src/index.tsx` exporting a default `render()` function
-2. Add a `package.json` with a `version` field and a `tsconfig.json` extending `../../tsconfig.base.json`
-3. Optionally add `src/styles/index.css` if you want Tailwind
-4. Run `pnpm build`. Apps are auto-discovered by their `src/index.tsx`
-
-### Releasing
-
-Releases are handled with [changesets](https://github.com/changesets/changesets).
-
-1. Run `pnpm release <app-name>`. This generates a draft changeset from commits since the last tag, opens your editor to pick the bump type and write release notes, then bumps the version, updates `CHANGELOG.md`, tags, and pushes.
-2. When a tag matching `*-v[0-9]*` is pushed, the [release workflow](.github/workflows/release.yml) builds the app, packages a zip, and creates a GitHub Release.
+Create `apps/<name>/src/index.tsx` with a default `render()` export, add a `package.json` with a `version` field and a `tsconfig.json` extending `../../tsconfig.base.json`. Apps are auto-discovered by the build script.
 
 ---
 
-[Issues](https://github.com/Prog-Jacob/spicetify-apps/issues) · [Releases](https://github.com/Prog-Jacob/spicetify-apps/releases) · [MIT License](LICENSE)
+<p align="center"><sub>MIT License &copy; 2026 Ahmed Abdelaziz</sub></p>

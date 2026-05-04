@@ -1,8 +1,30 @@
-# Data Porter
+<div align="center">
+  <a href="https://github.com/Prog-Jacob/spicetify-apps/releases?q=data-porter">
+    <img src="preview/preview.gif" width="100%" alt="Data Porter demo" />
+  </a>
 
-Back up your Spotify library, move it to another account, or just keep a copy for peace of mind.
+  <br />
 
-![Data Porter demo](preview/preview.gif)
+  <h1>Data Porter</h1>
+
+  <p><strong>Back up your Spotify library, move it to another account, or just keep a copy.</strong></p>
+
+  <p>
+    <a href="https://github.com/Prog-Jacob/spicetify-apps/releases?q=data-porter"><img src="https://img.shields.io/github/v/release/Prog-Jacob/spicetify-apps?style=for-the-badge&colorA=1e1e2e&colorB=a6e3a1&label=version" alt="Version" /></a>
+    <a href="https://github.com/Prog-Jacob/spicetify-apps/releases"><img src="https://img.shields.io/github/downloads/Prog-Jacob/spicetify-apps/total?style=for-the-badge&colorA=1e1e2e&colorB=89b4fa&label=downloads" alt="Downloads" /></a>
+  </p>
+
+<a href="#install">Install</a>
+<span>&nbsp;&middot;&nbsp;</span>
+<a href="#features">Features</a>
+<span>&nbsp;&middot;&nbsp;</span>
+<a href="#limitations">Limitations</a>
+<span>&nbsp;&middot;&nbsp;</span>
+<a href="https://github.com/Prog-Jacob/spicetify-apps/issues">Report a Bug</a>
+
+<br /><br />
+
+</div>
 
 ## Features
 
@@ -18,36 +40,54 @@ Pick what you want to include, then download it all as a single JSON file.
 | Artists          |    Yes     |                                                                  |
 | Shows / Podcasts |    Yes     |                                                                  |
 | Episodes         |    Yes     | Saved podcast episodes ("Your Episodes")                         |
-| Banned Content   |    Yes     | Blocked tracks and artists                                       |
-| Recently Played  |     --     | ~3 months of listening history (music and podcasts)              |
-| Search History   |     --     | Up to 50 recent searches                                         |
-| Profile          |     --     | Display name, username, country, subscription tier               |
+| Banned Content   |    Yes     | Blocked tracks, artists, and taste exclusions                    |
+| Recently Played  |  &mdash;   | ~3 months of listening history (music and podcasts)              |
+| Search History   |  &mdash;   | Up to 50 recent searches                                         |
+| Profile          |  &mdash;   | Display name, username, country, subscription tier               |
 
-You can also export another user's public playlists and followed artists. Just paste their profile URL or user ID.
+You can also export **another user's** public playlists and followed artists. Just paste their profile URL or user ID.
+
+---
 
 ### Import
 
-Drop in a JSON file to restore your data. Works with Data Porter exports and Spotify's official data exports (YourLibrary.json, Playlist1.json).
+Drop in a JSON file to restore your data. Works with **Data Porter exports** and **Spotify's official data exports** (YourLibrary.json, Playlist1.json).
 
 You'll see a preview of what's inside before anything gets written.
 
-![Import page](preview/import.png)
+<img src="preview/import.png" width="100%" alt="Import preview" />
 
-### Conflict Resolution
+---
 
-Already have a playlist with the same name? You get to choose: skip it, merge the tracks, or create a fresh copy. You can also apply one choice to all conflicts at once.
+### Playlist Review
 
-![Conflict resolution](preview/import-conflict.png)
+Before any playlists are created, you review every one. Each playlist shows its track count and whether it already exists in your library.
+
+- **New playlists** &rarr; Create or Skip
+- **Existing playlists** &rarr; Skip, Merge (add missing tracks), or Create New
+
+Apply one choice to all at once, or decide per playlist. Filter by name to find what you need.
+
+<img src="preview/import-conflict.png" width="100%" alt="Playlist review step" />
+
+---
 
 ### More
 
-- English and Arabic, auto-detected from Spotify's language setting
+- **English and Arabic**, auto-detected from Spotify's language setting
+- **Automatic update check** on launch
 
-## Known Limitations
+---
 
-- **Local tracks are skipped.** Spotify doesn't allow adding local files programmatically.
-- **Some episodes from Spotify's official export can't be matched.** If they're missing URIs, they're skipped.
-- **Max file size is 20 MB.**
+## Limitations
+
+> **Local tracks are skipped.** Spotify has no API for adding local files programmatically.
+
+> **Some episodes from Spotify's official export can't be matched.** If they're missing URIs in Spotify's export format, they're skipped with a log entry.
+
+- Max import file size is **20 MB**.
+
+---
 
 ## Install
 
@@ -64,7 +104,9 @@ iex "& { $(iwr -useb https://raw.githubusercontent.com/Prog-Jacob/spicetify-apps
 ```
 
 <details>
-<summary>Manual installation</summary>
+<summary><strong>Manual installation</strong></summary>
+
+<br />
 
 Download the zip from the [latest release](https://github.com/Prog-Jacob/spicetify-apps/releases?q=data-porter&expanded=true), then place the `data-porter` folder into your Spicetify `CustomApps` directory:
 
@@ -87,7 +129,9 @@ spicetify apply
 </details>
 
 <details>
-<summary>Uninstall</summary>
+<summary><strong>Uninstall</strong></summary>
+
+<br />
 
 ```sh
 spicetify config custom_apps data-porter-
@@ -100,4 +144,10 @@ Then delete the `data-porter` folder from `CustomApps`.
 
 ---
 
-[Report an issue](https://github.com/Prog-Jacob/spicetify-apps/issues) · [Changelog](CHANGELOG.md) · [Latest release](https://github.com/Prog-Jacob/spicetify-apps/releases?q=data-porter&expanded=true)
+<p align="center">
+  <a href="https://github.com/Prog-Jacob/spicetify-apps/issues">Report an Issue</a>
+  <span>&nbsp;&middot;&nbsp;</span>
+  <a href="CHANGELOG.md">Changelog</a>
+  <span>&nbsp;&middot;&nbsp;</span>
+  <a href="https://github.com/Prog-Jacob/spicetify-apps/releases?q=data-porter&expanded=true">Latest Release</a>
+</p>
