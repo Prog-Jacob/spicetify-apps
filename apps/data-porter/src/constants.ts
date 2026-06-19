@@ -11,6 +11,7 @@ export const ANIMATION_STAGGER_MS = { CONFLICT_ITEM: 45, SUMMARY_ITEM: 80 } as c
 export const SOURCE_FORMAT = {
   OUR_EXPORT: 'our-export',
   SPOTIFY_OFFICIAL: 'spotify-official',
+  PROFILE: 'profile',
 } as const;
 
 export const CONFLICT_RESOLUTION = {

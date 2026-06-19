@@ -26,10 +26,11 @@ const en = {
 
   // Import page
   'import.title': 'Import Data',
-  'import.subtitle': 'Upload a JSON file to restore your Spotify data.',
+  'import.subtitle': 'Upload a JSON file or pull from a public Spotify profile.',
   'import.foundIn': 'Found in {fileName}',
   'import.sourceSpotify': 'Spotify official export',
   'import.sourceDataPorter': 'Data Porter export',
+  'import.sourceProfile': 'Public profile import',
   'import.chooseDifferent': 'Choose Different File',
   'import.importSelected': 'Import Selected',
   'import.failed': 'Import Failed',
@@ -37,11 +38,11 @@ const en = {
   // File drop zone
   'dropZone.dropHere': 'Drop a JSON file here',
   'dropZone.browse': 'or click to browse',
-  'dropZone.orUrl': 'or enter a URL',
+  'dropZone.orUrl': 'or paste a URL or Spotify profile',
   'dropZone.fetch': 'Fetch',
   'dropZone.fetching': 'Fetching\u2026',
-  'dropZone.invalidUrl': 'Please enter a valid HTTP or HTTPS URL',
-  'dropZone.urlLabel': 'Import file URL',
+  'dropZone.urlPlaceholder': 'URL, profile link, or username',
+  'dropZone.urlLabel': 'Import URL or Spotify profile',
 
   // Playlist review
   'conflict.title': {

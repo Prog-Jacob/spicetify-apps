@@ -1,7 +1,6 @@
-import { t } from '../i18n';
 import { platform } from '@shared/api';
 import React, { useState } from 'react';
-import { notifyError } from '@shared/lib';
+import { t, type MessageKey } from '../i18n';
 import type { DataType } from '../types/export';
 import { importData } from '../services/importer';
 import type { ProgressInfo } from '@shared/types';
@@ -10,6 +9,8 @@ import { useAbortController } from '@shared/hooks';
 import DataTypeGrid from '../components/data-type-grid';
 import FileDropZone from '../components/file-drop-zone';
 import ImportSummary from '../components/import-summary';
+import { notifyError, ValidationError } from '@shared/lib';
+import { exportPublicProfile } from '../services/profile-export';
 import PlaylistReviewCard from '../components/playlist-review-card';
 import { fetchExistingPlaylists } from '../services/playlist-lookup';
 import {
@@ -30,12 +31,19 @@ import {
 } from '../constants';
 import type {
   ParsedFile,
+  SourceFormat,
   ImportResult,
   PlaylistReviewItem,
   PlaylistConflictResolution,
 } from '../types/import';
 
 type Step = (typeof IMPORT_STEP)[keyof typeof IMPORT_STEP];
+
+const SOURCE_LABEL: Record<SourceFormat, MessageKey> = {
+  [SOURCE_FORMAT.SPOTIFY_OFFICIAL]: 'import.sourceSpotify',
+  [SOURCE_FORMAT.OUR_EXPORT]: 'import.sourceDataPorter',
+  [SOURCE_FORMAT.PROFILE]: 'import.sourceProfile',
+};
 
 const ImportPage = ({ banner }: { banner?: React.ReactNode }) => {
   const [step, setStep] = useState<Step>(IMPORT_STEP.UPLOAD);
@@ -127,6 +135,32 @@ const ImportPage = ({ banner }: { banner?: React.ReactNode }) => {
     }
   };
 
+  const importFromProfile = async (input: string) => {
+    const controller = aborter.start();
+
+    setStep(IMPORT_STEP.IMPORTING);
+    setResult(null);
+    setProgress({ current: 0, total: 0, label: t('progress.starting') });
+
+    try {
+      const { data, userName } = await exportPublicProfile(input, setProgress, controller.signal);
+      setParsed({ data, sourceFormat: SOURCE_FORMAT.PROFILE, fileName: userName ?? input });
+      setSelected(new Set(getAvailableCounts(data).keys()));
+      setStep(IMPORT_STEP.PREVIEW);
+    } catch (e) {
+      if (controller.signal.aborted) return;
+      if (e instanceof ValidationError) {
+        notifyError(e);
+        setStep(IMPORT_STEP.UPLOAD);
+      } else {
+        setResult({ log: [], warnings: [e instanceof Error ? e.message : String(e)] });
+        setStep(IMPORT_STEP.ERROR);
+      }
+    } finally {
+      setProgress(null);
+    }
+  };
+
   const reset = () => {
     setStep(IMPORT_STEP.UPLOAD);
     setParsed(null);
@@ -152,6 +186,7 @@ const ImportPage = ({ banner }: { banner?: React.ReactNode }) => {
     >
       {step === IMPORT_STEP.UPLOAD && (
         <FileDropZone
+          onProfileImport={importFromProfile}
           onFileSelected={(file) => {
             setParsed(file);
             setSelected(new Set(getAvailableCounts(file.data).keys()));
@@ -169,9 +204,7 @@ const ImportPage = ({ banner }: { banner?: React.ReactNode }) => {
                   {t('import.foundIn', { fileName: parsed.fileName })}
                 </TextComponent>
                 <TextComponent variant="minuet" semanticColor="textSubdued">
-                  {parsed.sourceFormat === SOURCE_FORMAT.SPOTIFY_OFFICIAL
-                    ? t('import.sourceSpotify')
-                    : t('import.sourceDataPorter')}
+                  {t(SOURCE_LABEL[parsed.sourceFormat])}
                 </TextComponent>
               </div>
               <ButtonTertiary onClick={reset} buttonSize="sm">

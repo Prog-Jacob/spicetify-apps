@@ -2,14 +2,16 @@ import { t } from '../i18n';
 import { cn, notifyError } from '@shared/lib';
 import React, { useState, useRef } from 'react';
 import type { ParsedFile } from '../types/import';
+import { isProfileInput } from '../services/spotify-urls';
 import { TextComponent, Input, SpicetifyIcon } from '@ui/components';
 import { parseImportFile, parseImportText, checkFileSize } from '../services/file-parser';
 
 type FileDropZoneProps = {
   onFileSelected: (parsed: ParsedFile) => void;
+  onProfileImport: (input: string) => void;
 };
 
-const FileDropZone = ({ onFileSelected }: FileDropZoneProps) => {
+const FileDropZone = ({ onFileSelected, onProfileImport }: FileDropZoneProps) => {
   const [url, setUrl] = useState('');
   const [fetching, setFetching] = useState(false);
   const [dragOver, setDragOver] = useState(false);
@@ -25,8 +27,9 @@ const FileDropZone = ({ onFileSelected }: FileDropZoneProps) => {
 
   const handleUrl = async () => {
     const trimmed = url.trim();
+    if (!trimmed) return;
 
-    if (!/^https?:\/\//i.test(trimmed)) return notifyError(new Error(t('dropZone.invalidUrl')));
+    if (isProfileInput(trimmed)) return onProfileImport(trimmed);
 
     setFetching(true);
     try {
@@ -117,11 +120,11 @@ const FileDropZone = ({ onFileSelected }: FileDropZoneProps) => {
 
       <div className="flex gap-2">
         <Input
-          type="url"
+          type="text"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleUrl()}
-          placeholder="https://…"
+          placeholder={t('dropZone.urlPlaceholder')}
           disabled={fetching}
           aria-label={t('dropZone.urlLabel')}
         />

@@ -20,21 +20,22 @@
   "export.downloaded": "تم تحميل الملف",
 
   "import.title": "استيراد البيانات",
-  "import.subtitle": "ارفع ملف JSON لاستعادة بيانات سبوتيفاي.",
+  "import.subtitle": "ارفع ملف JSON أو اجلب من ملف تعريف عام على سبوتيفاي.",
   "import.foundIn": "موجود في {fileName}",
   "import.sourceSpotify": "تصدير سبوتيفاي الرسمي",
   "import.sourceDataPorter": "تصدير Data Porter",
+  "import.sourceProfile": "استيراد من ملف تعريف عام",
   "import.chooseDifferent": "اختر ملفاً آخر",
   "import.importSelected": "استيراد المحدد",
   "import.failed": "فشل الاستيراد",
 
   "dropZone.dropHere": "أسقط ملف JSON هنا",
   "dropZone.browse": "أو انقر للتصفح",
-  "dropZone.orUrl": "أو أدخل رابطاً",
+  "dropZone.orUrl": "أو ألصق رابطاً أو ملف تعريف سبوتيفاي",
   "dropZone.fetch": "جلب",
   "dropZone.fetching": "جارٍ الجلب\u2026",
-  "dropZone.invalidUrl": "يرجى إدخال رابط HTTP أو HTTPS صالح",
-  "dropZone.urlLabel": "رابط ملف الاستيراد",
+  "dropZone.urlPlaceholder": "رابط أو ملف تعريف أو اسم مستخدم",
+  "dropZone.urlLabel": "رابط الاستيراد أو ملف تعريف سبوتيفاي",
 
   "conflict.title": {
     "zero": "لا توجد قوائم تشغيل",
