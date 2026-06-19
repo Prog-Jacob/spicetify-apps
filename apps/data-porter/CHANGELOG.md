@@ -1,5 +1,12 @@
 # @spicetify-apps/data-porter
 
+## 2.3.0
+
+### Minor Changes
+
+- feat(data-porter): wire profile import into the import flow
+- feat(shared): add isProfileInput profile detector
+
 ## 2.2.0
 
 ### Minor Changes
