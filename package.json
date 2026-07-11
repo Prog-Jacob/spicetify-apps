@@ -19,33 +19,28 @@
     "changeset": "changeset",
     "release": "tsx scripts/release.mts",
     "download": "pnpm -r run download",
-    "symlink": "pnpm -r run symlink"
+    "symlink": "pnpm -r run symlink",
+    "create-app": "tsx scripts/create-app.mts"
   },
   "devDependencies": {
-    "@changesets/cli": "^2.30.0",
-    "@eslint/js": "^9.39.4",
-    "@tailwindcss/cli": "^4.2.1",
-    "@types/node": "^25.3.5",
-    "@types/react": "^18.3.28",
+    "@changesets/cli": "^2.31.0",
+    "@eslint/js": "^10.0.1",
+    "@tailwindcss/cli": "^4.3.2",
+    "@types/node": "^26.1.1",
+    "@types/react": "^18.3.31",
     "@types/react-dom": "^18.3.7",
     "clsx": "^2.1.1",
-    "esbuild": "^0.24.2",
+    "esbuild": "^0.28.1",
     "esbuild-plugin-external-global": "^1.0.1",
-    "eslint": "^9.39.4",
-    "prettier": "^3.8.1",
-    "radix-ui": "^1.4.3",
-    "tailwind-merge": "^2.6.1",
-    "tailwindcss": "^4.2.1",
-    "tsx": "^4.21.0",
-    "typescript": "^5.9.3",
-    "react-error-boundary": "^6.1.1",
-    "typescript-eslint": "^8.56.1"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "esbuild",
-      "@parcel/watcher"
-    ]
+    "eslint": "~10.0.3",
+    "prettier": "^3.9.5",
+    "radix-ui": "^1.6.2",
+    "react-error-boundary": "^6.1.2",
+    "tailwind-merge": "^3.6.0",
+    "tailwindcss": "^4.3.2",
+    "tsx": "^4.23.0",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.63.0"
   },
   "i18n": {
     "bundleLocales": [
