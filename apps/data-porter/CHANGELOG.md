@@ -1,5 +1,15 @@
 # @spicetify-apps/data-porter
 
+## 2.4.0
+
+### Minor Changes
+
+- chore: upgrade to TypeScript 6, ESLint 10, esbuild 0.28, tailwind-merge 3
+- feat: add interactive create-app scaffolder with real template files
+- docs: add compile-time assertion comments to i18n check files
+- fix(data-porter): add URL fetch timeout, fix byte count check and playlist name dedup
+- docs: add CLAUDE.md for Claude Code context
+
 ## 2.3.0
 
 ### Minor Changes
