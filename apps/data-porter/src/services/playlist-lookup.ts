@@ -20,5 +20,9 @@ export async function fetchRootlistPlaylists(signal?: AbortSignal): Promise<Play
 
 export async function fetchExistingPlaylists(signal?: AbortSignal): Promise<Map<string, string>> {
   const playlists = await fetchRootlistPlaylists(signal);
-  return new Map(playlists.map((p) => [p.name, p.uri]));
+  const map = new Map<string, string>();
+  for (const p of playlists) {
+    if (!map.has(p.name)) map.set(p.name, p.uri);
+  }
+  return map;
 }

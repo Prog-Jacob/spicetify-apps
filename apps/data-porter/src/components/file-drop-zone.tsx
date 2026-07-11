@@ -33,7 +33,7 @@ const FileDropZone = ({ onFileSelected, onProfileImport }: FileDropZoneProps) =>
 
     setFetching(true);
     try {
-      const res = await fetch(trimmed);
+      const res = await fetch(trimmed, { signal: AbortSignal.timeout(15_000) });
       if (!res.ok) throw new Error(t('import.failed'));
 
       const fileName = trimmed.split('/').pop()?.split('?')[0] || 'import.json';
@@ -41,7 +41,7 @@ const FileDropZone = ({ onFileSelected, onProfileImport }: FileDropZoneProps) =>
       if (length) checkFileSize(length, fileName);
 
       const text = await res.text();
-      checkFileSize(text.length, fileName);
+      checkFileSize(new Blob([text]).size, fileName);
       onFileSelected(parseImportText(text, fileName));
     } catch (e) {
       notifyError(e);
