@@ -64,11 +64,12 @@ pnpm dev              # watch-build all apps + spicetify watch
 | `pnpm build`            | Production build (all apps)                     |
 | `pnpm build:app <name>` | Build a single app                              |
 | `pnpm precommit`        | Format + lint + typecheck                       |
+| `pnpm create-app`       | Interactive scaffolder for a new app            |
 | `pnpm release`          | Interactive release: bump, changelog, tag, push |
 
 ### Adding a New App
 
-Create `apps/<name>/src/index.tsx` with a default `render()` export, add a `package.json` with a `version` field and a `tsconfig.json` extending `../../tsconfig.base.json`. Apps are auto-discovered by the build script.
+Run `pnpm create-app` to scaffold a new app interactively, or create `apps/<name>/src/index.tsx` manually with a default `render()` export, a `package.json` with a `version` field, and a `tsconfig.json` extending `../../tsconfig.base.json`. Apps are auto-discovered by the build script.
 
 ---
 
