@@ -1,7 +1,7 @@
 import React from 'react';
 import { t } from '../i18n';
 import { cn } from '@shared/lib';
-import { TextComponent, SpicetifyIcon } from '@ui/components';
+import { Pill, TextComponent, SpicetifyIcon } from '@ui/components';
 
 type DataTypeCardProps = {
   icon: Spicetify.Icon;
@@ -10,10 +10,15 @@ type DataTypeCardProps = {
   selected: boolean;
   disabled?: boolean;
   onToggle: () => void;
+  onPreview?: () => void;
   count?: number;
   badge?: string;
 };
 
+// The toggle is a childless button stretched under the content, so the
+// preview pill can be a real sibling <button> (no interactive nesting
+// inside role="switch"). Content is pointer-events-none to let clicks
+// fall through to the toggle.
 const DataTypeCard = ({
   icon,
   label,
@@ -21,56 +26,70 @@ const DataTypeCard = ({
   selected,
   disabled,
   onToggle,
+  onPreview,
   count,
   badge,
 }: DataTypeCardProps) => (
-  <button
-    role="switch"
-    aria-checked={selected}
-    aria-label={t('dataType.include', { label })}
-    disabled={disabled}
-    onClick={onToggle}
+  <div
     className={cn(
-      'relative group flex items-center gap-4 rounded-xl border p-4 text-start transition-all duration-150',
-      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-spice-button',
-      disabled ? 'cursor-default' : 'cursor-pointer',
+      'group relative flex items-center gap-4 rounded-xl border p-4 transition-all duration-150',
+      !disabled && 'hover:-translate-y-0.5 hover:scale-[1.02]',
       selected
-        ? 'border-spice-button/40 bg-spice-highlight-elevated hover:-translate-y-0.5 hover:scale-[1.02] hover:shadow-lg hover:shadow-spice-shadow/30'
-        : 'border-transparent bg-spice-card hover:-translate-y-0.5 hover:scale-[1.02] hover:bg-spice-highlight hover:shadow-md hover:shadow-spice-shadow/20',
+        ? 'border-spice-button/40 bg-spice-highlight-elevated hover:shadow-lg hover:shadow-spice-shadow/30'
+        : 'border-transparent bg-spice-card hover:bg-spice-highlight hover:shadow-md hover:shadow-spice-shadow/20',
     )}
   >
+    <button
+      role="switch"
+      aria-checked={selected}
+      aria-label={t('dataType.include', { label })}
+      disabled={disabled}
+      onClick={onToggle}
+      className={cn(
+        'absolute inset-0 rounded-xl border-0 bg-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-spice-button',
+        disabled ? 'cursor-default' : 'cursor-pointer',
+      )}
+    />
+
     <div
       className={cn(
-        'flex size-10 shrink-0 items-center justify-center rounded-full transition-colors duration-150',
+        'pointer-events-none flex size-10 shrink-0 items-center justify-center rounded-full transition-colors duration-150',
         selected ? 'bg-spice-button/20 text-spice-button' : 'bg-spice-sidebar text-spice-subtext',
       )}
     >
       <SpicetifyIcon icon={icon} size={20} />
     </div>
 
-    {badge && (
-      <span className="absolute right-2 bottom-2 rounded-full border border-spice-subtext/20 bg-spice-subtext/10 px-2 py-0.5 text-[10px]">
-        {badge}
-      </span>
-    )}
+    {badge && <Pill className="pointer-events-none absolute right-2 bottom-2">{badge}</Pill>}
 
-    <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+    <div className="pointer-events-none flex min-w-0 flex-1 flex-col gap-0.5">
       <TextComponent variant="viola" weight="bold">
         {label}
       </TextComponent>
       <TextComponent variant="minuet" semanticColor="textSubdued" className="opacity-50">
         {description}
       </TextComponent>
-      {count !== undefined && (
-        <TextComponent variant="minuet" semanticColor="textSubdued">
-          {t('dataType.itemCount', { count })}
-        </TextComponent>
-      )}
+      {count !== undefined &&
+        (onPreview ? (
+          <button
+            type="button"
+            onClick={onPreview}
+            aria-label={t('preview.open', { label })}
+            className="pointer-events-auto z-10 mt-0.5 flex cursor-pointer items-center gap-1 self-start rounded-full border-0 bg-spice-subtext/10 px-2 py-0.5 text-xs text-spice-subtext transition-colors hover:bg-spice-button/20 hover:text-spice-button"
+          >
+            {t('dataType.itemCount', { count })}
+            <SpicetifyIcon icon="chevron-right" size={10} className="rtl:rotate-180" />
+          </button>
+        ) : (
+          <TextComponent variant="minuet" semanticColor="textSubdued">
+            {t('dataType.itemCount', { count })}
+          </TextComponent>
+        ))}
     </div>
 
     <div
       className={cn(
-        'flex size-6 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-150',
+        'pointer-events-none flex size-6 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-150',
         selected
           ? 'animate-scale-in border-spice-button bg-spice-button text-spice-main'
           : 'border-spice-subtext/30 bg-transparent group-hover:border-spice-subtext/60',
@@ -78,7 +97,7 @@ const DataTypeCard = ({
     >
       {selected && <SpicetifyIcon icon="check-alt-fill" size={14} />}
     </div>
-  </button>
+  </div>
 );
 
 export default DataTypeCard;

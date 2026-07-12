@@ -1,5 +1,4 @@
 import { ROUTE } from './constants';
-import { platform } from '@shared/api';
 import { t, loadTranslations } from './i18n';
 import ExportPage from './pages/export-page';
 import ImportPage from './pages/import-page';
@@ -10,7 +9,7 @@ import { UpdateBanner, ErrorBoundary } from '@ui/components';
 const App = () => {
   const [ready, setReady] = useState(false);
   const updateUrl = useUpdateCheck(__APP_NAME__, __APP_VERSION__);
-  const [path, setPath] = useState(() => platform.History.location.pathname);
+  const [path, setPath] = useState(() => Spicetify.Platform.History.location.pathname);
   const banner = updateUrl ? <UpdateBanner appName={__APP_NAME__} releaseUrl={updateUrl} /> : null;
 
   useEffect(() => {
@@ -18,25 +17,27 @@ const App = () => {
   }, []);
 
   useEffect(() => {
-    const unlisten = platform.History.listen(({ pathname }) => {
+    return Spicetify.Platform.History.listen(({ pathname }) => {
       setPath(pathname);
     });
-
-    return typeof unlisten === 'function' ? unlisten : undefined;
   }, []);
 
   if (!ready) return null;
 
+  const isImport = path.endsWith(ROUTE.IMPORT);
+
+  // both pages stay mounted so their state survives switching between them
   return (
     <ErrorBoundary scope={__APP_NAME__} title={t('error.unexpected')}>
-      {path.endsWith(ROUTE.IMPORT) ? (
+      <div hidden={!isImport}>
         <ImportPage banner={banner} />
-      ) : (
+      </div>
+      <div hidden={isImport}>
         <ExportPage
           banner={banner}
-          onGoToImport={() => platform.History.push(`/${__APP_NAME__}${ROUTE.IMPORT}`)}
+          onGoToImport={() => Spicetify.Platform.History.push(`/${__APP_NAME__}${ROUTE.IMPORT}`)}
         />
-      )}
+      </div>
     </ErrorBoundary>
   );
 };

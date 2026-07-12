@@ -1,4 +1,3 @@
-import { platform } from '@shared/api';
 import React, { useState } from 'react';
 import { t, type MessageKey } from '../i18n';
 import type { DataType } from '../types/export';
@@ -9,6 +8,7 @@ import { useAbortController } from '@shared/hooks';
 import DataTypeGrid from '../components/data-type-grid';
 import FileDropZone from '../components/file-drop-zone';
 import ImportSummary from '../components/import-summary';
+import ContentPreview from '../components/content-preview';
 import { notifyError, ValidationError } from '@shared/lib';
 import { exportPublicProfile } from '../services/profile-export';
 import PlaylistReviewCard from '../components/playlist-review-card';
@@ -54,6 +54,7 @@ const ImportPage = ({ banner }: { banner?: React.ReactNode }) => {
     new Map(),
   );
   const [existingUris, setExistingUris] = useState<Map<string, string>>(new Map());
+  const [previewing, setPreviewing] = useState<DataType | null>(null);
   const aborter = useAbortController();
   const [result, setResult] = useState<ImportResult | null>(null);
   const [progress, setProgress] = useState<ProgressInfo | null>(null);
@@ -179,7 +180,10 @@ const ImportPage = ({ banner }: { banner?: React.ReactNode }) => {
       version={__APP_VERSION__}
       banner={banner}
       navButton={
-        <ButtonSecondary onClick={() => platform.History.push(`/${__APP_NAME__}`)} buttonSize="md">
+        <ButtonSecondary
+          onClick={() => Spicetify.Platform.History.push(`/${__APP_NAME__}`)}
+          buttonSize="md"
+        >
           {t('nav.export')}
         </ButtonSecondary>
       }
@@ -212,7 +216,12 @@ const ImportPage = ({ banner }: { banner?: React.ReactNode }) => {
               </ButtonTertiary>
             </div>
 
-            <DataTypeGrid selected={selected} onToggle={setSelected} counts={counts} />
+            <DataTypeGrid
+              selected={selected}
+              onToggle={setSelected}
+              counts={counts}
+              onPreview={setPreviewing}
+            />
           </div>
 
           <ButtonPrimary
@@ -222,6 +231,14 @@ const ImportPage = ({ banner }: { banner?: React.ReactNode }) => {
           >
             {t('import.importSelected')}
           </ButtonPrimary>
+
+          {previewing && (
+            <ContentPreview
+              type={previewing}
+              data={parsed.data}
+              onClose={() => setPreviewing(null)}
+            />
+          )}
         </>
       )}
 
@@ -257,7 +274,7 @@ const ImportPage = ({ banner }: { banner?: React.ReactNode }) => {
         <ImportSummary
           result={result}
           onImportAgain={reset}
-          onGoToExport={() => platform.History.push(`/${__APP_NAME__}`)}
+          onGoToExport={() => Spicetify.Platform.History.push(`/${__APP_NAME__}`)}
         />
       )}
 

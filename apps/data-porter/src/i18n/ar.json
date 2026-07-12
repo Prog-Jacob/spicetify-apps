@@ -46,9 +46,7 @@
     "other": "مراجعة # قائمة تشغيل"
   },
   "conflict.continue": "متابعة الاستيراد",
-  "conflict.filter": "تصفية حسب الاسم\u2026",
   "conflict.applyToAll": "تطبيق على الكل",
-  "conflict.showing": "{filtered} من {total}",
   "conflict.resolutionFor": "الإجراء لـ {name}",
   "conflict.skip": "تخطي",
   "conflict.merge": "دمج",
@@ -130,6 +128,22 @@
   "error.invalidPlaylists": "\"{fileName}\": مصفوفة قوائم التشغيل غير صالحة",
   "error.invalidLibrary": "\"{fileName}\": كائن المكتبة غير صالح",
   "error.unrecognizedFormat": "\"{fileName}\" ليس بصيغة معروفة. يُتوقع تصدير Data Porter أو Spotify YourLibrary.json / Playlist1.json.",
-  "error.fileTooLargeSize": "\"{name}\" كبير جداً ({size} ميغابايت). الحد الأقصى ٢٠ ميغابايت.",
-  "error.unexpected": "حدث خطأ غير متوقع"
+  "error.fileTooLargeSize": "\"{name}\" كبير جداً ({size} ميغابايت). الحد الأقصى {max} ميغابايت.",
+  "error.unexpected": "حدث خطأ غير متوقع",
+
+  "preview.close": "إغلاق",
+  "preview.back": "رجوع",
+  "preview.open": "معاينة {label}",
+  "preview.noResults": "لا نتائج مطابقة",
+  "preview.showMore": "عرض المزيد ({remaining})",
+  "preview.badgeArtist": "فنان",
+  "preview.badgeTrack": "مقطع",
+  "preview.badgeAlbum": "ألبوم",
+  "preview.badgePlaylist": "قائمة تشغيل",
+  "preview.badgeShow": "بودكاست",
+  "preview.badgeEpisode": "حلقة",
+  "preview.badgeUser": "مستخدم",
+  "preview.badgeTaste": "ذوق",
+  "preview.badgeCountry": "البلد",
+  "preview.badgeTier": "الفئة"
 }

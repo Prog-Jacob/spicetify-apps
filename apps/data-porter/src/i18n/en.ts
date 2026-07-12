@@ -50,9 +50,7 @@ const en = {
     other: 'Review # playlists',
   } as PluralEntry,
   'conflict.continue': 'Continue Import',
-  'conflict.filter': 'Filter by name\u2026',
   'conflict.applyToAll': 'Apply to all',
-  'conflict.showing': '{filtered} of {total}',
   'conflict.resolutionFor': 'Resolution for {name}',
   'conflict.skip': 'Skip',
   'conflict.merge': 'Merge',
@@ -140,8 +138,25 @@ const en = {
   'error.invalidLibrary': '"{fileName}": invalid library object',
   'error.unrecognizedFormat':
     '"{fileName}" is not a recognized format. Expected a Data Porter export or Spotify YourLibrary.json / Playlist1.json.',
-  'error.fileTooLargeSize': '"{name}" is too large ({size} MB). Maximum is 20 MB.',
+  'error.fileTooLargeSize': '"{name}" is too large ({size} MB). Maximum is {max} MB.',
   'error.unexpected': 'Something went wrong',
+
+  // Preview
+  'preview.close': 'Close',
+  'preview.back': 'Back',
+  'preview.open': 'Preview {label}',
+  'preview.noResults': 'No matches',
+  'preview.showMore': 'Show more ({remaining})',
+  'preview.badgeArtist': 'Artist',
+  'preview.badgeTrack': 'Track',
+  'preview.badgeAlbum': 'Album',
+  'preview.badgePlaylist': 'Playlist',
+  'preview.badgeShow': 'Podcast',
+  'preview.badgeEpisode': 'Episode',
+  'preview.badgeUser': 'User',
+  'preview.badgeTaste': 'Taste',
+  'preview.badgeCountry': 'Country',
+  'preview.badgeTier': 'Tier',
 } as const;
 
 export type DataPorterMessages = Record<keyof typeof en, MessageValue>;

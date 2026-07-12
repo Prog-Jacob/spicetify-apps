@@ -1,4 +1,5 @@
 import js from '@eslint/js';
+import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
@@ -9,7 +10,6 @@ export default tseslint.config(
       '.spotify/',
       '.plan/',
       '**/*.d.ts',
-      'scripts/cdp-*',
       'scripts/app-template/',
     ],
   },
@@ -24,30 +24,12 @@ export default tseslint.config(
         ecmaFeatures: { jsx: true },
       },
       globals: {
+        ...globals.browser,
         Spicetify: 'readonly',
-        console: 'readonly',
-        document: 'readonly',
-        window: 'readonly',
-        setTimeout: 'readonly',
-        clearTimeout: 'readonly',
-        setInterval: 'readonly',
-        clearInterval: 'readonly',
-        localStorage: 'readonly',
-        fetch: 'readonly',
-        Blob: 'readonly',
-        URL: 'readonly',
-        File: 'readonly',
-        FileReader: 'readonly',
-        AbortController: 'readonly',
-        AbortSignal: 'readonly',
-        DOMException: 'readonly',
-        HTMLInputElement: 'readonly',
-        navigator: 'readonly',
         __APP_VERSION__: 'readonly',
         __APP_NAME__: 'readonly',
         __REPO__: 'readonly',
         __BUNDLED_LOCALES__: 'readonly',
-        DOMParser: 'readonly',
       },
     },
     plugins: {
@@ -61,11 +43,9 @@ export default tseslint.config(
     },
   },
   {
-    files: ['scripts/**/*.mts'],
+    files: ['scripts/**/*.mts', '.changeset/**/*.mts'],
     languageOptions: {
-      globals: {
-        process: 'readonly',
-      },
+      globals: globals.node,
     },
     rules: {
       'no-console': 'off',

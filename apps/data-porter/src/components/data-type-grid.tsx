@@ -11,6 +11,7 @@ type DataTypeGridProps = {
   disabled?: boolean;
   counts?: Map<DataType, number>;
   dataTypes?: DataTypeConfig[];
+  onPreview?: (type: DataType) => void;
 };
 
 const DataTypeGrid = ({
@@ -19,6 +20,7 @@ const DataTypeGrid = ({
   disabled,
   counts,
   dataTypes = IMPORTABLE_DATA_TYPES,
+  onPreview,
 }: DataTypeGridProps) => (
   <div
     className={cn(
@@ -38,6 +40,7 @@ const DataTypeGrid = ({
           selected={selected.has(type)}
           disabled={disabled}
           onToggle={() => onToggle(toggleInSet(selected, type))}
+          onPreview={onPreview && count ? () => onPreview(type) : undefined}
           count={count}
           badge={exportOnly ? t('dataType.exportOnly') : undefined}
         />
