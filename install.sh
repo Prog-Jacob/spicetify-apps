@@ -17,11 +17,10 @@ APP_DIR="$CUSTOM_APPS_DIR/$APP_NAME"
 mkdir -p "$CUSTOM_APPS_DIR"
 
 echo "Fetching latest release..."
+# Match this app's tag (<app>-v*) so another app's asset can never be picked
 LATEST_RELEASE_URL=$(curl -s "https://api.github.com/repos/$REPO/releases" \
-  | grep -B10 "spicetify-$APP_NAME.release.zip" \
-  | grep "browser_download_url" \
-  | head -n1 \
-  | cut -d '"' -f 4)
+  | grep -o "https://[^\"]*/download/$APP_NAME-v[^\"]*/spicetify-$APP_NAME\.release\.zip" \
+  | head -n1)
 
 if [[ -z "$LATEST_RELEASE_URL" ]]; then
   echo "Error: could not find a release asset. Check https://github.com/$REPO/releases"

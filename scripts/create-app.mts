@@ -43,6 +43,8 @@ const tags = await ask('Tags (comma-separated)', '');
 rl.close();
 
 const appDir = join(APPS_DIR, slug);
+// forks scaffold apps pointing at their own repo, not upstream
+const repo = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf-8')).repository as string;
 const esc = (s: string) => s.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 const replacements: [RegExp, string][] = [
   [/\{\{NAME\}\}/g, esc(name)],
@@ -76,7 +78,7 @@ json('package.json', {
   main: 'dist/index.js',
   scripts: {
     typecheck: 'tsc --noEmit',
-    download: `curl -fsSL https://raw.githubusercontent.com/Prog-Jacob/spicetify-apps/main/install.sh | bash -s ${slug}`,
+    download: `curl -fsSL https://raw.githubusercontent.com/${repo}/main/install.sh | bash -s ${slug}`,
     symlink: `DEST="$(dirname $(spicetify -c))/CustomApps/${slug}" && rm -rf "$DEST" && ln -sfn "$PWD/dist" "$DEST"`,
   },
 });

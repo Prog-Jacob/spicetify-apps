@@ -14,8 +14,9 @@ pnpm build                  # production build (all apps, minified, bundled loca
 pnpm build:app data-porter  # build a single app
 pnpm typecheck              # typecheck scripts/ + all workspace packages
 pnpm lint                   # eslint (flat config)
+pnpm test                   # node:test via tsx (apps/*/src/**/*.test.ts)
 pnpm format                 # prettier
-pnpm precommit              # format + lint + typecheck (run before committing)
+pnpm precommit              # format + lint + typecheck + test (run before committing)
 pnpm create-app             # interactive scaffolder for a new app
 pnpm release data-porter    # interactive release: changeset → version bump → tag → push
 ```
@@ -52,13 +53,12 @@ All code runs inside Spotify's renderer process. The `Spicetify` global provides
 - `Spicetify.ReactComponent.*` — stock UI components (ButtonPrimary, Menu, TooltipWrapper, etc.)
 - `Spicetify.showNotification()` — toast notifications
 
-Types are in `packages/shared/src/types/spicetify.d.ts` and `platform-api.ts`. The `platform` helper (`packages/shared/src/api/platform.ts`) provides lazy getters for commonly used Platform APIs.
+Types are in `packages/shared/src/types/spicetify.d.ts` and `platform-api.ts`. Call `Spicetify.Platform.*` APIs directly; they are fully typed.
 
 ## API Layer (`packages/shared/src/api/`)
 
 - `cosmos.ts` — typed wrapper around `Spicetify.CosmosAsync` with error validation
-- `batch.ts` — `paginate()` for reading paginated library endpoints, `batchedWrite()` for rate-limited bulk writes. Both support `AbortSignal` and progress callbacks.
-- `platform.ts` — lazy-getter facade over `Spicetify.Platform` APIs
+- `batch.ts` — `paginate()` for reading paginated library endpoints, `batchedWrite()` for chunked bulk writes. Both support `AbortSignal` and progress callbacks.
 
 ## i18n
 
