@@ -1,16 +1,16 @@
 import { t } from '../i18n';
+import { batchedWrite } from '@shared/api';
 import type { ProgressInfo } from '@shared/types';
 import { SPOTIFY_URI, notifyError } from '@shared/lib';
 import type { DataType, ExportData, ExportedPlaylist } from '../types/export';
 import type { ImportLogEntry, ImportResult, PlaylistConflictResolution } from '../types/import';
-import { DATA_TYPE, LOG_STATUS, CONFLICT_RESOLUTION, PERMISSION_SETTLE_MS } from '../constants';
 import {
-  platform,
-  checkAborted,
-  batchedWrite,
-  PLAYLIST_POSITION,
-  PLAYLIST_PERMISSION,
-} from '@shared/api';
+  BAN_SET,
+  DATA_TYPE,
+  LOG_STATUS,
+  CONFLICT_RESOLUTION,
+  PERMISSION_SETTLE_MS,
+} from '../constants';
 
 async function importPlaylist(
   playlist: ExportedPlaylist,
@@ -33,8 +33,8 @@ async function importPlaylist(
   if (resolution === CONFLICT_RESOLUTION.MERGE && existingUri) {
     targetUri = existingUri;
   } else {
-    const result = await platform.RootlistAPI.createPlaylist(playlist.name, {
-      before: PLAYLIST_POSITION.END,
+    const result = await Spicetify.Platform.RootlistAPI.createPlaylist(playlist.name, {
+      before: 'end',
     });
     targetUri = typeof result === 'string' ? result : (result?.uri ?? '');
     if (!targetUri) {
@@ -51,7 +51,7 @@ async function importPlaylist(
       const description =
         new DOMParser().parseFromString(playlist.description, 'text/html').body.textContent ??
         playlist.description;
-      await platform.PlaylistAPI.updateDetails(targetUri, { description });
+      await Spicetify.Platform.PlaylistAPI.updateDetails(targetUri, { description });
     } catch (e) {
       console.warn(`[${__APP_NAME__}] Failed to set description:`, e);
       log.push({
@@ -84,7 +84,7 @@ async function importPlaylist(
 
   // On merge, filter out tracks already in the playlist to avoid duplicates.
   if (resolution === CONFLICT_RESOLUTION.MERGE && trackUris.length > 0) {
-    const detail = await platform.PlaylistAPI.getPlaylist(targetUri);
+    const detail = await Spicetify.Platform.PlaylistAPI.getPlaylist(targetUri);
 
     if (!detail || detail.error || !detail.contents) {
       log.push({
@@ -111,7 +111,7 @@ async function importPlaylist(
   if (trackUris.length > 0) {
     await batchedWrite(
       trackUris,
-      (batch) => platform.PlaylistAPI.add(targetUri, batch, { after: PLAYLIST_POSITION.END }),
+      (batch) => Spicetify.Platform.PlaylistAPI.add(targetUri, batch, { after: 'end' }),
       {
         label: t('progress.importingPlaylist', { name: playlist.name }),
         signal,
@@ -150,7 +150,7 @@ export async function importData(
     try {
       await fn();
     } catch (e) {
-      checkAborted(signal);
+      signal?.throwIfAborted();
       const detail = e instanceof Error ? e.message : String(e);
       const msg = t('log.failed', { label });
       log.push({ label, status: LOG_STATUS.ERROR, detail });
@@ -202,7 +202,7 @@ export async function importData(
     const uris = items.map((i) => i.uri).filter(Boolean);
     if (!uris.length) continue;
     await tryWrite(noun, async () => {
-      await batchedWrite(uris, (batch) => platform.LibraryAPI.add({ uris: batch }), {
+      await batchedWrite(uris, (batch) => Spicetify.Platform.LibraryAPI.add({ uris: batch }), {
         label: progressLabel,
         signal,
         onProgress,
@@ -219,19 +219,23 @@ export async function importData(
     onProgress({ current: 0, total: 0, label: t('progress.banningContent') });
 
     const banSets: [typeof bannedTracks, string][] = [
-      [bannedArtists, 'artistban'],
-      [bannedTracks, 'notinterested'],
-      [excludedFromTaste, 'ignoreinrecs'],
+      [bannedArtists, BAN_SET.ARTISTS],
+      [bannedTracks, BAN_SET.TRACKS],
+      [excludedFromTaste, BAN_SET.TASTE],
     ];
     for (const [items, set] of banSets) {
       if (!items?.length) continue;
       await tryWrite(noun, async () => {
         const uris = items.map((i) => i.uri);
-        await batchedWrite(uris, (batch) => platform.CollectionPlatformAPI.add(set, batch), {
-          label: t('progress.banningContent'),
-          signal,
-          onProgress,
-        });
+        await batchedWrite(
+          uris,
+          (batch) => Spicetify.Platform.CollectionPlatformAPI.add(set, batch),
+          {
+            label: t('progress.banningContent'),
+            signal,
+            onProgress,
+          },
+        );
         log.push({ label: t('log.saved', { count: uris.length, noun }), status: LOG_STATUS.OK });
       });
     }
@@ -241,7 +245,7 @@ export async function importData(
 
   if (selected.has(DATA_TYPE.PLAYLISTS) && data.playlists?.length) {
     for (let i = 0; i < data.playlists.length; i++) {
-      checkAborted(signal);
+      signal?.throwIfAborted();
 
       const playlist = data.playlists[i];
       onProgress({
@@ -261,7 +265,7 @@ export async function importData(
         );
         if (uri) privatePlaylists.push({ uri, name: playlist.name });
       } catch (e) {
-        checkAborted(signal);
+        signal?.throwIfAborted();
         const detail = e instanceof Error ? e.message : String(e);
         const msg = t('log.failed', { label: playlist.name });
         log.push({ label: playlist.name, status: LOG_STATUS.ERROR, detail });
@@ -277,7 +281,7 @@ export async function importData(
     await new Promise<void>((r) => setTimeout(r, PERMISSION_SETTLE_MS));
     for (const { uri, name } of privatePlaylists) {
       try {
-        await platform.PlaylistPermissionsAPI.setBasePermission(uri, PLAYLIST_PERMISSION.BLOCKED);
+        await Spicetify.Platform.PlaylistPermissionsAPI.setBasePermission(uri, 'BLOCKED');
       } catch (e) {
         console.warn(`[${__APP_NAME__}] Failed to set permissions:`, e);
         log.push({ label: t('log.permissionFailed', { name }), status: LOG_STATUS.SKIPPED });

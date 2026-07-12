@@ -1,7 +1,7 @@
 import { t } from '../i18n';
 import { userProfileUrl } from './spotify-urls';
+import { cosmos, PAGE_SIZE } from '@shared/api';
 import { buildPlaylists, emptyLibrary } from './exporter';
-import { cosmos, PAGE_SIZE, checkAborted } from '@shared/api';
 import type { ProgressInfo, LibraryContentItem } from '@shared/types';
 import { parseUserId, ValidationError, SPOTIFY_URI } from '@shared/lib';
 import type { ExportResult, ExportedPlaylist } from '../types/export';
@@ -19,7 +19,7 @@ async function fetchUserPlaylists(
   const items: LibraryContentItem[] = [];
 
   for (let offset = 0; offset < total; offset += PAGE_SIZE) {
-    checkAborted(signal);
+    signal?.throwIfAborted();
     onProgress({ current: offset, total, label: t('progress.fetchingPlaylistList') });
 
     const { public_playlists = [] } = await cosmos.get<PlaylistsResponse>(
@@ -43,7 +43,7 @@ export async function exportPublicProfile(
   let playlists: ExportedPlaylist[] = [];
   if (!userId) throw new ValidationError(t('error.invalidProfile'));
 
-  checkAborted(signal);
+  signal?.throwIfAborted();
   onProgress({ current: 0, total: 0, label: t('progress.fetchingProfile') });
 
   const profile = await cosmos.get<UserProfile>(userProfileUrl(userId));
@@ -60,18 +60,10 @@ export async function exportPublicProfile(
     onProgress({ current: 0, total: playlistItems.length, label: t('progress.fetchingPlaylists') });
     const result = await buildPlaylists(playlistItems, onProgress, signal);
     playlists = result.playlists;
-
-    if (result.skipped.length > 0) {
-      warnings.push(
-        t('warn.playlistsFailed', {
-          count: result.skipped.length,
-          names: result.skipped.join(', '),
-        }),
-      );
-    }
+    if (result.warning) warnings.push(result.warning);
   }
 
-  checkAborted(signal);
+  signal?.throwIfAborted();
   onProgress({ current: 0, total: 0, label: t('progress.fetchingArtists') });
 
   const { profiles = [] } = await cosmos.get<FollowingResponse>(

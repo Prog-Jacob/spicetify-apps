@@ -32,9 +32,6 @@ const MODES: readonly { value: Mode; labelKey: MessageKey }[] = [
   { value: MODE.OTHER_USER, labelKey: 'export.anotherUser' },
 ];
 
-const resolveStatus = (data: ExportResult['data'], warnings: string[]): Status =>
-  warnings.length > 0 && Object.keys(data).length === 0 ? EXPORT_STATUS.ERROR : EXPORT_STATUS.DONE;
-
 type ExportPageProps = {
   banner?: React.ReactNode;
   onGoToImport?: () => void;
@@ -63,7 +60,10 @@ const ExportPage = ({ banner, onGoToImport }: ExportPageProps) => {
           : await exportData(selected, setProgress, controller.signal);
 
       setResult(exportResult);
-      setStatus(resolveStatus(exportResult.data, exportResult.warnings));
+      const isEmpty = Object.keys(exportResult.data).length === 0;
+      setStatus(
+        exportResult.warnings.length > 0 && isEmpty ? EXPORT_STATUS.ERROR : EXPORT_STATUS.DONE,
+      );
     } catch (e) {
       if (controller.signal.aborted) return;
       if (e instanceof ValidationError) {

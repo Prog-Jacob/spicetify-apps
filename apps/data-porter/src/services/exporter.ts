@@ -1,7 +1,8 @@
 import { t } from '../i18n';
-import { DATA_TYPE } from '../constants';
 import { userProfileUrl } from './spotify-urls';
+import { BAN_SET, DATA_TYPE } from '../constants';
 import { fetchRootlistPlaylists, type PlaylistRef } from './playlist-lookup';
+import { cosmos, paginate, BATCH_DELAY_MS, PLAYLIST_BATCH_SIZE } from '@shared/api';
 import {
   SPOTIFY_URI,
   notifyError,
@@ -15,14 +16,6 @@ import type {
   LibraryContentItem,
   PlaylistItemDetail,
 } from '@shared/types';
-import {
-  cosmos,
-  paginate,
-  platform,
-  checkAborted,
-  BATCH_DELAY_MS,
-  PLAYLIST_BATCH_SIZE,
-} from '@shared/api';
 import type {
   DataType,
   ExportData,
@@ -69,7 +62,7 @@ function toExportedPlaylistItem(item: PlaylistItemDetail): ExportedPlaylistItem 
 }
 
 async function fetchBannedItems(set: string) {
-  const result = await platform.CollectionPlatformAPI.get(set);
+  const result = await Spicetify.Platform.CollectionPlatformAPI.get(set);
   return (Array.isArray(result) ? result : []).map((item) => ({
     uri: item.uri,
     ...(item.name && { name: item.name }),
@@ -77,7 +70,7 @@ async function fetchBannedItems(set: string) {
 }
 
 async function fetchRecentlyPlayed() {
-  const result = await platform.RecentsAPI.getContents();
+  const result = await Spicetify.Platform.RecentsAPI.getContents();
   const raw = result?.items;
   const music: ExportedRecentTrack[] = [];
   const podcasts: ExportedRecentPodcast[] = [];
@@ -115,12 +108,12 @@ async function fetchRecentlyPlayed() {
 }
 
 async function fetchUserProfile() {
-  const user = await platform.UserAPI.getUser();
+  const user = await Spicetify.Platform.UserAPI.getUser();
   const userId = user.username ?? '';
   const enriched = await cosmos
     .get<{ following_count?: number }>(`${userProfileUrl(userId)}?market=from_token`)
     .catch(() => null);
-  const ps = platform.initialProductState;
+  const ps = Spicetify.Platform.initialProductState;
   return {
     displayName: user.displayName ?? user.name ?? '',
     username: userId,
@@ -139,26 +132,37 @@ async function fetchSearchHistory(): Promise<SearchHistoryItem[]> {
   });
   const items = res?.data?.recentSearches?.recentSearchesItems?.items ?? [];
 
-  return items.map((item: { data?: { __typename?: string; uri?: string; name?: string } }) => {
-    const d = item.data ?? {};
-    return {
-      type: String(d.__typename ?? '').toLowerCase(),
-      name: String(d.name ?? ''),
-      uri: String(d.uri ?? ''),
-    };
-  });
+  return items.map(
+    (item: {
+      data?: {
+        __typename?: string;
+        uri?: string;
+        name?: string;
+        // artists and users carry their display name in nested objects
+        profile?: { name?: string };
+        displayName?: string;
+      };
+    }) => {
+      const d = item.data ?? {};
+      return {
+        type: String(d.__typename ?? '').toLowerCase(),
+        name: String(d.name ?? d.profile?.name ?? d.displayName ?? ''),
+        uri: String(d.uri ?? ''),
+      };
+    },
+  );
 }
 
 export async function buildPlaylists(
   playlistItems: PlaylistRef[],
   onProgress?: (progress: ProgressInfo) => void,
   signal?: AbortSignal,
-): Promise<{ playlists: ExportedPlaylist[]; skipped: string[] }> {
+): Promise<{ playlists: ExportedPlaylist[]; warning?: string }> {
   const playlists: ExportedPlaylist[] = [];
   const skipped: string[] = [];
 
   for (let i = 0; i < playlistItems.length; i++) {
-    checkAborted(signal);
+    signal?.throwIfAborted();
     if (i > 0 && i % PLAYLIST_BATCH_SIZE === 0)
       await new Promise<void>((r) => setTimeout(r, BATCH_DELAY_MS));
 
@@ -169,7 +173,7 @@ export async function buildPlaylists(
       label: t('progress.playlist', { name: row.name }),
     });
 
-    const detail = await platform.PlaylistAPI.getPlaylist(row.uri).catch(() => null);
+    const detail = await Spicetify.Platform.PlaylistAPI.getPlaylist(row.uri).catch(() => null);
     if (!detail || detail.error || !detail.contents) {
       skipped.push(row.name);
       continue;
@@ -177,6 +181,7 @@ export async function buildPlaylists(
 
     playlists.push({
       name: row.name,
+      uri: row.uri,
       lastModifiedDate: toDateString(detail.metadata?.lastModified ?? Date.now()),
       items: (detail.contents.items ?? []).map(toExportedPlaylistItem),
       description: detail.metadata?.description ?? null,
@@ -184,7 +189,12 @@ export async function buildPlaylists(
     });
   }
 
-  return { playlists, skipped };
+  return {
+    playlists,
+    ...(skipped.length > 0 && {
+      warning: t('warn.playlistsFailed', { count: skipped.length, names: skipped.join(', ') }),
+    }),
+  };
 }
 
 export async function exportData(
@@ -199,7 +209,7 @@ export async function exportData(
     try {
       return await fn();
     } catch (e) {
-      checkAborted(signal);
+      signal?.throwIfAborted();
       const msg = t('warn.fetchFailed', { label });
       warnings.push(msg);
       notifyError(e, msg);
@@ -215,7 +225,7 @@ export async function exportData(
   if (needsLibraryScan) {
     onProgress({ current: 0, total: 0, label: t('progress.scanningLibrary') });
     libraryContents = await tryFetch(t('progress.scanningLibrary'), () =>
-      paginate<LibraryContentItem>((params) => platform.LibraryAPI.getContents(params), {
+      paginate<LibraryContentItem>((params) => Spicetify.Platform.LibraryAPI.getContents(params), {
         context: 'LibraryAPI.getContents',
         onProgress,
         label: t('progress.scanningLibrary'),
@@ -240,13 +250,7 @@ export async function exportData(
       );
       if (result) {
         data.playlists = result.playlists;
-        if (result.skipped.length > 0)
-          warnings.push(
-            t('warn.playlistsFailed', {
-              count: result.skipped.length,
-              names: result.skipped.join(', '),
-            }),
-          );
+        if (result.warning) warnings.push(result.warning);
       }
     }
   }
@@ -257,7 +261,7 @@ export async function exportData(
     onProgress({ current: 0, total: 0, label: t('progress.fetchingLikedSongs') });
     const tracks = await tryFetch(t('dataType.likedSongs'), async () => {
       const items = await paginate<LibraryTrackItem>(
-        (params) => platform.LibraryAPI.getTracks(params),
+        (params) => Spicetify.Platform.LibraryAPI.getTracks(params),
         {
           context: 'LibraryAPI.getTracks',
           onProgress,
@@ -266,6 +270,7 @@ export async function exportData(
         },
       );
       return items.map((item) => ({
+        name: item.name,
         artist: formatArtists(item.artists),
         album: item.album?.name ?? '',
         uri: item.uri,
@@ -292,7 +297,7 @@ export async function exportData(
   if (selected.has(DATA_TYPE.EPISODES)) {
     onProgress({ current: 0, total: 0, label: t('progress.fetchingEpisodes') });
     const eps = await tryFetch(t('dataType.episodes'), async () => {
-      const detail = await platform.PlaylistAPI.getPlaylist(SPOTIFY_URI.YOUR_EPISODES);
+      const detail = await Spicetify.Platform.PlaylistAPI.getPlaylist(SPOTIFY_URI.YOUR_EPISODES);
       return (detail?.contents?.items ?? []).map((ep) => ({
         name: ep.name,
         uri: ep.uri,
@@ -304,10 +309,10 @@ export async function exportData(
   if (selected.has(DATA_TYPE.BANNED_CONTENT)) {
     onProgress({ current: 0, total: 0, label: t('progress.fetchingBannedContent') });
     const label = t('dataType.bannedContent');
-    library.bannedArtists = (await tryFetch(label, () => fetchBannedItems('artistban'))) ?? [];
-    library.bannedTracks = (await tryFetch(label, () => fetchBannedItems('notinterested'))) ?? [];
+    library.bannedArtists = (await tryFetch(label, () => fetchBannedItems(BAN_SET.ARTISTS))) ?? [];
+    library.bannedTracks = (await tryFetch(label, () => fetchBannedItems(BAN_SET.TRACKS))) ?? [];
     library.excludedFromTaste =
-      (await tryFetch(label, () => fetchBannedItems('ignoreinrecs'))) ?? [];
+      (await tryFetch(label, () => fetchBannedItems(BAN_SET.TASTE))) ?? [];
   }
 
   if (Object.values(library).some((arr) => arr.length > 0)) data.library = library;

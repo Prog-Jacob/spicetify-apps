@@ -2,7 +2,7 @@ import type { DATA_TYPE } from '../constants';
 
 type BannedItem = { uri: string; name?: string };
 type EpisodeFields = { episodeName: string; showName: string; episodeUri?: string };
-type TrackFields = { artist: string; album: string; uri: string };
+type TrackFields = { name?: string; artist: string; album: string; uri: string };
 type PlaylistTrackFields = {
   trackName: string;
   artistName: string;
@@ -23,6 +23,8 @@ export type ExportedPlaylist = {
   items: ExportedPlaylistItem[];
   description: string | null;
   numberOfFollowers: number;
+  // absent in Spotify-official exports and files from older versions
+  uri?: string;
 };
 
 export type NamedUri = { name: string; uri: string };

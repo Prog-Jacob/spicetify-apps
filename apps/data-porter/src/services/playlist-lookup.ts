@@ -1,5 +1,4 @@
 import type { RootlistItem } from '@shared/types';
-import { platform, checkAborted } from '@shared/api';
 
 export type PlaylistRef = Pick<RootlistItem, 'name' | 'uri'>;
 
@@ -11,8 +10,8 @@ function collect(items: RootlistItem[], out: PlaylistRef[]): void {
 }
 
 export async function fetchRootlistPlaylists(signal?: AbortSignal): Promise<PlaylistRef[]> {
-  const { items = [] } = await platform.RootlistAPI.getContents();
-  checkAborted(signal);
+  const { items = [] } = await Spicetify.Platform.RootlistAPI.getContents();
+  signal?.throwIfAborted();
   const out: PlaylistRef[] = [];
   collect(items, out);
   return out;

@@ -7,7 +7,8 @@ const MAX_FILE_SIZE = 20; // in MB
 
 export const checkFileSize = (bytes: number, name: string): void => {
   const size = Math.ceil(bytes / 1024 / 1024);
-  if (size > MAX_FILE_SIZE) throw new Error(t('error.fileTooLargeSize', { name, size }));
+  if (size > MAX_FILE_SIZE)
+    throw new Error(t('error.fileTooLargeSize', { name, size, max: MAX_FILE_SIZE }));
 };
 
 function isPlaylistArray(v: unknown): v is ExportedPlaylist[] {
@@ -20,40 +21,31 @@ function isPlaylistArray(v: unknown): v is ExportedPlaylist[] {
   );
 }
 
-function normalizeLibraryTracks(tracks: Record<string, unknown>[]): ExportedLibrary['tracks'] {
-  return tracks.map((track) => ({
-    artist: String(track.artist ?? track.artistName ?? ''),
-    album: String(track.album ?? track.albumName ?? ''),
-    uri: String(track.uri ?? track.trackUri ?? ''),
-  }));
-}
-
-function normalizeLibraryAlbums(albums: Record<string, unknown>[]): ExportedLibrary['albums'] {
-  return albums.map((album) => ({
-    artist: String(album.artist ?? album.artistName ?? ''),
-    album: String(album.album ?? album.albumName ?? album.name ?? ''),
-    uri: String(album.uri ?? album.albumUri ?? ''),
-  }));
-}
-
-function normalizeLibraryEpisodes(
-  episodes: Record<string, unknown>[],
-): ExportedLibrary['episodes'] {
-  return episodes.map((ep) => ({
-    name: String(ep.name ?? ep.episodeName ?? ''),
-    uri: String(ep.uri ?? ep.episodeUri ?? ''),
-  }));
-}
+// First present field among the Spotify-official / our-export aliases, as a string
+const field = (o: Record<string, unknown>, ...keys: string[]): string =>
+  String(keys.map((k) => o[k]).find((v) => v != null) ?? '');
 
 function normalizeLibrary(raw: ExportedLibrary | Record<string, unknown>): ExportedLibrary {
   const arr = <K extends keyof ExportedLibrary>(k: K): ExportedLibrary[K] =>
     (Array.isArray(raw[k]) ? raw[k] : []) as ExportedLibrary[K];
 
   return {
-    tracks: normalizeLibraryTracks(arr('tracks')),
-    albums: normalizeLibraryAlbums(arr('albums')),
+    tracks: arr('tracks').map((o) => ({
+      name: field(o, 'name', 'trackName', 'track'),
+      artist: field(o, 'artist', 'artistName'),
+      album: field(o, 'album', 'albumName'),
+      uri: field(o, 'uri', 'trackUri'),
+    })),
+    albums: arr('albums').map((o) => ({
+      artist: field(o, 'artist', 'artistName'),
+      album: field(o, 'album', 'albumName', 'name'),
+      uri: field(o, 'uri', 'albumUri'),
+    })),
     shows: arr('shows'),
-    episodes: normalizeLibraryEpisodes(arr('episodes')),
+    episodes: arr('episodes').map((o) => ({
+      name: field(o, 'name', 'episodeName'),
+      uri: field(o, 'uri', 'episodeUri'),
+    })),
     bannedTracks: arr('bannedTracks'),
     artists: arr('artists'),
     bannedArtists: arr('bannedArtists'),
@@ -93,7 +85,11 @@ export function parseImportText(text: string, fileName: string): ParsedFile {
 
   if ('playlists' in obj) {
     if (!isPlaylistArray(obj.playlists)) throw new Error(t('error.invalidPlaylists', { fileName }));
-    data.playlists = obj.playlists;
+    // hand-edited files can hold null entries inside items
+    data.playlists = obj.playlists.map((p) => ({
+      ...p,
+      items: p.items.filter((item) => typeof item === 'object' && item !== null),
+    }));
   }
 
   const libSource = 'library' in obj ? obj.library : hasTopLevel ? obj : null;

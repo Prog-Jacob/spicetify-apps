@@ -2,11 +2,18 @@ export const ROUTE = { IMPORT: '/import' } as const;
 
 export const PERMISSION_SETTLE_MS = 1000;
 
+// Spotify collection sets used by both exporter and importer; must stay in sync
+export const BAN_SET = {
+  ARTISTS: 'artistban',
+  TRACKS: 'notinterested',
+  TASTE: 'ignoreinrecs',
+} as const;
+
 export const EXPORT_FILENAME_PREFIX = 'spotify-export';
 
 export const LOG_STATUS = { OK: 'ok', SKIPPED: 'skipped', ERROR: 'error' } as const;
 
-export const ANIMATION_STAGGER_MS = { CONFLICT_ITEM: 45, SUMMARY_ITEM: 80 } as const;
+export const ANIMATION_STAGGER_MS = { LIST_ITEM: 45, SUMMARY_ITEM: 80 } as const;
 
 export const SOURCE_FORMAT = {
   OUR_EXPORT: 'our-export',
