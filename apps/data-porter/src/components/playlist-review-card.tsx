@@ -4,7 +4,8 @@ import React, { useMemo, useState } from 'react';
 import { ANIMATION_STAGGER_MS, CONFLICT_RESOLUTION } from '../constants';
 import type { PlaylistReviewItem, PlaylistConflictResolution } from '../types/import';
 import {
-  Input,
+  Pill,
+  FilterBar,
   ResultCard,
   SpicetifyIcon,
   TextComponent,
@@ -103,18 +104,13 @@ const PlaylistReviewCard = ({
       }
     >
       <div className="flex max-h-96 flex-col overflow-hidden rounded-lg border border-spice-highlight/20">
-        <div className="flex items-center gap-3 px-4 py-3">
-          <Input
-            type="text"
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-            placeholder={t('conflict.filter')}
-            aria-label={t('conflict.filter')}
-          />
-          <TextComponent variant="minuet" semanticColor="textSubdued">
-            {t('conflict.showing', { filtered: filtered.length, total: items.length })}
-          </TextComponent>
-        </div>
+        <FilterBar
+          value={filter}
+          total={items.length}
+          filtered={filtered.length}
+          onChange={setFilter}
+          className="px-4 py-3"
+        />
 
         <div className="overflow-y-auto" role="list">
           {filtered.length >= 2 && (
@@ -141,7 +137,7 @@ const PlaylistReviewCard = ({
               role="listitem"
               key={index}
               className="animate-fade-in-up flex items-center justify-between px-4 py-2.5 hover:bg-spice-highlight/10"
-              style={{ animationDelay: `${i * ANIMATION_STAGGER_MS.CONFLICT_ITEM}ms` }}
+              style={{ animationDelay: `${i * ANIMATION_STAGGER_MS.LIST_ITEM}ms` }}
             >
               <div className="flex min-w-0 items-center gap-2.5">
                 <SpicetifyIcon icon="playlist" size={16} className="text-spice-subtext" />
@@ -152,13 +148,9 @@ const PlaylistReviewCard = ({
                   {t('dataType.itemCount', { count: trackCount })}
                 </TextComponent>
                 {existingUri && (
-                  <TextComponent
-                    variant="minuet"
-                    className="shrink-0 rounded bg-spice-notification-error/15 px-1.5 py-0.5"
-                    semanticColor="textNegative"
-                  >
+                  <Pill variant="error" className="shrink-0">
                     {t('conflict.exists')}
-                  </TextComponent>
+                  </Pill>
                 )}
               </div>
               <ResolutionPicker

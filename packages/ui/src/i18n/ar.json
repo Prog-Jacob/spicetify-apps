@@ -1,6 +1,8 @@
 {
   "tryAgain": "حاول مجدداً",
   "cancel": "إلغاء",
+  "filter.placeholder": "تصفية حسب الاسم…",
+  "filter.showing": "{filtered} من {total}",
   "update.available": "يتوفر إصدار جديد من {appName}",
   "update.copied": "تم النسخ!",
   "update.update": "تحديث",

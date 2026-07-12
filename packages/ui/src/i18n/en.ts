@@ -3,6 +3,8 @@ import type { MessageValue } from '@shared/i18n';
 const en = {
   tryAgain: 'Try Again',
   cancel: 'Cancel',
+  'filter.placeholder': 'Filter by name…',
+  'filter.showing': '{filtered} of {total}',
   'update.available': 'A new version of {appName} is available',
   'update.copied': 'Copied!',
   'update.update': 'Update',
