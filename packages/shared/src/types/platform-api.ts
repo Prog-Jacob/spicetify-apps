@@ -17,13 +17,16 @@ export interface PlatformLibraryAPI {
 
 export interface PlatformPlaylistAPI {
   getPlaylist(uri: string): Promise<PlaylistDetail>;
-  add(uri: string, uris: string[], opts?: { after?: string }): Promise<void>;
+  add(uri: string, uris: string[], opts?: { after?: 'start' | 'end' }): Promise<void>;
   updateDetails(uri: string, details: { name?: string; description?: string }): Promise<void>;
 }
 
 export interface PlatformRootlistAPI {
   getContents(): Promise<{ items: RootlistItem[] }>;
-  createPlaylist(name: string, opts?: { before?: string }): Promise<string | { uri?: string }>;
+  createPlaylist(
+    name: string,
+    opts?: { before?: 'start' | 'end' },
+  ): Promise<string | { uri?: string }>;
 }
 
 export interface PlatformRecentsAPI {
@@ -40,7 +43,7 @@ export interface PlatformUserAPI {
 }
 
 export interface PlatformPlaylistPermissionsAPI {
-  setBasePermission(uri: string, permission: string): Promise<void>;
+  setBasePermission(uri: string, permission: 'BLOCKED'): Promise<void>;
 }
 
 export interface PlatformClipboardAPI {

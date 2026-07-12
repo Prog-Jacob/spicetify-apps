@@ -6,41 +6,32 @@ export const BATCH_DELAY_MS = 500;
 export const WRITE_BATCH_SIZE = 50;
 export const PLAYLIST_BATCH_SIZE = 10;
 
-export type WriteOptions = {
+type WriteOptions = {
   label: string;
-  delayMs?: number;
-  batchSize?: number;
   signal?: AbortSignal;
   onProgress?: (p: ProgressInfo) => void;
 };
 
-export type PaginateOptions = {
+type PaginateOptions = {
   label?: string;
   context: string;
   signal?: AbortSignal;
   onProgress?: (p: ProgressInfo) => void;
 };
 
-export function checkAborted(signal?: AbortSignal): void {
-  if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
-}
-
 export async function batchedWrite(
   items: string[],
   write: (batch: string[]) => Promise<void>,
-  options: WriteOptions,
+  { label, signal, onProgress }: WriteOptions,
 ): Promise<void> {
-  const { label, signal, onProgress, batchSize = WRITE_BATCH_SIZE, delayMs = 0 } = options;
-
-  for (let i = 0; i < items.length; i += batchSize) {
-    checkAborted(signal);
-    await write(items.slice(i, i + batchSize));
+  for (let i = 0; i < items.length; i += WRITE_BATCH_SIZE) {
+    signal?.throwIfAborted();
+    await write(items.slice(i, i + WRITE_BATCH_SIZE));
     onProgress?.({
-      current: Math.min(i + batchSize, items.length),
+      current: Math.min(i + WRITE_BATCH_SIZE, items.length),
       total: items.length,
       label,
     });
-    if (i + batchSize < items.length) await new Promise<void>((r) => setTimeout(r, delayMs));
   }
 }
 
@@ -66,7 +57,7 @@ export async function paginate<T>(
   const { context, signal, onProgress, label = context } = options;
 
   for (;;) {
-    checkAborted(signal);
+    signal?.throwIfAborted();
     const page = validatePage<T>(await fetch({ limit: PAGE_SIZE, offset }), context);
     items.push(...page.items);
     onProgress?.({ current: items.length, total: page.totalLength, label });

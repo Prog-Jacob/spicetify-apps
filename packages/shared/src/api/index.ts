@@ -1,13 +1,3 @@
-export { cosmos, validateResponse } from './cosmos';
-export { platform, PLAYLIST_POSITION, PLAYLIST_PERMISSION } from './platform';
-export {
-  paginate,
-  checkAborted,
-  batchedWrite,
-  PAGE_SIZE,
-  BATCH_DELAY_MS,
-  WRITE_BATCH_SIZE,
-  PLAYLIST_BATCH_SIZE,
-  type WriteOptions,
-  type PaginateOptions,
-} from './batch';
+export { cosmos } from './cosmos';
+export { resolveUriMetadata, type UriMeta } from './uri-metadata';
+export { paginate, batchedWrite, PAGE_SIZE, BATCH_DELAY_MS, PLAYLIST_BATCH_SIZE } from './batch';

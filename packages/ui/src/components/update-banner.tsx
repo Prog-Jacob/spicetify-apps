@@ -2,7 +2,6 @@ import { t } from '../i18n';
 import TextComponent from './text';
 import SpicetifyIcon from './icon';
 import { REPO_RAW } from '@shared/lib';
-import { platform } from '@shared/api';
 import React, { useRef, useState, useEffect } from 'react';
 
 const COPY_FEEDBACK_MS = 2000;
@@ -33,7 +32,7 @@ const UpdateBanner = ({ appName, releaseUrl }: UpdateBannerProps) => {
   if (dismissed) return null;
 
   const handleCopy = () => {
-    platform.ClipboardAPI.copy(getInstallCommand(appName));
+    Spicetify.Platform.ClipboardAPI.copy(getInstallCommand(appName));
     setCopied(true);
     clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => setCopied(false), COPY_FEEDBACK_MS);

@@ -52,6 +52,8 @@
   }
   100% {
     opacity: 1;
-    transform: translateY(0);
+    /* `none`, not translateY(0): a retained transform would make animated
+       cards the containing block for fixed-position descendants (modals) */
+    transform: none;
   }
 }

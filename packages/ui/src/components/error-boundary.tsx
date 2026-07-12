@@ -1,6 +1,5 @@
 import React from 'react';
 import ErrorCard from './error-card';
-import { ErrorBoundary as ReactErrorBoundary, type FallbackProps } from 'react-error-boundary';
 
 type ErrorBoundaryProps = {
   scope: string;
@@ -8,21 +7,30 @@ type ErrorBoundaryProps = {
   children: React.ReactNode;
 };
 
-const ErrorBoundary = ({ scope, title, children }: ErrorBoundaryProps) => (
-  <ReactErrorBoundary
-    onError={(error, info) =>
-      console.error(`[${scope}] Uncaught render error:`, error, info.componentStack)
-    }
-    fallbackRender={({ error, resetErrorBoundary }: FallbackProps) => (
+type ErrorBoundaryState = { hasError: boolean; error: unknown };
+
+class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  state: ErrorBoundaryState = { hasError: false, error: null };
+
+  static getDerivedStateFromError(error: unknown): ErrorBoundaryState {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: unknown, info: React.ErrorInfo) {
+    console.error(`[${this.props.scope}] Uncaught render error:`, error, info.componentStack);
+  }
+
+  render() {
+    const { hasError, error } = this.state;
+    if (!hasError) return this.props.children;
+    return (
       <ErrorCard
-        title={title}
+        title={this.props.title}
         warnings={[error instanceof Error ? error.message : String(error)]}
-        onRetry={resetErrorBoundary}
+        onRetry={() => this.setState({ hasError: false, error: null })}
       />
-    )}
-  >
-    {children}
-  </ReactErrorBoundary>
-);
+    );
+  }
+}
 
 export default ErrorBoundary;

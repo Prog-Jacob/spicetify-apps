@@ -7,7 +7,6 @@ export type {
   BundledLocales,
   TranslationDict,
 } from './types';
-export { fetchLocale } from './fetch-locale';
 export { loadAllTranslations } from './load-translations';
 
 const getLocale = (): string => {
