@@ -47,7 +47,7 @@ scripts/
 
 ### Quick Start
 
-Requires [Node.js](https://nodejs.org/) &ge; 18, [pnpm](https://pnpm.io/) &ge; 9, and [Spicetify](https://spicetify.app/docs/advanced-usage/installation).
+Requires [Node.js](https://nodejs.org/) &ge; 22, [pnpm](https://pnpm.io/) &ge; 11, and [Spicetify](https://spicetify.app/docs/advanced-usage/installation).
 
 ```sh
 git clone https://github.com/Prog-Jacob/spicetify-apps.git
@@ -63,7 +63,8 @@ pnpm dev              # watch-build all apps + spicetify watch
 | `pnpm dev`              | Watch-build all apps with live reload           |
 | `pnpm build`            | Production build (all apps)                     |
 | `pnpm build:app <name>` | Build a single app                              |
-| `pnpm precommit`        | Format + lint + typecheck                       |
+| `pnpm test`             | Run tests (node:test via tsx)                   |
+| `pnpm precommit`        | Format + lint + typecheck + test                |
 | `pnpm create-app`       | Interactive scaffolder for a new app            |
 | `pnpm release`          | Interactive release: bump, changelog, tag, push |
 
