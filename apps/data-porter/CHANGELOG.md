@@ -1,5 +1,17 @@
 # @spicetify-apps/data-porter
 
+## 3.0.0
+
+### Major Changes
+
+- fix(release): remove version specification for pnpm action setup
+- chore: include changeset scripts in typecheck, add noEmit to base tsconfig
+- chore: add CI workflow, dev-prelaunch script, and test command
+- feat(data-porter): add content preview with drill-down and artwork enrichment
+- fix(data-porter): improve exporter accuracy and harden file parser
+- feat(ui): add Pill and FilterBar shared components
+- refactor: remove platform facade, simplify batch API, drop unused deps
+
 ## 2.4.0
 
 ### Minor Changes
