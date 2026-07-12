@@ -49,11 +49,22 @@ You can also export **another user's** public playlists and followed artists. Ju
 
 ---
 
+### Content Preview
+
+Before exporting or importing, click any data type's item count to open a preview panel. Browse your playlists, liked songs, albums, and everything else with:
+
+- **Search and filter** across all fields
+- **Drill-down** into playlists to see individual tracks
+- **Artwork and metadata** fetched on-the-fly from Spotify
+- **Pagination** for large collections
+
+---
+
 ### Import
 
 Drop in a JSON file to restore your data. Works with **Data Porter exports** and **Spotify's official data exports** (YourLibrary.json, Playlist1.json).
 
-You'll see a preview of what's inside before anything gets written.
+You'll see a preview of what's inside before anything gets written. Click into any data type to inspect its contents before committing to the import.
 
 <img src="preview/import.png" width="100%" alt="Import preview" />
 
