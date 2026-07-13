@@ -43,7 +43,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['scripts/**/*.mts', '.changeset/**/*.mts'],
+    files: ['scripts/**/*.mts', 'scripts/**/*.mjs', '.changeset/**/*.mts'],
     languageOptions: {
       globals: globals.node,
     },
