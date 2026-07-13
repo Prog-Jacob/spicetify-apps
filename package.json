@@ -22,7 +22,9 @@
     "release": "tsx scripts/release.mts",
     "download": "pnpm -r run download",
     "symlink": "pnpm -r run symlink",
-    "create-app": "tsx scripts/create-app.mts"
+    "create-app": "tsx scripts/create-app.mts",
+    "setup-fork": "tsx scripts/setup-fork.mts",
+    "prepare": "git config core.hooksPath .githooks"
   },
   "devDependencies": {
     "@changesets/cli": "^2.31.0",
