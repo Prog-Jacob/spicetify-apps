@@ -1,5 +1,23 @@
 # @spicetify-apps/data-porter
 
+## 3.1.0
+
+### Minor Changes
+
+- chore(data-porter): update preview gif
+- refactor(data-porter): use shared SummaryTile and WarningBanner in export summary
+- refactor(data-porter): rewrite import summary with stat tiles and filtering
+- feat(ui): add SummaryTile and WarningBanner components
+- feat(data-porter): redesign app icon
+- chore: lint scripts/*.mjs as node modules
+- chore(data-porter): tune marketplace search keywords
+- docs: expand README and CLAUDE.md with architecture, forking, and commands
+- feat: add setup-fork script and git pre-commit hook
+- feat(create-app): add README template, new placeholders, and auto-install
+- refactor: extract shared script helpers into lib.mts
+- docs: add content preview section to README for data-porter
+- docs: update Node.js and pnpm version requirements in README
+
 ## 3.0.0
 
 ### Major Changes
