@@ -19,6 +19,7 @@ pnpm format                 # prettier
 pnpm precommit              # format + lint + typecheck + test (run before committing)
 pnpm create-app             # interactive scaffolder for a new app
 pnpm release data-porter    # interactive release: changeset → version bump → tag → push
+pnpm setup-fork             # point a fork at a new owner's repo (updates all references)
 ```
 
 ## Architecture
@@ -27,7 +28,10 @@ pnpm release data-porter    # interactive release: changeset → version bump �
 apps/<name>/src/index.tsx   ← entry point: default-exports a render() returning JSX
 packages/shared/            ← API wrappers, i18n engine, hooks, types, utilities
 packages/ui/                ← shared UI components (shadcn/radix style, Tailwind v4)
+scripts/lib.mts             ← shared constants (ROOT, APPS_DIR) and helpers (readPkg, prompt)
 scripts/build.mts           ← esbuild bundler, auto-discovers apps in apps/
+scripts/create-app.mts      ← interactive scaffolder (template in scripts/app-template/)
+scripts/setup-fork.mts      ← updates all repo references for forks
 scripts/release.mts         ← changeset-based release per app (tags: <app>-v<ver>)
 ```
 
@@ -72,7 +76,11 @@ Tailwind CSS v4 with Spicetify theme variables mapped in `packages/shared/src/st
 
 ## Adding a New App
 
-Run `pnpm create-app` for an interactive scaffolder that generates the entry point, app shell, i18n setup, package.json, and tsconfig. It also adds a manifest entry. Template source files live in `scripts/app-template/` as real `.ts`/`.tsx` with `{{NAME}}` placeholders. The build script auto-discovers apps by scanning for `apps/*/src/index.tsx`.
+Run `pnpm create-app` for an interactive scaffolder that generates the entry point, app shell, i18n setup, README, package.json, and tsconfig. It also adds a manifest entry and runs `pnpm install`. Template source files live in `scripts/app-template/` as real `.ts`/`.tsx` with `{{NAME}}`, `{{SLUG}}`, `{{DESCRIPTION}}`, `{{REPO}}` placeholders. JS/TS files get escaped replacements (backslashes, quotes); markdown gets raw values. The build script auto-discovers apps by scanning for `apps/*/src/index.tsx`.
+
+## Forking
+
+`package.json#repository` is the single source of truth for repo identity. The build injects it as `__REPO__`, used at runtime for update checks and i18n locale fetching. `pnpm setup-fork` rewrites all references (package.json, install scripts, READMEs) from the original repo to the fork's repo in one step.
 
 ## Release
 
