@@ -7,7 +7,7 @@
 
   <h1>Data Porter</h1>
 
-  <p><strong>Back up your Spotify library, move it to another account, or just keep a copy.</strong></p>
+  <p><strong>Back up, export, transfer, and migrate your Spotify library: playlists, liked songs, albums, artists, and podcasts. Move it to another account or save it as a JSON file.</strong></p>
 
   <p>
     <a href="https://github.com/Prog-Jacob/spicetify-apps/releases?q=data-porter"><img src="https://img.shields.io/github/v/release/Prog-Jacob/spicetify-apps?style=for-the-badge&colorA=1e1e2e&colorB=a6e3a1&label=version" alt="Version" /></a>
