@@ -2,26 +2,22 @@
 /**
  * Interactive app scaffolder.
  *
- * Usage:  pnpm create-app
+ * Usage: pnpm create-app
  *
- * Template source files live in scripts/app-template/src/ as real .ts/.tsx
- * with {{NAME}} placeholders in string literals. The template has its own
- * tsconfig.json so the IDE resolves @shared/* and @ui/* imports correctly.
+ * Copies scripts/app-template/ into apps/<slug>/, replacing {{NAME}}/{{SLUG}}/
+ * {{DESCRIPTION}}/{{REPO}} placeholders (escaped in JS/TS, raw in markdown).
+ * Generates package.json, tsconfig, manifest entry, then runs pnpm install.
  */
 
-import { resolve, join } from 'path';
-import { createInterface } from 'readline';
+import { join } from 'path';
+import { execSync } from 'child_process';
+import { ROOT, APPS_DIR, readPkg, prompt } from './lib.mts';
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'fs';
 
-const TEMPLATE_SRC = join(import.meta.dirname, 'app-template', 'src');
-const ROOT = resolve(import.meta.dirname, '..');
-const APPS_DIR = join(ROOT, 'apps');
+const TEMPLATE_DIR = join(import.meta.dirname, 'app-template');
+const TEMPLATE_SRC = join(TEMPLATE_DIR, 'src');
 
-const rl = createInterface({ input: process.stdin, output: process.stdout });
-const ask = (q: string, fallback = ''): Promise<string> =>
-  new Promise((r) =>
-    rl.question(fallback ? `${q} (${fallback}): ` : `${q}: `, (a) => r(a.trim() || fallback)),
-  );
+const { ask, close } = prompt();
 const titleCase = (s: string) =>
   s.replace(/(^|-)(\w)/g, (_, __, c: string) => ` ${c.toUpperCase()}`).trim();
 
@@ -40,16 +36,28 @@ if (existsSync(join(APPS_DIR, slug))) {
 const name = await ask('Display name', titleCase(slug));
 const desc = await ask('One-line description', '');
 const tags = await ask('Tags (comma-separated)', '');
-rl.close();
+close();
 
 const appDir = join(APPS_DIR, slug);
-// forks scaffold apps pointing at their own repo, not upstream
-const repo = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf-8')).repository as string;
+const repo: string = readPkg().repository;
+const description = desc || 'A Spicetify custom app.';
+
+const replacements: Record<string, string> = {
+  '{{NAME}}': name,
+  '{{SLUG}}': slug,
+  '{{DESCRIPTION}}': description,
+  '{{REPO}}': repo,
+};
+
 const esc = (s: string) => s.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-const replacements: [RegExp, string][] = [
-  [/\{\{NAME\}\}/g, esc(name)],
-  [/\{\{SLUG\}\}/g, esc(slug)],
-];
+const needsEscape = (file: string) => /\.[mt]?[jt]sx?$/.test(file);
+
+function applyReplacements(content: string, escape: boolean): string {
+  for (const [key, value] of Object.entries(replacements)) {
+    content = content.replaceAll(key, escape ? esc(value) : value);
+  }
+  return content;
+}
 
 function copyDir(src: string, dest: string) {
   mkdirSync(dest, { recursive: true });
@@ -59,14 +67,16 @@ function copyDir(src: string, dest: string) {
     if (statSync(srcPath).isDirectory()) {
       copyDir(srcPath, destPath);
     } else {
-      let content = readFileSync(srcPath, 'utf-8');
-      for (const [pattern, value] of replacements) content = content.replace(pattern, value);
-      writeFileSync(destPath, content);
+      const content = readFileSync(srcPath, 'utf-8');
+      writeFileSync(destPath, applyReplacements(content, needsEscape(entry)));
     }
   }
 }
 
 copyDir(TEMPLATE_SRC, join(appDir, 'src'));
+
+const readme = applyReplacements(readFileSync(join(TEMPLATE_DIR, 'README.md'), 'utf-8'), false);
+writeFileSync(join(appDir, 'README.md'), readme);
 
 const json = (file: string, obj: object) =>
   writeFileSync(join(appDir, file), JSON.stringify(obj, null, 2) + '\n');
@@ -104,4 +114,7 @@ manifest.push({
 });
 writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + '\n');
 
-console.log(`\n  Created apps/${slug}/\n\n  Next steps:\n    pnpm install\n    pnpm dev\n`);
+console.log(`\n  Created apps/${slug}/\n`);
+console.log('  Installing dependencies...\n');
+execSync('pnpm install', { cwd: ROOT, stdio: 'inherit' });
+console.log(`\n  Ready! Run \`pnpm dev\` to start.\n`);
