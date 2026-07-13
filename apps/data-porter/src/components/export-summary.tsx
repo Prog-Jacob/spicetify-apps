@@ -6,9 +6,10 @@ import { ANIMATION_STAGGER_MS } from '../constants';
 import type { DataType, ExportData } from '../types/export';
 import {
   ResultCard,
-  TextComponent,
-  ButtonPrimary,
+  SummaryTile,
   SpicetifyIcon,
+  ButtonPrimary,
+  WarningBanner,
   ButtonTertiary,
 } from '@ui/components';
 
@@ -53,41 +54,26 @@ const ExportSummary = ({ result, warnings, onDownload, onNewExport }: ExportSumm
       {items.length > 0 && (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {items.map(({ type, label, count, icon }, i) => (
-            <button
-              key={label}
-              type="button"
+            <SummaryTile
+              key={type}
+              icon={icon}
+              value={t.number(count)}
+              label={label}
+              animationDelay={`${i * ANIMATION_STAGGER_MS.SUMMARY_ITEM}ms`}
               onClick={() => setPreviewing(type)}
-              className="flex animate-fade-in-up cursor-pointer items-center gap-3 rounded-lg border-0 bg-spice-highlight/50 p-3 text-start transition-colors hover:bg-spice-highlight/80"
-              style={{ animationDelay: `${i * ANIMATION_STAGGER_MS.SUMMARY_ITEM}ms` }}
-            >
-              <SpicetifyIcon icon={icon} className="shrink-0 text-spice-subtext" />
-              <div className="flex min-w-0 flex-col">
-                <TextComponent variant="alto" weight="bold">
-                  {t.number(count)}
-                </TextComponent>
-                <TextComponent variant="minuet" semanticColor="textSubdued">
-                  {label}
-                </TextComponent>
-              </div>
-              <SpicetifyIcon
-                icon="chevron-right"
-                size={12}
-                className="ms-auto shrink-0 text-spice-subtext/50 rtl:rotate-180"
-              />
-            </button>
+              trailing={
+                <SpicetifyIcon
+                  icon="chevron-right"
+                  size={12}
+                  className="ms-auto shrink-0 text-spice-subtext/50 rtl:rotate-180"
+                />
+              }
+            />
           ))}
         </div>
       )}
 
-      {warnings.length > 0 && (
-        <div className="flex flex-col gap-1.5 rounded-lg bg-spice-notification-error/10 p-3">
-          {warnings.map((w, i) => (
-            <TextComponent key={i} variant="minuet" semanticColor="textNegative">
-              {w}
-            </TextComponent>
-          ))}
-        </div>
-      )}
+      <WarningBanner warnings={warnings} />
 
       {previewing && (
         <ContentPreview type={previewing} data={result} onClose={() => setPreviewing(null)} />
