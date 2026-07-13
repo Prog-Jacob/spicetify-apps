@@ -58,6 +58,9 @@
   "summary.partial": "اكتمل جزئياً",
   "summary.importAgain": "استيراد مرة أخرى",
   "summary.goToExport": "الذهاب إلى التصدير",
+  "summary.succeeded": "نجح",
+  "summary.skipped": "تم تخطيه",
+  "summary.failed": "فشل",
 
   "dataType.playlists": "قوائم التشغيل",
   "dataType.playlists.desc": "قوائم التشغيل بجميع مقاطعها",

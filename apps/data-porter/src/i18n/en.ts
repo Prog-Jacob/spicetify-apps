@@ -63,6 +63,9 @@ const en = {
   'summary.newExport': 'New Export',
   'summary.importAgain': 'Import Again',
   'summary.goToExport': 'Go to Export',
+  'summary.succeeded': 'Succeeded',
+  'summary.skipped': 'Skipped',
+  'summary.failed': 'Failed',
 
   // Data types
   'dataType.playlists': 'Playlists',
