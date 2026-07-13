@@ -13,13 +13,12 @@
  * bumps versions, writes CHANGELOGs, and commits. The script tags and pushes.
  */
 
-import { resolve, join } from 'path';
+import { join } from 'path';
 import { execSync, spawnSync } from 'child_process';
-import { existsSync, readFileSync, readdirSync, writeFileSync } from 'fs';
+import { ROOT, APPS_DIR, readPkg } from './lib.mts';
+import { existsSync, readdirSync, writeFileSync } from 'fs';
 
-const ROOT = resolve(import.meta.dirname, '..');
 const CHANGESET_DIR = join(ROOT, '.changeset');
-const APPS_DIR = join(ROOT, 'apps');
 
 const appName = process.argv[2];
 const run = (cmd: string) => execSync(cmd, { cwd: ROOT, stdio: 'inherit' });
@@ -38,8 +37,7 @@ if (!existsSync(appDir)) {
   process.exit(1);
 }
 
-const pkgPath = join(appDir, 'package.json');
-const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'));
+const pkg = readPkg(appDir);
 const currentVersion: string = pkg.version;
 const pkgName: string = pkg.name;
 
@@ -66,7 +64,7 @@ if (!hasChangesets()) {
 
 run('pnpm changeset version');
 
-const newVersion: string = JSON.parse(readFileSync(pkgPath, 'utf-8')).version;
+const newVersion: string = readPkg(appDir).version;
 const tag = `${appName}-v${newVersion}`;
 console.log(`\n  ${appName}: ${currentVersion} → ${newVersion}  (tag: ${tag})\n`);
 

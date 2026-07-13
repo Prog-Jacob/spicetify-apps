@@ -1,6 +1,7 @@
-import { resolve, join } from 'path';
+import { join } from 'path';
 import { execSync } from 'child_process';
 import pkg from 'esbuild-plugin-external-global';
+import { ROOT, APPS_DIR, readPkg } from './lib.mts';
 import { build, context, type BuildOptions } from 'esbuild';
 import type { BundledLocales } from '../packages/shared/src/i18n/types.ts';
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'fs';
@@ -26,10 +27,8 @@ interface ManifestEntry {
   tags: string[];
 }
 
-const ROOT = resolve(import.meta.dirname, '..');
-const rootPkg: PackageJson = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf-8'));
+const rootPkg: PackageJson = readPkg();
 const bundleLocales = rootPkg.i18n?.bundleLocales ?? [];
-const APPS_DIR = join(ROOT, 'apps');
 
 const { externalGlobalPlugin } = pkg;
 const args = process.argv.slice(2);
@@ -63,7 +62,7 @@ const collectBundledLocales = (appName: string): BundledLocales => {
 const buildOptions = (appName: string): BuildOptions => {
   const appDir = join(APPS_DIR, appName);
   const outDir = join(appDir, 'dist');
-  const appPkg: PackageJson = JSON.parse(readFileSync(join(appDir, 'package.json'), 'utf-8'));
+  const appPkg: PackageJson = readPkg(appDir);
   const appVersion = appPkg.version ?? '0.0.0';
 
   return {
