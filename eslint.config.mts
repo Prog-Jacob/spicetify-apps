@@ -28,6 +28,7 @@ export default tseslint.config(
         Spicetify: 'readonly',
         __APP_VERSION__: 'readonly',
         __APP_NAME__: 'readonly',
+        __APP_DISPLAY_NAME__: 'readonly',
         __REPO__: 'readonly',
         __BUNDLED_LOCALES__: 'readonly',
       },

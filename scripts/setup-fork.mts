@@ -11,7 +11,7 @@
 
 import { join } from 'path';
 import { execSync } from 'child_process';
-import { ROOT, APPS_DIR, readPkg, prompt } from './lib.mts';
+import { ROOT, APPS_DIR, readPkg, prompt, writeManifest } from './lib.mts';
 import { readFileSync, writeFileSync, readdirSync, rmSync, existsSync } from 'fs';
 
 const pkgPath = join(ROOT, 'package.json');
@@ -76,8 +76,7 @@ for (const target of targets) {
 
 if (deleteApps) {
   for (const app of apps) rmSync(join(APPS_DIR, app), { recursive: true });
-  const manifestPath = join(ROOT, 'manifest.json');
-  writeFileSync(manifestPath, '[]\n');
+  writeManifest([]);
   console.log(`\n  Deleted ${apps.length} app${apps.length === 1 ? '' : 's'}: ${apps.join(', ')}`);
 }
 

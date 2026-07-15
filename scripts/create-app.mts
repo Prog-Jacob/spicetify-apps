@@ -11,7 +11,7 @@
 
 import { join } from 'path';
 import { execSync } from 'child_process';
-import { ROOT, APPS_DIR, readPkg, prompt } from './lib.mts';
+import { ROOT, APPS_DIR, readPkg, prompt, readManifest, writeManifest } from './lib.mts';
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'fs';
 
 const TEMPLATE_DIR = join(import.meta.dirname, 'app-template');
@@ -98,8 +98,7 @@ json('tsconfig.json', {
   include: ['src/**/*', '../../packages/shared/src/types/**/*'],
 });
 
-const manifestPath = join(ROOT, 'manifest.json');
-const manifest = JSON.parse(readFileSync(manifestPath, 'utf-8'));
+const manifest = readManifest();
 manifest.push({
   name,
   ...(desc && { description: desc }),
@@ -112,7 +111,7 @@ manifest.push({
         .filter(Boolean)
     : [],
 });
-writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + '\n');
+writeManifest(manifest);
 
 console.log(`\n  Created apps/${slug}/\n`);
 console.log('  Installing dependencies...\n');

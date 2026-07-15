@@ -44,7 +44,7 @@ scripts/release.mts         ← changeset-based release per app (tags: <app>-v<v
 
 **Build-time defines** (available as globals, typed in `packages/shared/src/types/globals.d.ts`):
 
-- `__APP_NAME__`, `__APP_VERSION__`, `__REPO__`, `__BUNDLED_LOCALES__`
+- `__APP_NAME__`, `__APP_DISPLAY_NAME__`, `__APP_VERSION__`, `__REPO__`, `__BUNDLED_LOCALES__`
 
 ## Spicetify Runtime
 
