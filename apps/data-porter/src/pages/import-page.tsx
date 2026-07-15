@@ -45,7 +45,7 @@ const SOURCE_LABEL: Record<SourceFormat, MessageKey> = {
   [SOURCE_FORMAT.PROFILE]: 'import.sourceProfile',
 };
 
-const ImportPage = ({ banner }: { banner?: React.ReactNode }) => {
+const ImportPage = () => {
   const [step, setStep] = useState<Step>(IMPORT_STEP.UPLOAD);
   const [parsed, setParsed] = useState<ParsedFile | null>(null);
   const [selected, setSelected] = useState<Set<DataType>>(new Set());
@@ -178,7 +178,6 @@ const ImportPage = ({ banner }: { banner?: React.ReactNode }) => {
       title={t('import.title')}
       subtitle={t('import.subtitle')}
       version={__APP_VERSION__}
-      banner={banner}
       navButton={
         <ButtonSecondary
           onClick={() => Spicetify.Platform.History.push(`/${__APP_NAME__}`)}
