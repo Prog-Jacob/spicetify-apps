@@ -1,8 +1,14 @@
 import { t } from '../i18n';
 import { userProfileUrl } from './spotify-urls';
 import { BAN_SET, DATA_TYPE } from '../constants';
-import { fetchRootlistPlaylists, type PlaylistRef } from './playlist-lookup';
-import { cosmos, paginate, BATCH_DELAY_MS, PLAYLIST_BATCH_SIZE } from '@shared/api';
+import {
+  cosmos,
+  paginate,
+  BATCH_DELAY_MS,
+  type PlaylistRef,
+  PLAYLIST_BATCH_SIZE,
+  fetchRootlistPlaylists,
+} from '@shared/api';
 import {
   SPOTIFY_URI,
   notifyError,

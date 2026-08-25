@@ -1,21 +1,4 @@
-import type { RootlistItem } from '@shared/types';
-
-export type PlaylistRef = Pick<RootlistItem, 'name' | 'uri'>;
-
-function collect(items: RootlistItem[], out: PlaylistRef[]): void {
-  for (const item of items) {
-    if (item.type === 'playlist') out.push({ name: item.name, uri: item.uri });
-    else if (item.type === 'folder' && item.items) collect(item.items, out);
-  }
-}
-
-export async function fetchRootlistPlaylists(signal?: AbortSignal): Promise<PlaylistRef[]> {
-  const { items = [] } = await Spicetify.Platform.RootlistAPI.getContents();
-  signal?.throwIfAborted();
-  const out: PlaylistRef[] = [];
-  collect(items, out);
-  return out;
-}
+import { fetchRootlistPlaylists } from '@shared/api';
 
 export async function fetchExistingPlaylists(signal?: AbortSignal): Promise<Map<string, string>> {
   const playlists = await fetchRootlistPlaylists(signal);
