@@ -2,6 +2,7 @@ import type { NodeType } from '../types';
 
 export const NODE_REL_SIZE = 4;
 export const AVATAR_MIN_SCREEN_RADIUS = 7;
+export const LABEL_MIN_SCREEN_RADIUS = 13;
 
 // Fixed categorical hues (not theme-derived) so node types stay distinguishable on any
 // theme; only `accent` follows the live Spicetify accent, so "you" matches the user.
