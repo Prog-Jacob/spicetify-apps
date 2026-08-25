@@ -15,3 +15,6 @@ export type GraphEdge = {
   target: string;
   type: EdgeType;
 };
+
+export type EntityRef = { uri: string; name: string };
+export type TrackRef = EntityRef & { artists: EntityRef[] };

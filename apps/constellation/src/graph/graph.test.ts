@@ -8,6 +8,7 @@ import { deriveCollaborations } from './collaboration';
 import { detectCommunities } from './community-detection';
 import { ingestPlaylistTracks } from '../services/ingest';
 import { toSnapshot, fromSnapshot } from './graph-snapshot';
+import { parseArtistOverview, parseAlbumTracks } from '../services/graphql-enrichment';
 
 const node = (uri: string) => ({ uri, type: 'artist', label: uri }) as const;
 
@@ -104,6 +105,71 @@ test('detectCommunities separates disconnected clusters', () => {
   assert.equal(community.get('a'), community.get('c'));
   assert.notEqual(community.get('a'), community.get('x'));
   assert.equal(community.get('x'), community.get('z'));
+});
+
+test('parseArtistOverview reads related artists and flattens nested discography releases', () => {
+  const enrichment = parseArtistOverview({
+    data: {
+      artistUnion: {
+        relatedContent: {
+          relatedArtists: {
+            items: [
+              { uri: 'spotify:artist:r1', profile: { name: 'Related One' } },
+              { profile: { name: 'no uri' } }, // dropped
+            ],
+          },
+        },
+        discography: {
+          albums: {
+            items: [
+              { releases: { items: [{ uri: 'spotify:album:a1', name: 'Album One' }] } },
+              { releases: { items: [{ uri: 'spotify:album:a2', name: 'Album Two' }] } },
+            ],
+          },
+        },
+      },
+    },
+  });
+  assert.deepEqual(
+    enrichment.related.map((r) => r.uri),
+    ['spotify:artist:r1'],
+  );
+  assert.deepEqual(
+    enrichment.albums.map((a) => a.uri),
+    ['spotify:album:a1', 'spotify:album:a2'],
+  );
+});
+
+test('parseArtistOverview yields empty lists for an unexpected shape, never throws', () => {
+  assert.deepEqual(parseArtistOverview({}), { related: [], albums: [] });
+  assert.deepEqual(parseArtistOverview({ data: { artistUnion: {} } }), { related: [], albums: [] });
+});
+
+test('parseAlbumTracks reads tracks with per-track artists, tolerating tracksV2', () => {
+  const { tracks } = parseAlbumTracks({
+    data: {
+      albumUnion: {
+        tracksV2: {
+          items: [
+            {
+              track: {
+                uri: 'spotify:track:t1',
+                name: 'Song',
+                artists: { items: [{ uri: 'spotify:artist:a1', profile: { name: 'Artist' } }] },
+              },
+            },
+            { track: { name: 'no uri' } }, // dropped
+          ],
+        },
+      },
+    },
+  });
+  assert.equal(tracks.length, 1);
+  assert.equal(tracks[0].uri, 'spotify:track:t1');
+  assert.deepEqual(
+    tracks[0].artists.map((a) => a.uri),
+    ['spotify:artist:a1'],
+  );
 });
 
 test('isFresh gates the cache by age', () => {
