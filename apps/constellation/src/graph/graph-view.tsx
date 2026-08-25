@@ -1,193 +1,144 @@
 import ForceGraph from 'force-graph';
+import { graphPalette } from './theme';
 import type { GraphNode } from '../types';
 import type { MusicGraph } from './music-graph';
 import type { RenderNode } from './render-data';
 import { resolveUriMetadata } from '@shared/api';
-import React, { useEffect, useRef } from 'react';
-import { readGraphPalette, type GraphPalette } from './theme';
-import {
-  monogram,
-  nodeRadius,
-  NODE_STYLE,
-  NODE_REL_SIZE,
-  hueFromString,
-  AVATAR_MIN_SCREEN_RADIUS,
-} from './node-style';
+import { loadImage, paintNode } from './node-paint';
+import React, { useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
+import { nodeRadius, NODE_STYLE, NODE_REL_SIZE, hueFromString } from './node-style';
+
+export type GraphViewHandle = {
+  focusNode: (uri: string) => void;
+  capturePng: () => Promise<Blob | null>;
+};
 
 type Props = {
   graph: MusicGraph;
   images: Map<string, string>;
   revision: number;
+  nodeVisible: (node: GraphNode) => boolean;
   onSelect: (node: GraphNode | null) => void;
 };
 
-const TWO_PI = Math.PI * 2;
+const FOCUS_MS = 600;
+const FOCUS_ZOOM = 3;
 
-// Session cache of decoded avatar images, keyed by URL. crossOrigin keeps the canvas
-// untainted so a future PNG export stays possible. Capped with FIFO eviction so a long
-// session with many expansions can't grow it without bound.
-const IMAGE_CACHE_MAX = 512;
-const imageCache = new Map<string, HTMLImageElement>();
+const GraphView = forwardRef<GraphViewHandle, Props>(
+  ({ graph, images, revision, nodeVisible, onSelect }, ref) => {
+    const palette = graphPalette();
+    const containerRef = useRef<HTMLDivElement>(null);
+    const graphRef = useRef<ForceGraph<RenderNode>>();
+    const onSelectRef = useRef(onSelect);
+    onSelectRef.current = onSelect;
 
-const loadImage = (url: string, onReady: () => void): void => {
-  if (imageCache.has(url)) return;
-  const img = new Image();
-  img.crossOrigin = 'anonymous';
-  img.onload = onReady;
-  img.src = url;
-  imageCache.set(url, img);
-  if (imageCache.size > IMAGE_CACHE_MAX) {
-    const oldest = imageCache.keys().next().value;
-    if (oldest !== undefined) imageCache.delete(oldest);
-  }
-};
+    const imageByUri = useRef(new Map<string, string>()).current;
+    const attempted = useRef(new Set<string>()).current;
+    const renderByUri = useRef(new Map<string, RenderNode>()).current;
 
-const readyImage = (url?: string): HTMLImageElement | undefined => {
-  const img = url ? imageCache.get(url) : undefined;
-  return img?.complete && img.naturalWidth > 0 ? img : undefined;
-};
+    useImperativeHandle(
+      ref,
+      () => ({
+        focusNode: (uri: string) => {
+          const node = renderByUri.get(uri);
+          const fg = graphRef.current;
+          if (node && fg)
+            fg.centerAt(node.x ?? 0, node.y ?? 0, FOCUS_MS).zoom(FOCUS_ZOOM, FOCUS_MS);
+        },
+        capturePng: () =>
+          new Promise<Blob | null>((resolve) => {
+            const canvas = containerRef.current?.querySelector('canvas');
+            if (!canvas) return resolve(null);
+            canvas.toBlob(resolve, 'image/png');
+          }),
+      }),
+      [renderByUri],
+    );
 
-const paintAvatar = (node: RenderNode, ctx: CanvasRenderingContext2D, r: number, url?: string) => {
-  const x = node.x ?? 0;
-  const y = node.y ?? 0;
-  const img = readyImage(url);
+    useEffect(() => {
+      const el = containerRef.current;
+      if (!el) return;
 
-  ctx.save();
-  ctx.beginPath();
-  ctx.arc(x, y, r, 0, TWO_PI);
-  ctx.clip();
-  if (img) {
-    ctx.drawImage(img, x - r, y - r, r * 2, r * 2);
-  } else {
-    const gradient = ctx.createLinearGradient(x - r, y - r, x + r, y + r);
-    gradient.addColorStop(0, `hsl(${node.hue}, 52%, 58%)`);
-    gradient.addColorStop(1, `hsl(${(node.hue + 38) % 360}, 58%, 30%)`);
-    ctx.fillStyle = gradient;
-    ctx.fillRect(x - r, y - r, r * 2, r * 2);
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
-    ctx.font = `600 ${r}px sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(monogram(node.label), x, y + 0.5);
-  }
-  ctx.restore();
-};
+      const fg = new ForceGraph<RenderNode>(el)
+        .backgroundColor(palette.background)
+        .nodeRelSize(NODE_REL_SIZE)
+        .nodeVal((node) => NODE_STYLE[node.type].area)
+        .linkColor(() => palette.link)
+        .onNodeClick((node) => onSelectRef.current(node))
+        .onBackgroundClick(() => onSelectRef.current(null))
+        .nodeCanvasObject((node, ctx, scale) => paintNode(node, ctx, scale, palette, imageByUri));
 
-const paintNode = (
-  node: RenderNode,
-  ctx: CanvasRenderingContext2D,
-  scale: number,
-  palette: GraphPalette,
-  images: Map<string, string>,
-) => {
-  const r = node.radius;
-  const x = node.x ?? 0;
-  const y = node.y ?? 0;
-  const color = palette.color[node.type];
+      const resize = () => fg.width(el.clientWidth).height(el.clientHeight);
+      resize();
+      window.addEventListener('resize', resize);
+      graphRef.current = fg;
 
-  // Tracks stay dots; every node collapses to a dot when too small to read art.
-  if (node.type === 'track' || r * scale < AVATAR_MIN_SCREEN_RADIUS) {
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.arc(x, y, r, 0, TWO_PI);
-    ctx.fill();
-    return;
-  }
-
-  paintAvatar(node, ctx, r, images.get(node.uri));
-  ctx.lineWidth = 2 / scale;
-  ctx.strokeStyle = color;
-  ctx.beginPath();
-  ctx.arc(x, y, r, 0, TWO_PI);
-  ctx.stroke();
-};
-
-const GraphView = ({ graph, images, revision, onSelect }: Props) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const graphRef = useRef<ForceGraph<RenderNode>>();
-  const onSelectRef = useRef(onSelect);
-  onSelectRef.current = onSelect;
-  // URL per node, resolved lazily; the paint path reads it, so the domain stays image-free.
-  const imageByUri = useRef(new Map<string, string>()).current;
-  // URIs already sent through oEmbed, so imageless nodes aren't re-resolved every expansion.
-  const attempted = useRef(new Set<string>()).current;
-  // Render node per URI, reused across expansions so force-graph keeps settled positions.
-  const renderByUri = useRef(new Map<string, RenderNode>()).current;
-
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-
-    const palette = readGraphPalette();
-    const fg = new ForceGraph<RenderNode>(el)
-      .backgroundColor(palette.background)
-      .nodeRelSize(NODE_REL_SIZE)
-      .nodeVal((node) => NODE_STYLE[node.type].area)
-      .linkColor(() => palette.link)
-      .onNodeClick((node) => onSelectRef.current(node))
-      .onBackgroundClick(() => onSelectRef.current(null))
-      .nodeCanvasObject((node, ctx, scale) => paintNode(node, ctx, scale, palette, imageByUri));
-
-    const resize = () => fg.width(el.clientWidth).height(el.clientHeight);
-    resize();
-    window.addEventListener('resize', resize);
-    graphRef.current = fg;
-
-    return () => {
-      window.removeEventListener('resize', resize);
-      fg._destructor();
-    };
-  }, [imageByUri]);
-
-  useEffect(() => {
-    const fg = graphRef.current;
-    if (!fg) return;
-
-    const domainNodes = graph.nodes();
-    const nodes = domainNodes.map((node) => {
-      const existing = renderByUri.get(node.uri);
-      if (existing) return existing;
-      const created: RenderNode = {
-        ...node,
-        id: node.uri,
-        radius: nodeRadius(node.type),
-        hue: hueFromString(node.uri),
+      return () => {
+        window.removeEventListener('resize', resize);
+        fg._destructor();
       };
-      renderByUri.set(node.uri, created);
-      return created;
-    });
-    fg.graphData({ nodes, links: graph.links() });
+    }, [palette, imageByUri]);
 
-    // The graph auto-pauses rendering when the layout settles, so nudge one repaint each
-    // time artwork lands late.
-    const repaint = () => graphRef.current?.resumeAnimation();
-    const show = (uri: string, url: string) => {
-      if (imageByUri.has(uri)) return;
-      imageByUri.set(uri, url);
-      loadImage(url, repaint);
-    };
+    useEffect(() => {
+      const fg = graphRef.current;
+      if (!fg) return;
 
-    for (const [uri, url] of images) show(uri, url);
+      const pending: string[] = [];
+      const nodes = graph.nodes().map((node) => {
+        if (node.type !== 'track' && !imageByUri.has(node.uri) && !attempted.has(node.uri)) {
+          attempted.add(node.uri);
+          pending.push(node.uri);
+        }
+        const existing = renderByUri.get(node.uri);
+        if (existing) return existing;
+        const created: RenderNode = {
+          ...node,
+          id: node.uri,
+          radius: nodeRadius(node.type),
+          hue: hueFromString(node.uri),
+        };
+        renderByUri.set(node.uri, created);
+        return created;
+      });
+      fg.graphData({ nodes, links: graph.links() });
 
-    // Non-track nodes get their real cover from oEmbed. Resolves the whole set at once:
-    // fine for library sizes, gate behind viewport/LOD if huge graphs stutter.
-    let cancelled = false;
-    const pending = domainNodes
-      .filter((n) => n.type !== 'track' && !imageByUri.has(n.uri) && !attempted.has(n.uri))
-      .map((n) => n.uri);
-    for (const uri of pending) attempted.add(uri);
-    void resolveUriMetadata(pending).then((metas) => {
-      if (cancelled) return;
-      for (const [uri, meta] of metas) if (meta.imageUrl) show(uri, meta.imageUrl);
-      repaint();
-    });
+      // The graph auto-pauses rendering when the layout settles, so nudge one repaint each
+      // time artwork lands late.
+      const repaint = () => graphRef.current?.resumeAnimation();
+      const show = (uri: string, url: string) => {
+        if (imageByUri.has(uri)) return;
+        imageByUri.set(uri, url);
+        loadImage(url, repaint);
+      };
 
-    return () => {
-      cancelled = true;
-    };
-  }, [graph, images, revision, imageByUri, attempted, renderByUri]);
+      for (const [uri, url] of images) show(uri, url);
 
-  return <div ref={containerRef} className="h-full w-full" />;
-};
+      let cancelled = false;
+      void resolveUriMetadata(pending).then((metas) => {
+        if (cancelled) return;
+        for (const [uri, meta] of metas) if (meta.imageUrl) show(uri, meta.imageUrl);
+        repaint();
+      });
+
+      return () => {
+        cancelled = true;
+      };
+    }, [graph, images, revision, imageByUri, attempted, renderByUri]);
+
+    useEffect(() => {
+      const fg = graphRef.current;
+      if (!fg) return;
+      const endVisible = (end: string | number | RenderNode | undefined) =>
+        typeof end === 'object' && end !== null ? nodeVisible(end) : false;
+      fg.nodeVisibility(nodeVisible).linkVisibility(
+        (link) => endVisible(link.source) && endVisible(link.target),
+      );
+    }, [nodeVisible]);
+
+    return <div ref={containerRef} className="h-full w-full" />;
+  },
+);
+
+GraphView.displayName = 'GraphView';
 
 export default GraphView;

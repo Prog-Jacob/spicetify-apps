@@ -15,6 +15,12 @@ const en = {
   'inspector.expanding': 'Expanding…',
   'inspector.connections': 'Connections ({count})',
 
+  'controls.search': 'Search nodes…',
+  'controls.noMatches': 'No matches',
+
+  'actions.exportImage': 'Export image',
+  'actions.exportData': 'Export data',
+
   'expand.failed': 'Could not expand this node.',
 } as const;
 
