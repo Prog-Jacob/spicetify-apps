@@ -38,3 +38,6 @@ export const readGraphPalette = (): GraphPalette => {
     color,
   };
 };
+
+let cached: GraphPalette | undefined;
+export const graphPalette = (): GraphPalette => (cached ??= readGraphPalette());

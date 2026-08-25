@@ -1,9 +1,9 @@
 import { t } from '../i18n';
 import React, { useMemo } from 'react';
 import { NODE_TYPE } from '../constants';
-import { readGraphPalette } from '../graph/theme';
-import { canExpand } from '../services/expand-node';
+import NodeTypeDot from './node-type-dot';
 import type { NodeType, GraphNode } from '../types';
+import { canExpand } from '../services/expand-node';
 import type { MusicGraph } from '../graph/music-graph';
 import { TextComponent, ButtonSecondary } from '@ui/components';
 
@@ -22,12 +22,7 @@ type Props = {
   onExpand: (node: GraphNode) => void;
 };
 
-const TypeDot = ({ color }: { color: string }) => (
-  <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: color }} />
-);
-
 const Inspector = ({ node, graph, expanded, expandingUri, onExpand }: Props) => {
-  const palette = useMemo(readGraphPalette, []);
   const neighbors = useMemo(() => (node ? graph.neighbors(node.uri) : []), [graph, node]);
 
   return (
@@ -39,7 +34,7 @@ const Inspector = ({ node, graph, expanded, expandingUri, onExpand }: Props) => 
       ) : (
         <>
           <div className="flex items-center gap-2">
-            <TypeDot color={palette.color[node.type]} />
+            <NodeTypeDot type={node.type} />
             <TextComponent variant="mesto" semanticColor="textSubdued">
               {t(`type.${node.type}`)}
             </TextComponent>
@@ -69,7 +64,7 @@ const Inspector = ({ node, graph, expanded, expandingUri, onExpand }: Props) => 
           <ul className="flex flex-col gap-1.5">
             {neighbors.map((n) => (
               <li key={n.uri} className="flex items-center gap-2 truncate">
-                <TypeDot color={palette.color[n.type]} />
+                <NodeTypeDot type={n.type} />
                 <span className="truncate text-sm text-spice-text">{n.label}</span>
               </li>
             ))}
