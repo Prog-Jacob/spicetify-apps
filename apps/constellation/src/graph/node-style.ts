@@ -25,6 +25,11 @@ const DEGREE_SCALE_MAX = 3;
 export const degreeScale = (degree: number): number =>
   Math.min(1 + Math.log2(1 + degree) * DEGREE_SCALE_K, DEGREE_SCALE_MAX);
 
+// Golden-angle hue spacing keeps adjacent community ids visually distinct.
+const GOLDEN_ANGLE = 137.508;
+export const clusterColor = (community: number): string =>
+  `hsl(${(community * GOLDEN_ANGLE) % 360}, 60%, 58%)`;
+
 export const monogram = (label: string): string => {
   const first = label
     .trim()
