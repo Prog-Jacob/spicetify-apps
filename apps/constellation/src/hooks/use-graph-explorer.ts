@@ -4,11 +4,13 @@ import { notifyError } from '@shared/lib';
 import { useAbortController } from '@shared/hooks';
 import { expandNode, canExpand } from '../services/expand-node';
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { loadCachedGraph, saveCachedGraph } from '../services/graph-cache';
 import { buildLibraryGraph, type LibraryGraph } from '../services/library-crawler';
 
 /**
  * Owns the explored graph. Expansion mutates the same MusicGraph in place, so `revision`
- * bumps to tell the view to re-project.
+ * bumps to tell the view to re-project. Load is stale-while-revalidate: a cached snapshot
+ * paints instantly while a fresh crawl runs and then replaces it.
  */
 export const useGraphExplorer = () => {
   const [library, setLibrary] = useState<LibraryGraph | null>(null);
@@ -20,8 +22,18 @@ export const useGraphExplorer = () => {
 
   useEffect(() => {
     const { signal } = aborter.start();
+    let fresh = false;
+
+    void loadCachedGraph().then((cached) => {
+      if (cached && !fresh && !signal.aborted) setLibrary({ graph: cached, images: new Map() });
+    });
+
     buildLibraryGraph(signal)
-      .then(setLibrary)
+      .then((lib) => {
+        fresh = true;
+        setLibrary(lib);
+        void saveCachedGraph(lib.graph);
+      })
       .catch((e) => {
         if (signal.aborted) return;
         setFailed(true);

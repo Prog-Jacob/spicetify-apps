@@ -39,6 +39,7 @@
     "eslint": "~10.0.3",
     "force-graph": "^1.51.4",
     "globals": "^17.11.0",
+    "idb-keyval": "^6.3.0",
     "prettier": "^3.9.6",
     "tailwind-merge": "^3.6.0",
     "tailwindcss": "^4.3.3",
