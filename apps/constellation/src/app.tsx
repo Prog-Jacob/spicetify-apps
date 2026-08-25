@@ -1,9 +1,9 @@
+import type { GraphNode } from './types';
 import GraphView from './graph/graph-view';
 import { t, loadTranslations } from './i18n';
 import Inspector from './components/inspector';
 import { useUpdateCheck } from '@shared/hooks';
 import React, { useState, useEffect } from 'react';
-import type { RenderNode } from './graph/render-data';
 import { useGraphExplorer } from './hooks/use-graph-explorer';
 import { TextComponent, UpdateBanner, ErrorBoundary } from '@ui/components';
 
@@ -17,8 +17,8 @@ const Centered = ({ children }: { children: React.ReactNode }) => (
 
 const App = () => {
   const [ready, setReady] = useState(false);
-  const [selected, setSelected] = useState<RenderNode | null>(null);
-  const { status, library, revision, expand, expanded, expandingUri } = useGraphExplorer();
+  const [selected, setSelected] = useState<GraphNode | null>(null);
+  const { library, failed, revision, expand, expanded, expandingUri } = useGraphExplorer();
   const updateUrl = useUpdateCheck(__APP_NAME__, __APP_VERSION__);
 
   useEffect(() => {
@@ -31,9 +31,9 @@ const App = () => {
     <ErrorBoundary scope={__APP_NAME__} title={t('app.error')}>
       {updateUrl && <UpdateBanner appName={__APP_NAME__} releaseUrl={updateUrl} />}
       <div className="absolute inset-0 flex">
-        {status === 'error' ? (
+        {failed ? (
           <Centered>{t('app.error')}</Centered>
-        ) : status === 'loading' || !library ? (
+        ) : !library ? (
           <Centered>{t('app.loading')}</Centered>
         ) : (
           <>

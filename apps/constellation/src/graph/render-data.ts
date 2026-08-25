@@ -1,5 +1,11 @@
 import type { GraphNode } from '../types';
 
-// force-graph's node contract: our identity fields plus the x/y the engine populates in
-// place. A view type, kept out of the domain so MusicGraph stays framework-independent.
-export type RenderNode = GraphNode & { id: string; x?: number; y?: number };
+// Paint values (radius, placeholder hue) are precomputed at projection so the per-frame canvas
+// path allocates nothing. A view type, kept out of MusicGraph so the domain stays framework-free.
+export type RenderNode = GraphNode & {
+  id: string;
+  radius: number;
+  hue: number;
+  x?: number;
+  y?: number;
+};

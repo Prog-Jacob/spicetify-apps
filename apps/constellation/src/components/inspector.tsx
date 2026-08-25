@@ -1,10 +1,9 @@
 import { t } from '../i18n';
 import React, { useMemo } from 'react';
-import type { NodeType } from '../types';
 import { NODE_TYPE } from '../constants';
 import { readGraphPalette } from '../graph/theme';
 import { canExpand } from '../services/expand-node';
-import type { RenderNode } from '../graph/render-data';
+import type { NodeType, GraphNode } from '../types';
 import type { MusicGraph } from '../graph/music-graph';
 import { TextComponent, ButtonSecondary } from '@ui/components';
 
@@ -16,11 +15,11 @@ const PLAYABLE = new Set<NodeType>([
 ]);
 
 type Props = {
-  node: RenderNode | null;
+  node: GraphNode | null;
   graph: MusicGraph;
   expanded: Set<string>;
   expandingUri: string | null;
-  onExpand: (node: RenderNode) => void;
+  onExpand: (node: GraphNode) => void;
 };
 
 const TypeDot = ({ color }: { color: string }) => (

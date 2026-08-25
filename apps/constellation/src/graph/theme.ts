@@ -1,5 +1,5 @@
-import { NODE_HUE } from './node-style';
 import type { NodeType } from '../types';
+import { NODE_STYLE } from './node-style';
 
 export type GraphPalette = {
   background: string;
@@ -22,16 +22,12 @@ const withAlpha = (color: string, alpha: number): string => {
     : color;
 };
 
-/**
- * Snapshot the graph's colors from the active Spicetify theme, so the canvas (which can't
- * use CSS classes) blends with whatever theme the user runs. Read once per mount: a theme
- * switch reloads the app. The per-type color map is fully resolved here (accent included)
- * so paint is a plain lookup.
- */
+// Snapshot node colors from the live Spicetify theme so the canvas (which can't use CSS
+// classes) matches whatever theme the user runs. Read once per mount: a theme switch reloads.
 export const readGraphPalette = (): GraphPalette => {
   const accent = cssVar('--spice-button', '#1ed760');
   const color = Object.fromEntries(
-    (Object.entries(NODE_HUE) as [NodeType, string][]).map(([type, hue]) => [
+    (Object.entries(NODE_STYLE) as [NodeType, { hue: string }][]).map(([type, { hue }]) => [
       type,
       hue === 'accent' ? accent : hue,
     ]),

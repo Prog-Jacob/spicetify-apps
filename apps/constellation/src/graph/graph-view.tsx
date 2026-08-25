@@ -1,4 +1,5 @@
 import ForceGraph from 'force-graph';
+import type { GraphNode } from '../types';
 import type { MusicGraph } from './music-graph';
 import type { RenderNode } from './render-data';
 import { resolveUriMetadata } from '@shared/api';
@@ -6,8 +7,8 @@ import React, { useEffect, useRef } from 'react';
 import { readGraphPalette, type GraphPalette } from './theme';
 import {
   monogram,
-  NODE_AREA,
-  NODE_RADIUS,
+  nodeRadius,
+  NODE_STYLE,
   NODE_REL_SIZE,
   hueFromString,
   AVATAR_MIN_SCREEN_RADIUS,
@@ -17,13 +18,15 @@ type Props = {
   graph: MusicGraph;
   images: Map<string, string>;
   revision: number;
-  onSelect: (node: RenderNode | null) => void;
+  onSelect: (node: GraphNode | null) => void;
 };
 
 const TWO_PI = Math.PI * 2;
 
-// Session cache of loaded avatar images, keyed by URL. crossOrigin keeps the canvas
-// untainted so a future PNG export stays possible.
+// Session cache of decoded avatar images, keyed by URL. crossOrigin keeps the canvas
+// untainted so a future PNG export stays possible. Capped with FIFO eviction so a long
+// session with many expansions can't grow it without bound.
+const IMAGE_CACHE_MAX = 512;
 const imageCache = new Map<string, HTMLImageElement>();
 
 const loadImage = (url: string, onReady: () => void): void => {
@@ -33,6 +36,10 @@ const loadImage = (url: string, onReady: () => void): void => {
   img.onload = onReady;
   img.src = url;
   imageCache.set(url, img);
+  if (imageCache.size > IMAGE_CACHE_MAX) {
+    const oldest = imageCache.keys().next().value;
+    if (oldest !== undefined) imageCache.delete(oldest);
+  }
 };
 
 const readyImage = (url?: string): HTMLImageElement | undefined => {
@@ -52,10 +59,9 @@ const paintAvatar = (node: RenderNode, ctx: CanvasRenderingContext2D, r: number,
   if (img) {
     ctx.drawImage(img, x - r, y - r, r * 2, r * 2);
   } else {
-    const hue = hueFromString(node.uri);
     const gradient = ctx.createLinearGradient(x - r, y - r, x + r, y + r);
-    gradient.addColorStop(0, `hsl(${hue}, 52%, 58%)`);
-    gradient.addColorStop(1, `hsl(${(hue + 38) % 360}, 58%, 30%)`);
+    gradient.addColorStop(0, `hsl(${node.hue}, 52%, 58%)`);
+    gradient.addColorStop(1, `hsl(${(node.hue + 38) % 360}, 58%, 30%)`);
     ctx.fillStyle = gradient;
     ctx.fillRect(x - r, y - r, r * 2, r * 2);
     ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
@@ -74,7 +80,7 @@ const paintNode = (
   palette: GraphPalette,
   images: Map<string, string>,
 ) => {
-  const r = NODE_RADIUS[node.type];
+  const r = node.radius;
   const x = node.x ?? 0;
   const y = node.y ?? 0;
   const color = palette.color[node.type];
@@ -103,6 +109,8 @@ const GraphView = ({ graph, images, revision, onSelect }: Props) => {
   onSelectRef.current = onSelect;
   // URL per node, resolved lazily; the paint path reads it, so the domain stays image-free.
   const imageByUri = useRef(new Map<string, string>()).current;
+  // URIs already sent through oEmbed, so imageless nodes aren't re-resolved every expansion.
+  const attempted = useRef(new Set<string>()).current;
   // Render node per URI, reused across expansions so force-graph keeps settled positions.
   const renderByUri = useRef(new Map<string, RenderNode>()).current;
 
@@ -114,7 +122,7 @@ const GraphView = ({ graph, images, revision, onSelect }: Props) => {
     const fg = new ForceGraph<RenderNode>(el)
       .backgroundColor(palette.background)
       .nodeRelSize(NODE_REL_SIZE)
-      .nodeVal((node) => NODE_AREA[node.type])
+      .nodeVal((node) => NODE_STYLE[node.type].area)
       .linkColor(() => palette.link)
       .onNodeClick((node) => onSelectRef.current(node))
       .onBackgroundClick(() => onSelectRef.current(null))
@@ -135,10 +143,16 @@ const GraphView = ({ graph, images, revision, onSelect }: Props) => {
     const fg = graphRef.current;
     if (!fg) return;
 
-    const nodes = graph.nodes().map((node) => {
+    const domainNodes = graph.nodes();
+    const nodes = domainNodes.map((node) => {
       const existing = renderByUri.get(node.uri);
       if (existing) return existing;
-      const created: RenderNode = { ...node, id: node.uri };
+      const created: RenderNode = {
+        ...node,
+        id: node.uri,
+        radius: nodeRadius(node.type),
+        hue: hueFromString(node.uri),
+      };
       renderByUri.set(node.uri, created);
       return created;
     });
@@ -148,6 +162,7 @@ const GraphView = ({ graph, images, revision, onSelect }: Props) => {
     // time artwork lands late.
     const repaint = () => graphRef.current?.resumeAnimation();
     const show = (uri: string, url: string) => {
+      if (imageByUri.has(uri)) return;
       imageByUri.set(uri, url);
       loadImage(url, repaint);
     };
@@ -157,10 +172,10 @@ const GraphView = ({ graph, images, revision, onSelect }: Props) => {
     // Non-track nodes get their real cover from oEmbed. Resolves the whole set at once:
     // fine for library sizes, gate behind viewport/LOD if huge graphs stutter.
     let cancelled = false;
-    const pending = graph
-      .nodes()
-      .filter((n) => n.type !== 'track' && !imageByUri.has(n.uri))
+    const pending = domainNodes
+      .filter((n) => n.type !== 'track' && !imageByUri.has(n.uri) && !attempted.has(n.uri))
       .map((n) => n.uri);
+    for (const uri of pending) attempted.add(uri);
     void resolveUriMetadata(pending).then((metas) => {
       if (cancelled) return;
       for (const [uri, meta] of metas) if (meta.imageUrl) show(uri, meta.imageUrl);
@@ -170,7 +185,7 @@ const GraphView = ({ graph, images, revision, onSelect }: Props) => {
     return () => {
       cancelled = true;
     };
-  }, [graph, images, revision, imageByUri, renderByUri]);
+  }, [graph, images, revision, imageByUri, attempted, renderByUri]);
 
   return <div ref={containerRef} className="h-full w-full" />;
 };
