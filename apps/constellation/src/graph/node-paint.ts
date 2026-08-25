@@ -1,4 +1,3 @@
-import type { GraphPalette } from './theme';
 import type { RenderNode } from './render-data';
 import { degreeScale, AVATAR_MIN_SCREEN_RADIUS } from './node-style';
 
@@ -55,14 +54,13 @@ export const paintNode = (
   node: RenderNode,
   ctx: CanvasRenderingContext2D,
   scale: number,
-  palette: GraphPalette,
+  color: string,
   images: Map<string, string>,
   sizeByDegree: boolean,
 ) => {
   const r = sizeByDegree ? node.radius * degreeScale(node.degree) : node.radius;
   const x = node.x ?? 0;
   const y = node.y ?? 0;
-  const color = palette.color[node.type];
 
   // Tracks stay dots; every node collapses to a dot when too small to read art.
   if (node.type === 'track' || r * scale < AVATAR_MIN_SCREEN_RADIUS) {

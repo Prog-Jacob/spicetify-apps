@@ -1,10 +1,11 @@
-import ForceGraph from 'force-graph';
 import { graphPalette } from './theme';
-import type { GraphNode } from '../types';
+import { EDGE_TYPE } from '../constants';
 import type { MusicGraph } from './music-graph';
 import type { RenderNode } from './render-data';
 import { resolveUriMetadata } from '@shared/api';
 import { loadImage, paintNode } from './node-paint';
+import ForceGraph, { type LinkObject } from 'force-graph';
+import type { GraphNode, GraphEdge, EdgeType } from '../types';
 import React, { useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
 import {
   monogram,
@@ -14,6 +15,8 @@ import {
   NODE_REL_SIZE,
   hueFromString,
 } from './node-style';
+
+type RenderLink = LinkObject<RenderNode> & { type: EdgeType };
 
 export type GraphViewHandle = {
   focusNode: (uri: string) => void;
@@ -25,6 +28,8 @@ type Props = {
   images: Map<string, string>;
   revision: number;
   nodeVisible: (node: GraphNode) => boolean;
+  nodeColor: (node: RenderNode) => string;
+  extraLinks: GraphEdge[];
   sizeByDegree: boolean;
   onSelect: (node: GraphNode | null) => void;
 };
@@ -33,14 +38,19 @@ const FOCUS_MS = 600;
 const FOCUS_ZOOM = 3;
 
 const GraphView = forwardRef<GraphViewHandle, Props>(
-  ({ graph, images, revision, nodeVisible, sizeByDegree, onSelect }, ref) => {
+  (
+    { graph, images, revision, nodeVisible, nodeColor, extraLinks, sizeByDegree, onSelect },
+    ref,
+  ) => {
     const palette = graphPalette();
     const containerRef = useRef<HTMLDivElement>(null);
-    const graphRef = useRef<ForceGraph<RenderNode>>();
+    const graphRef = useRef<ForceGraph<RenderNode, RenderLink>>();
     const onSelectRef = useRef(onSelect);
     onSelectRef.current = onSelect;
     const sizeByDegreeRef = useRef(sizeByDegree);
     sizeByDegreeRef.current = sizeByDegree;
+    const nodeColorRef = useRef(nodeColor);
+    nodeColorRef.current = nodeColor;
 
     const imageByUri = useRef(new Map<string, string>()).current;
     const attempted = useRef(new Set<string>()).current;
@@ -69,7 +79,7 @@ const GraphView = forwardRef<GraphViewHandle, Props>(
       const el = containerRef.current;
       if (!el) return;
 
-      const fg = new ForceGraph<RenderNode>(el)
+      const fg = new ForceGraph<RenderNode, RenderLink>(el)
         .backgroundColor(palette.background)
         .nodeRelSize(NODE_REL_SIZE)
         .nodeVal(
@@ -77,11 +87,20 @@ const GraphView = forwardRef<GraphViewHandle, Props>(
             NODE_STYLE[node.type].area *
             (sizeByDegreeRef.current ? degreeScale(node.degree) ** 2 : 1),
         )
-        .linkColor(() => palette.link)
+        .linkColor((link) =>
+          link.type === EDGE_TYPE.COLLABORATED ? palette.color.artist : palette.link,
+        )
         .onNodeClick((node) => onSelectRef.current(node))
         .onBackgroundClick(() => onSelectRef.current(null))
         .nodeCanvasObject((node, ctx, scale) =>
-          paintNode(node, ctx, scale, palette, imageByUri, sizeByDegreeRef.current),
+          paintNode(
+            node,
+            ctx,
+            scale,
+            nodeColorRef.current(node),
+            imageByUri,
+            sizeByDegreeRef.current,
+          ),
         );
 
       const resize = () => fg.width(el.clientWidth).height(el.clientHeight);
@@ -122,7 +141,7 @@ const GraphView = forwardRef<GraphViewHandle, Props>(
         renderByUri.set(node.uri, created);
         return created;
       });
-      fg.graphData({ nodes, links: graph.links() });
+      fg.graphData({ nodes, links: [...graph.links(), ...extraLinks] });
 
       // The graph auto-pauses rendering when the layout settles, so nudge one repaint each
       // time artwork lands late.
@@ -145,7 +164,7 @@ const GraphView = forwardRef<GraphViewHandle, Props>(
       return () => {
         cancelled = true;
       };
-    }, [graph, images, revision, imageByUri, attempted, renderByUri]);
+    }, [graph, images, revision, extraLinks, imageByUri, attempted, renderByUri]);
 
     useEffect(() => {
       const fg = graphRef.current;
@@ -161,6 +180,11 @@ const GraphView = forwardRef<GraphViewHandle, Props>(
     useEffect(() => {
       graphRef.current?.d3ReheatSimulation().resumeAnimation();
     }, [sizeByDegree]);
+
+    // Node colouring changed (lens or theme): repaint without disturbing the layout.
+    useEffect(() => {
+      graphRef.current?.resumeAnimation();
+    }, [nodeColor]);
 
     return <div ref={containerRef} className="h-full w-full" />;
   },

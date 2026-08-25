@@ -24,6 +24,12 @@ const en = {
   'actions.exportData': 'Export data',
 
   'lens.byDegree': 'Size by connections',
+  'lens.byCluster': 'Color by cluster',
+  'edges.collaborations': 'Collaborations',
+
+  'time.all': 'All time',
+  'time.since': 'Since {date}',
+  'time.label': 'Show items added since',
 
   'expand.failed': 'Could not expand this node.',
 } as const;

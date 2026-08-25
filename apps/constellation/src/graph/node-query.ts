@@ -9,8 +9,17 @@ export const neighborhoodUris = (graph: MusicGraph, uri: string): Set<string> =>
   return uris;
 };
 
-// Prefix matches rank above mid-label matches, then shorter labels win, so the most specific
-// hit surfaces first. Pure over a node list so a command palette can reuse it unchanged.
+export const addedAtBounds = (graph: MusicGraph): { min: number; max: number } | null => {
+  let min = Infinity;
+  let max = -Infinity;
+  for (const node of graph.nodes()) {
+    if (!node.addedAt) continue;
+    if (node.addedAt < min) min = node.addedAt;
+    if (node.addedAt > max) max = node.addedAt;
+  }
+  return min < max ? { min, max } : null;
+};
+
 export const searchNodes = (
   nodes: GraphNode[],
   query: string,

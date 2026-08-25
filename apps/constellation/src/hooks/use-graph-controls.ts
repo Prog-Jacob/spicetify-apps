@@ -15,6 +15,14 @@ export const useGraphControls = () => {
   const [sizeByDegree, setSizeByDegree] = useState(false);
   const toggleSizeLens = useCallback(() => setSizeByDegree((on) => !on), []);
 
+  const [colorByCluster, setColorByCluster] = useState(false);
+  const toggleClusterLens = useCallback(() => setColorByCluster((on) => !on), []);
+
+  const [showCollaborations, setShowCollaborations] = useState(false);
+  const toggleCollaborations = useCallback(() => setShowCollaborations((on) => !on), []);
+
+  const [since, setSince] = useState(0);
+
   const [focusUri, setFocusUri] = useState<string | null>(null);
   const focus = useCallback((uri: string) => setFocusUri(uri), []);
   const clearFocus = useCallback(() => setFocusUri(null), []);
@@ -25,6 +33,12 @@ export const useGraphControls = () => {
     isVisible,
     sizeByDegree,
     toggleSizeLens,
+    colorByCluster,
+    toggleClusterLens,
+    showCollaborations,
+    toggleCollaborations,
+    since,
+    setSince,
     focusUri,
     focus,
     clearFocus,

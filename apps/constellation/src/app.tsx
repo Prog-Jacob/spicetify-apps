@@ -3,17 +3,18 @@ import { t, loadTranslations } from './i18n';
 import Inspector from './components/inspector';
 import { useUpdateCheck } from '@shared/hooks';
 import TypeFilter from './components/type-filter';
+import ToggleChip from './components/toggle-chip';
 import { toSnapshot } from './graph/graph-snapshot';
-import { neighborhoodUris } from './graph/node-query';
 import NodeSearchBox from './components/node-search-box';
 import { downloadJson, downloadBlob } from '@shared/lib';
-import SizeLensToggle from './components/size-lens-toggle';
+import { useGraphLenses } from './hooks/use-graph-lenses';
+import React, { useState, useEffect, useRef } from 'react';
 import { useGraphExplorer } from './hooks/use-graph-explorer';
 import { useGraphControls } from './hooks/use-graph-controls';
+import AddedSinceFilter from './components/added-since-filter';
 import GraphExportToolbar from './components/graph-export-toolbar';
 import GraphView, { type GraphViewHandle } from './graph/graph-view';
 import { TextComponent, UpdateBanner, ErrorBoundary } from '@ui/components';
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 
 const Centered = ({ children }: { children: React.ReactNode }) => (
   <div className="flex h-full w-full items-center justify-center">
@@ -27,28 +28,39 @@ const App = () => {
   const [ready, setReady] = useState(false);
   const [selected, setSelected] = useState<GraphNode | null>(null);
   const { library, failed, revision, expand, expanded, expandingUri } = useGraphExplorer();
+  const controls = useGraphControls();
   const {
     visibleTypes,
     toggleType,
-    isVisible,
     sizeByDegree,
     toggleSizeLens,
+    colorByCluster,
+    toggleClusterLens,
+    showCollaborations,
+    toggleCollaborations,
+    since,
+    setSince,
     focusUri,
     focus,
     clearFocus,
-  } = useGraphControls();
+  } = controls;
+  const { nodeVisible, nodeColor, extraLinks, timeBounds } = useGraphLenses(
+    library,
+    revision,
+    controls,
+  );
   const viewRef = useRef<GraphViewHandle>(null);
   const updateUrl = useUpdateCheck(__APP_NAME__, __APP_VERSION__);
 
-  const focusSet = useMemo(
-    () => (focusUri && library ? neighborhoodUris(library.graph, focusUri) : null),
-    [focusUri, library, revision],
-  );
-
-  const nodeVisible = useCallback(
-    (node: GraphNode) => isVisible(node) && (!focusSet || focusSet.has(node.uri)),
-    [isVisible, focusSet],
-  );
+  const lenses = [
+    { label: t('lens.byDegree'), active: sizeByDegree, onToggle: toggleSizeLens },
+    { label: t('lens.byCluster'), active: colorByCluster, onToggle: toggleClusterLens },
+    {
+      label: t('edges.collaborations'),
+      active: showCollaborations,
+      onToggle: toggleCollaborations,
+    },
+  ];
 
   const focusOn = (node: GraphNode) => {
     setSelected(node);
@@ -89,6 +101,8 @@ const App = () => {
                 images={library.images}
                 revision={revision}
                 nodeVisible={nodeVisible}
+                nodeColor={nodeColor}
+                extraLinks={extraLinks}
                 sizeByDegree={sizeByDegree}
                 onSelect={setSelected}
               />
@@ -100,7 +114,21 @@ const App = () => {
                   onPick={focusOn}
                 />
                 <TypeFilter visibleTypes={visibleTypes} onToggle={toggleType} />
-                <SizeLensToggle active={sizeByDegree} onToggle={toggleSizeLens} />
+                <div className="flex flex-wrap gap-1.5">
+                  {lenses.map((lens) => (
+                    <ToggleChip key={lens.label} active={lens.active} onToggle={lens.onToggle}>
+                      {lens.label}
+                    </ToggleChip>
+                  ))}
+                </div>
+                {timeBounds && (
+                  <AddedSinceFilter
+                    min={timeBounds.min}
+                    max={timeBounds.max}
+                    since={since}
+                    onChange={setSince}
+                  />
+                )}
               </div>
               <GraphExportToolbar onExportImage={exportImage} onExportData={exportData} />
             </div>

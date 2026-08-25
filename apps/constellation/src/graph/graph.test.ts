@@ -4,6 +4,8 @@ import { MusicGraph } from './music-graph';
 import { searchNodes } from './node-query';
 import { isFresh } from '../services/graph-cache';
 import { monogram, hueFromString } from './node-style';
+import { deriveCollaborations } from './collaboration';
+import { detectCommunities } from './community-detection';
 import { ingestPlaylistTracks } from '../services/ingest';
 import { toSnapshot, fromSnapshot } from './graph-snapshot';
 
@@ -71,6 +73,37 @@ test('node-style helpers: monogram skips symbols, hue is stable', () => {
   assert.equal(monogram('▶ Late Night'), 'L');
   assert.equal(monogram('  '), '?');
   assert.equal(hueFromString('spotify:artist:1'), hueFromString('spotify:artist:1'));
+});
+
+test('deriveCollaborations links co-credited artists once, not solo tracks', () => {
+  const g = new MusicGraph();
+  g.addNode({ uri: 't', type: 'track', label: 'Duet' });
+  g.addNode({ uri: 'solo', type: 'track', label: 'Solo' });
+  ['a1', 'a2'].forEach((u) => g.addNode({ uri: u, type: 'artist', label: u }));
+  g.addEdge('t', 'a1', 'performed_by');
+  g.addEdge('t', 'a2', 'performed_by');
+  g.addEdge('solo', 'a1', 'performed_by');
+  const collab = deriveCollaborations(g);
+  assert.equal(collab.length, 1);
+  assert.deepEqual([collab[0].source, collab[0].target].sort(), ['a1', 'a2']);
+  assert.equal(collab[0].type, 'collaborated');
+});
+
+test('detectCommunities separates disconnected clusters', () => {
+  const g = new MusicGraph();
+  ['a', 'b', 'c', 'x', 'y', 'z'].forEach((u) => g.addNode(node(u)));
+  // Two disjoint triangles: {a,b,c} and {x,y,z}.
+  g.addEdge('a', 'b', 'saved');
+  g.addEdge('b', 'c', 'saved');
+  g.addEdge('a', 'c', 'saved');
+  g.addEdge('x', 'y', 'saved');
+  g.addEdge('y', 'z', 'saved');
+  g.addEdge('x', 'z', 'saved');
+  const community = detectCommunities(g);
+  assert.equal(community.get('a'), community.get('b'));
+  assert.equal(community.get('a'), community.get('c'));
+  assert.notEqual(community.get('a'), community.get('x'));
+  assert.equal(community.get('x'), community.get('z'));
 });
 
 test('isFresh gates the cache by age', () => {

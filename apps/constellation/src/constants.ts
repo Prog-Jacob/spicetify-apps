@@ -13,6 +13,7 @@ export const EDGE_TYPE = {
   SAVED: 'saved',
   OWNS: 'owns',
   CONTAINS: 'contains',
+  COLLABORATED: 'collaborated',
 } as const;
 
 export const ALL_NODE_TYPES = Object.values(NODE_TYPE);
