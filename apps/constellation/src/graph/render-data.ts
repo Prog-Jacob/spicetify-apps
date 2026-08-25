@@ -1,13 +1,36 @@
-import type { GraphNode } from '../types';
+import type { LinkObject } from 'force-graph';
+import type { MusicGraph } from './music-graph';
+import { monogram, nodeRadius } from './node-style';
+import type { GraphNode, EdgeType } from '../types';
 
-// Paint values (radius, placeholder hue) are precomputed at projection so the per-frame canvas
-// path allocates nothing. A view type, kept out of MusicGraph so the domain stays framework-free.
 export type RenderNode = GraphNode & {
   id: string;
   radius: number;
-  hue: number;
   degree: number;
   monogram: string;
   x?: number;
   y?: number;
+  fx?: number;
+  fy?: number;
 };
+
+export type RenderLink = LinkObject<RenderNode> & { type: EdgeType };
+
+export const projectNodes = (graph: MusicGraph, cache: Map<string, RenderNode>): RenderNode[] =>
+  graph.nodes().map((node) => {
+    const degree = graph.degree(node.uri);
+    const existing = cache.get(node.uri);
+    if (existing) {
+      existing.degree = degree;
+      return existing;
+    }
+    const created: RenderNode = {
+      ...node,
+      id: node.uri,
+      radius: nodeRadius(node.type),
+      monogram: monogram(node.label),
+      degree,
+    };
+    cache.set(node.uri, created);
+    return created;
+  });

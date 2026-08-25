@@ -22,8 +22,6 @@ const withAlpha = (color: string, alpha: number): string => {
     : color;
 };
 
-// Snapshot node colors from the live Spicetify theme so the canvas (which can't use CSS
-// classes) matches whatever theme the user runs. Read once per mount: a theme switch reloads.
 export const readGraphPalette = (): GraphPalette => {
   const accent = cssVar('--spice-button', '#1ed760');
   const color = Object.fromEntries(
@@ -34,7 +32,7 @@ export const readGraphPalette = (): GraphPalette => {
   ) as Record<NodeType, string>;
   return {
     background: cssVar('--spice-main', '#121212'),
-    link: withAlpha(cssVar('--spice-subtext', '#b3b3b3'), 0.16),
+    link: withAlpha(cssVar('--spice-subtext', '#b3b3b3'), 0.5),
     color,
   };
 };

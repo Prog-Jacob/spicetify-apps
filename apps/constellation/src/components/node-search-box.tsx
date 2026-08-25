@@ -18,10 +18,8 @@ const NodeSearchBox = ({ graph, revision, isVisible, onPick }: Props) => {
   const [query, setQuery] = useState('');
   const [active, setActive] = useState(0);
 
-  const results = useMemo(
-    () => (query ? searchNodes(graph.nodes().filter(isVisible), query) : []),
-    [graph, revision, isVisible, query],
-  );
+  const visible = useMemo(() => graph.nodes().filter(isVisible), [graph, revision, isVisible]);
+  const results = useMemo(() => (query ? searchNodes(visible, query) : []), [visible, query]);
 
   const retype = (value: string) => {
     setQuery(value);

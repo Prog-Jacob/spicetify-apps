@@ -25,7 +25,22 @@ const readyImage = (url?: string): HTMLImageElement | undefined => {
   return img?.complete && img.naturalWidth > 0 ? img : undefined;
 };
 
-const paintAvatar = (node: RenderNode, ctx: CanvasRenderingContext2D, r: number, url?: string) => {
+let sheenGradient: CanvasGradient | null = null;
+const unitSheen = (ctx: CanvasRenderingContext2D): CanvasGradient => {
+  if (sheenGradient) return sheenGradient;
+  sheenGradient = ctx.createLinearGradient(0, -1, 0, 1);
+  sheenGradient.addColorStop(0, 'rgba(255, 255, 255, 0.18)');
+  sheenGradient.addColorStop(1, 'rgba(0, 0, 0, 0.4)');
+  return sheenGradient;
+};
+
+const paintAvatar = (
+  node: RenderNode,
+  ctx: CanvasRenderingContext2D,
+  r: number,
+  color: string,
+  url?: string,
+) => {
   const x = node.x ?? 0;
   const y = node.y ?? 0;
   const img = readyImage(url);
@@ -37,12 +52,15 @@ const paintAvatar = (node: RenderNode, ctx: CanvasRenderingContext2D, r: number,
   if (img) {
     ctx.drawImage(img, x - r, y - r, r * 2, r * 2);
   } else {
-    const gradient = ctx.createLinearGradient(x - r, y - r, x + r, y + r);
-    gradient.addColorStop(0, `hsl(${node.hue}, 52%, 58%)`);
-    gradient.addColorStop(1, `hsl(${(node.hue + 38) % 360}, 58%, 30%)`);
-    ctx.fillStyle = gradient;
+    ctx.fillStyle = color;
     ctx.fillRect(x - r, y - r, r * 2, r * 2);
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(r, r);
+    ctx.fillStyle = unitSheen(ctx);
+    ctx.fillRect(-1, -1, 2, 2);
+    ctx.restore();
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
     ctx.font = `600 ${r}px sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -54,51 +72,105 @@ const paintAvatar = (node: RenderNode, ctx: CanvasRenderingContext2D, r: number,
 let labelFont = '';
 let labelFontScale = NaN;
 
-const paintLabel = (
-  node: RenderNode,
-  ctx: CanvasRenderingContext2D,
-  scale: number,
-  r: number,
-  color: string,
-) => {
+const paintLabel = (node: RenderNode, ctx: CanvasRenderingContext2D, scale: number, r: number) => {
   if (scale !== labelFontScale) {
     labelFontScale = scale;
-    labelFont = `500 ${LABEL_SCREEN_PX / scale}px sans-serif`;
+    labelFont = `600 ${LABEL_SCREEN_PX / scale}px sans-serif`;
   }
+  const x = node.x ?? 0;
+  const y = (node.y ?? 0) + r + 3 / scale;
   ctx.font = labelFont;
-  ctx.fillStyle = color;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
-  ctx.fillText(node.label, node.x ?? 0, (node.y ?? 0) + r + 3 / scale);
+  ctx.lineWidth = 3 / scale;
+  ctx.strokeStyle = 'rgba(0, 0, 0, 0.7)';
+  ctx.strokeText(node.label, x, y);
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+  ctx.fillText(node.label, x, y);
+};
+
+export type NodeEmphasis = 'active' | 'dim' | 'none';
+
+export const emphasisFor = (
+  uri: string,
+  focusUri: string | null,
+  focusSet: Set<string> | null,
+): NodeEmphasis =>
+  !focusUri ? 'none' : uri === focusUri ? 'active' : focusSet?.has(uri) ? 'none' : 'dim';
+
+export type PaintOptions = {
+  color: string;
+  images: Map<string, string>;
+  sizeByDegree: boolean;
+  emphasis: NodeEmphasis;
+  expandable: boolean;
+};
+
+const paintExpandBadge = (ctx: CanvasRenderingContext2D, x: number, y: number, r: number) => {
+  const bx = x + r * 0.72;
+  const by = y - r * 0.72;
+  const br = r * 0.34;
+  ctx.fillStyle = 'rgba(30, 215, 96, 0.95)';
+  ctx.beginPath();
+  ctx.arc(bx, by, br, 0, TWO_PI);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.95)';
+  ctx.lineWidth = br * 0.28;
+  const s = br * 0.5;
+  ctx.beginPath();
+  ctx.moveTo(bx - s, by);
+  ctx.lineTo(bx + s, by);
+  ctx.moveTo(bx, by - s);
+  ctx.lineTo(bx, by + s);
+  ctx.stroke();
 };
 
 export const paintNode = (
   node: RenderNode,
   ctx: CanvasRenderingContext2D,
   scale: number,
-  color: string,
-  images: Map<string, string>,
-  sizeByDegree: boolean,
+  { color, images, sizeByDegree, emphasis, expandable }: PaintOptions,
 ) => {
   const r = sizeByDegree ? node.radius * degreeScale(node.degree) : node.radius;
   const screenR = r * scale;
   const x = node.x ?? 0;
   const y = node.y ?? 0;
 
-  // Tracks stay dots; every node collapses to a dot when too small to read art.
+  ctx.save();
+  if (emphasis === 'dim') ctx.globalAlpha = 0.16;
+  if (emphasis === 'active') {
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 12;
+  }
+
+  // Tracks and nodes too small to read artwork render as plain dots.
   if (node.type === 'track' || screenR < AVATAR_MIN_SCREEN_RADIUS) {
     ctx.fillStyle = color;
     ctx.beginPath();
     ctx.arc(x, y, r, 0, TWO_PI);
     ctx.fill();
   } else {
-    paintAvatar(node, ctx, r, images.get(node.uri));
+    paintAvatar(node, ctx, r, color, images.get(node.uri));
     ctx.lineWidth = 2 / scale;
     ctx.strokeStyle = color;
     ctx.beginPath();
     ctx.arc(x, y, r, 0, TWO_PI);
     ctx.stroke();
   }
+  ctx.shadowBlur = 0;
 
-  if (screenR >= LABEL_MIN_SCREEN_RADIUS) paintLabel(node, ctx, scale, r, color);
+  if (emphasis === 'active') {
+    ctx.lineWidth = 2.5 / scale;
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+    ctx.beginPath();
+    ctx.arc(x, y, r + 3 / scale, 0, TWO_PI);
+    ctx.stroke();
+  }
+
+  if (expandable && emphasis !== 'dim' && screenR >= AVATAR_MIN_SCREEN_RADIUS) {
+    paintExpandBadge(ctx, x, y, r);
+  }
+
+  if (screenR >= LABEL_MIN_SCREEN_RADIUS || emphasis === 'active') paintLabel(node, ctx, scale, r);
+  ctx.restore();
 };

@@ -4,14 +4,14 @@ export const NODE_REL_SIZE = 4;
 export const AVATAR_MIN_SCREEN_RADIUS = 7;
 export const LABEL_MIN_SCREEN_RADIUS = 13;
 
-// Fixed categorical hues (not theme-derived) so node types stay distinguishable on any
-// theme; only `accent` follows the live Spicetify accent, so "you" matches the user.
+// Fixed categorical hues (not theme-derived) so types stay distinct on any theme; only `accent`
+// follows the live Spicetify accent. Track is muted so the mass of tracks recedes behind entities.
 export const NODE_STYLE = {
   user: { area: 12, hue: 'accent' },
-  artist: { area: 6, hue: '#ff6b9d' },
-  album: { area: 4, hue: '#46c8e6' },
-  playlist: { area: 5, hue: '#a98bff' },
-  track: { area: 2, hue: '#f5b942' },
+  artist: { area: 6, hue: 'hsl(340, 72%, 66%)' },
+  album: { area: 4, hue: 'hsl(190, 68%, 58%)' },
+  playlist: { area: 5, hue: 'hsl(255, 68%, 72%)' },
+  track: { area: 2, hue: 'hsl(38, 46%, 56%)' },
 } satisfies Record<NodeType, { area: number; hue: string }>;
 
 // Declaration order is a view ordering: legend and filter chips read largest entity to smallest.
@@ -37,10 +37,4 @@ export const monogram = (label: string): string => {
     .replace(/^[^\p{L}\p{N}]+/u, '')
     .charAt(0);
   return (first || '?').toUpperCase();
-};
-
-export const hueFromString = (value: string): number => {
-  let hash = 0;
-  for (let i = 0; i < value.length; i++) hash = (hash * 31 + value.charCodeAt(i)) | 0;
-  return Math.abs(hash) % 360;
 };

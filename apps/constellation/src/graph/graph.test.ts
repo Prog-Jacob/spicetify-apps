@@ -1,9 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { monogram } from './node-style';
 import { MusicGraph } from './music-graph';
 import { searchNodes } from './node-query';
 import { isFresh } from '../services/graph-cache';
-import { monogram, hueFromString } from './node-style';
 import { deriveCollaborations } from './collaboration';
 import { detectCommunities } from './community-detection';
 import { ingestPlaylistTracks } from '../services/ingest';
@@ -70,10 +70,9 @@ test('ingestPlaylistTracks adds track nodes + containment edges, skipping non-tr
   );
 });
 
-test('node-style helpers: monogram skips symbols, hue is stable', () => {
+test('node-style helpers: monogram skips symbols', () => {
   assert.equal(monogram('▶ Late Night'), 'L');
   assert.equal(monogram('  '), '?');
-  assert.equal(hueFromString('spotify:artist:1'), hueFromString('spotify:artist:1'));
 });
 
 test('deriveCollaborations links co-credited artists once, not solo tracks', () => {

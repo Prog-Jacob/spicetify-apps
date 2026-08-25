@@ -1,25 +1,29 @@
+import ForceGraph from 'force-graph';
 import { graphPalette } from './theme';
 import { EDGE_TYPE } from '../constants';
+import { openUriInClient } from '@shared/lib';
 import type { MusicGraph } from './music-graph';
-import type { RenderNode } from './render-data';
-import { resolveUriMetadata } from '@shared/api';
-import { loadImage, paintNode } from './node-paint';
-import ForceGraph, { type LinkObject } from 'force-graph';
-import type { GraphNode, GraphEdge, EdgeType } from '../types';
-import React, { useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
-import {
-  monogram,
-  nodeRadius,
-  NODE_STYLE,
-  degreeScale,
-  NODE_REL_SIZE,
-  hueFromString,
-} from './node-style';
+import { configureForces } from './force-config';
+import { canExpand } from '../services/expand-node';
+import type { GraphNode, GraphEdge } from '../types';
+import { useNodeArtwork } from '../hooks/use-node-artwork';
+import { NODE_STYLE, degreeScale, NODE_REL_SIZE } from './node-style';
+import { paintNode, emphasisFor, type PaintOptions } from './node-paint';
+import { projectNodes, type RenderNode, type RenderLink } from './render-data';
+import React, { useEffect, useRef, useImperativeHandle, forwardRef, useCallback } from 'react';
 
-type RenderLink = LinkObject<RenderNode> & { type: EdgeType };
+type LinkEnd = string | number | RenderNode | undefined;
+
+const endNode = (end: LinkEnd): RenderNode | undefined =>
+  typeof end === 'object' && end !== null ? end : undefined;
+
+const isIncident = (link: RenderLink, focus: string | null): boolean =>
+  focus !== null && (endNode(link.source)?.uri === focus || endNode(link.target)?.uri === focus);
 
 export type GraphViewHandle = {
   focusNode: (uri: string) => void;
+  zoomBy: (factor: number) => void;
+  fitView: () => void;
   capturePng: () => Promise<Blob | null>;
 };
 
@@ -31,15 +35,32 @@ type Props = {
   nodeColor: (node: RenderNode) => string;
   extraLinks: GraphEdge[];
   sizeByDegree: boolean;
+  selectedUri?: string;
+  expanded: Set<string>;
   onSelect: (node: GraphNode | null) => void;
+  onExpand: (node: GraphNode) => void;
 };
+
+const DOUBLE_CLICK_MS = 350;
 
 const FOCUS_MS = 600;
 const FOCUS_ZOOM = 3;
 
 const GraphView = forwardRef<GraphViewHandle, Props>(
   (
-    { graph, images, revision, nodeVisible, nodeColor, extraLinks, sizeByDegree, onSelect },
+    {
+      graph,
+      images,
+      revision,
+      nodeVisible,
+      nodeColor,
+      extraLinks,
+      sizeByDegree,
+      selectedUri,
+      expanded,
+      onSelect,
+      onExpand,
+    },
     ref,
   ) => {
     const palette = graphPalette();
@@ -47,14 +68,37 @@ const GraphView = forwardRef<GraphViewHandle, Props>(
     const graphRef = useRef<ForceGraph<RenderNode, RenderLink>>();
     const onSelectRef = useRef(onSelect);
     onSelectRef.current = onSelect;
+    const onExpandRef = useRef(onExpand);
+    onExpandRef.current = onExpand;
+    const expandedRef = useRef(expanded);
+    expandedRef.current = expanded;
+    const lastClickRef = useRef({ uri: '', at: 0 });
     const sizeByDegreeRef = useRef(sizeByDegree);
     sizeByDegreeRef.current = sizeByDegree;
     const nodeColorRef = useRef(nodeColor);
     nodeColorRef.current = nodeColor;
+    const graphDataRef = useRef(graph);
+    graphDataRef.current = graph;
+    const selectedUriRef = useRef(selectedUri);
+    selectedUriRef.current = selectedUri;
 
     const imageByUri = useRef(new Map<string, string>()).current;
-    const attempted = useRef(new Set<string>()).current;
     const renderByUri = useRef(new Map<string, RenderNode>()).current;
+    const fitted = useRef(false);
+    const hoverUriRef = useRef<string | null>(null);
+    const focusUriRef = useRef<string | null>(null);
+    const focusSetRef = useRef<Set<string> | null>(null);
+
+    useNodeArtwork(graph, images, revision, graphRef, imageByUri);
+
+    // Neighbour set is recomputed here on focus change, never per frame.
+    const setFocus = useCallback((uri: string | null) => {
+      focusUriRef.current = uri;
+      focusSetRef.current = uri
+        ? new Set([uri, ...graphDataRef.current.neighbors(uri).map((n) => n.uri)])
+        : null;
+      graphRef.current?.resumeAnimation();
+    }, []);
 
     useImperativeHandle(
       ref,
@@ -65,6 +109,11 @@ const GraphView = forwardRef<GraphViewHandle, Props>(
           if (node && fg)
             fg.centerAt(node.x ?? 0, node.y ?? 0, FOCUS_MS).zoom(FOCUS_ZOOM, FOCUS_MS);
         },
+        zoomBy: (factor: number) => {
+          const fg = graphRef.current;
+          if (fg) fg.zoom(fg.zoom() * factor, 250);
+        },
+        fitView: () => graphRef.current?.zoomToFit(500, 60),
         capturePng: () =>
           new Promise<Blob | null>((resolve) => {
             const canvas = containerRef.current?.querySelector('canvas');
@@ -79,29 +128,66 @@ const GraphView = forwardRef<GraphViewHandle, Props>(
       const el = containerRef.current;
       if (!el) return;
 
+      const paintOpts: PaintOptions = {
+        color: '',
+        images: imageByUri,
+        sizeByDegree: false,
+        emphasis: 'none',
+        expandable: false,
+      };
+
       const fg = new ForceGraph<RenderNode, RenderLink>(el)
         .backgroundColor(palette.background)
+        .cooldownTime(4000)
         .nodeRelSize(NODE_REL_SIZE)
         .nodeVal(
           (node) =>
             NODE_STYLE[node.type].area *
             (sizeByDegreeRef.current ? degreeScale(node.degree) ** 2 : 1),
         )
-        .linkColor((link) =>
-          link.type === EDGE_TYPE.COLLABORATED ? palette.color.artist : palette.link,
-        )
-        .onNodeClick((node) => onSelectRef.current(node))
+        .linkColor((link) => {
+          if (isIncident(link, focusUriRef.current)) return palette.color.artist;
+          return link.type === EDGE_TYPE.COLLABORATED ? palette.color.artist : palette.link;
+        })
+        .linkWidth((link) => {
+          if (isIncident(link, focusUriRef.current)) return 2;
+          return link.type === EDGE_TYPE.COLLABORATED ? 1.5 : 1;
+        })
+        .onNodeClick((node) => {
+          const now = Date.now();
+          const last = lastClickRef.current;
+          if (last.uri === node.uri && now - last.at < DOUBLE_CLICK_MS) {
+            onExpandRef.current(node);
+          } else {
+            onSelectRef.current(node);
+          }
+          lastClickRef.current = { uri: node.uri, at: now };
+        })
+        .onNodeRightClick((node) => openUriInClient(node.uri))
         .onBackgroundClick(() => onSelectRef.current(null))
-        .nodeCanvasObject((node, ctx, scale) =>
-          paintNode(
-            node,
-            ctx,
-            scale,
-            nodeColorRef.current(node),
-            imageByUri,
-            sizeByDegreeRef.current,
-          ),
-        );
+        .onNodeHover((node) => {
+          hoverUriRef.current = node ? node.uri : null;
+          setFocus(hoverUriRef.current ?? selectedUriRef.current ?? null);
+        })
+        .onNodeDragEnd((node) => {
+          node.fx = node.x;
+          node.fy = node.y;
+        })
+        .onEngineStop(() => {
+          if (fitted.current) return;
+          fitted.current = true;
+          fg.zoomToFit(600, 60);
+        })
+        // Reused and mutated per node so the per-frame paint path allocates nothing.
+        .nodeCanvasObject((node, ctx, scale) => {
+          paintOpts.color = nodeColorRef.current(node);
+          paintOpts.sizeByDegree = sizeByDegreeRef.current;
+          paintOpts.emphasis = emphasisFor(node.uri, focusUriRef.current, focusSetRef.current);
+          paintOpts.expandable = canExpand(node.type) && !expandedRef.current.has(node.uri);
+          paintNode(node, ctx, scale, paintOpts);
+        });
+
+      configureForces(fg);
 
       const resize = () => fg.width(el.clientWidth).height(el.clientHeight);
       resize();
@@ -117,74 +203,36 @@ const GraphView = forwardRef<GraphViewHandle, Props>(
     useEffect(() => {
       const fg = graphRef.current;
       if (!fg) return;
-
-      const pending: string[] = [];
-      const nodes = graph.nodes().map((node) => {
-        if (node.type !== 'track' && !imageByUri.has(node.uri) && !attempted.has(node.uri)) {
-          attempted.add(node.uri);
-          pending.push(node.uri);
-        }
-        const degree = graph.degree(node.uri);
-        const existing = renderByUri.get(node.uri);
-        if (existing) {
-          existing.degree = degree;
-          return existing;
-        }
-        const created: RenderNode = {
-          ...node,
-          id: node.uri,
-          radius: nodeRadius(node.type),
-          hue: hueFromString(node.uri),
-          monogram: monogram(node.label),
-          degree,
-        };
-        renderByUri.set(node.uri, created);
-        return created;
+      fg.graphData({
+        nodes: projectNodes(graph, renderByUri),
+        links: [...graph.links(), ...extraLinks],
       });
-      fg.graphData({ nodes, links: [...graph.links(), ...extraLinks] });
-
-      // The graph auto-pauses rendering when the layout settles, so nudge one repaint each
-      // time artwork lands late.
-      const repaint = () => graphRef.current?.resumeAnimation();
-      const show = (uri: string, url: string) => {
-        if (imageByUri.has(uri)) return;
-        imageByUri.set(uri, url);
-        loadImage(url, repaint);
-      };
-
-      for (const [uri, url] of images) show(uri, url);
-
-      let cancelled = false;
-      void resolveUriMetadata(pending).then((metas) => {
-        if (cancelled) return;
-        for (const [uri, meta] of metas) if (meta.imageUrl) show(uri, meta.imageUrl);
-        repaint();
-      });
-
-      return () => {
-        cancelled = true;
-      };
-    }, [graph, images, revision, extraLinks, imageByUri, attempted, renderByUri]);
+    }, [graph, revision, extraLinks, renderByUri]);
 
     useEffect(() => {
       const fg = graphRef.current;
       if (!fg) return;
-      const endVisible = (end: string | number | RenderNode | undefined) =>
-        typeof end === 'object' && end !== null ? nodeVisible(end) : false;
+      const endVisible = (end: LinkEnd) => {
+        const node = endNode(end);
+        return node ? nodeVisible(node) : false;
+      };
       fg.nodeVisibility(nodeVisible).linkVisibility(
         (link) => endVisible(link.source) && endVisible(link.target),
       );
     }, [nodeVisible]);
 
-    // Node sizes changed: re-space the layout for the new radii and repaint.
+    // Size changes the layout spacing, so reheat; colour doesn't, so just repaint.
     useEffect(() => {
       graphRef.current?.d3ReheatSimulation().resumeAnimation();
     }, [sizeByDegree]);
 
-    // Node colouring changed (lens or theme): repaint without disturbing the layout.
     useEffect(() => {
       graphRef.current?.resumeAnimation();
     }, [nodeColor]);
+
+    useEffect(() => {
+      if (!hoverUriRef.current) setFocus(selectedUri ?? null);
+    }, [selectedUri, setFocus]);
 
     return <div ref={containerRef} className="h-full w-full" />;
   },

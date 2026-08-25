@@ -39,6 +39,7 @@ export const useGraphLenses = (
     [isVisible, focusSet, deferredSince],
   );
 
+  const deferredRevision = useDeferredValue(revision);
   const clusterColorByUri = useMemo(() => {
     if (!colorByCluster || !library) return null;
     const colors = new Map<string, string>();
@@ -46,7 +47,7 @@ export const useGraphLenses = (
       colors.set(uri, clusterColor(community));
     }
     return colors;
-  }, [colorByCluster, library, revision]);
+  }, [colorByCluster, library, deferredRevision]);
 
   const palette = graphPalette();
   const nodeColor = useCallback(
