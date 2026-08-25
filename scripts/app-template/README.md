@@ -10,7 +10,7 @@
   <p><strong>{{DESCRIPTION}}</strong></p>
 
   <p>
-    <a href="https://github.com/{{REPO}}/releases?q={{SLUG}}"><img src="https://img.shields.io/github/v/release/{{REPO}}?style=for-the-badge&colorA=1e1e2e&colorB=a6e3a1&label=version" alt="Version" /></a>
+    <a href="https://github.com/{{REPO}}/releases?q={{SLUG}}"><img src="https://img.shields.io/github/package-json/v/{{REPO}}?filename=apps/{{SLUG}}/package.json&style=for-the-badge&colorA=1e1e2e&colorB=a6e3a1&label=version" alt="Version" /></a>
     <a href="https://github.com/{{REPO}}/releases"><img src="https://img.shields.io/github/downloads/{{REPO}}/total?style=for-the-badge&colorA=1e1e2e&colorB=89b4fa&label=downloads" alt="Downloads" /></a>
   </p>
 
