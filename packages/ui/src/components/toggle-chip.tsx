@@ -16,8 +16,8 @@ const ToggleChip = ({ active, onToggle, className, children }: Props) => (
     className={cn(
       'rounded-full border px-2 py-1 text-xs transition-colors',
       active
-        ? 'border-spice-button/40 bg-spice-highlight/20 text-spice-text'
-        : 'border-transparent bg-spice-highlight/5 text-spice-subtext/60',
+        ? 'border-spice-button/60 bg-spice-button/20 text-spice-text'
+        : 'border-spice-subtext/30 bg-spice-card/60 text-spice-subtext hover:border-spice-subtext/50 hover:text-spice-text',
       className,
     )}
   >
