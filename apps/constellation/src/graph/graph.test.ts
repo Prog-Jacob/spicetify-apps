@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { MusicGraph } from './music-graph';
 import { monogram, hueFromString } from './node-style';
-import { addPlaylistContents } from '../services/expand-node';
+import { ingestPlaylistTracks } from '../services/ingest';
 
 const node = (uri: string) => ({ uri, type: 'artist', label: uri }) as const;
 
@@ -39,10 +39,10 @@ test('neighbors are undirected and unique via the adjacency index', () => {
   );
 });
 
-test('addPlaylistContents adds track nodes + containment edges, skipping non-tracks', () => {
+test('ingestPlaylistTracks adds track nodes + containment edges, skipping non-tracks', () => {
   const g = new MusicGraph();
   g.addNode({ uri: 'spotify:playlist:p', type: 'playlist', label: 'P' });
-  addPlaylistContents(g, 'spotify:playlist:p', [
+  ingestPlaylistTracks(g, 'spotify:playlist:p', [
     { uri: 'spotify:track:t1', name: 'One' },
     { uri: 'spotify:episode:e1', name: 'Ep' },
     { uri: 'spotify:local:x', name: 'Local' },

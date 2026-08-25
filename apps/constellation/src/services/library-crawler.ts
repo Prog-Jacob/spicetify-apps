@@ -1,6 +1,6 @@
-import type { EdgeType } from '../types';
 import { MusicGraph } from '../graph/music-graph';
 import { NODE_TYPE, EDGE_TYPE } from '../constants';
+import { ingestArtists, ingestTrack } from './ingest';
 import { paginate, fetchRootlistPlaylists } from '@shared/api';
 import type { LibraryTrackItem, LibraryContentItem } from '@shared/types';
 
@@ -8,34 +8,7 @@ import type { LibraryTrackItem, LibraryContentItem } from '@shared/types';
 // oEmbed can't resolve). Images ride alongside rather than on the domain nodes.
 export type LibraryGraph = { graph: MusicGraph; images: Map<string, string> };
 
-type ArtistRef = { uri: string; name: string };
-
-const ingestArtists = (
-  graph: MusicGraph,
-  from: string,
-  edge: EdgeType,
-  artists: ArtistRef[] = [],
-) => {
-  for (const artist of artists) {
-    graph.addNode({ uri: artist.uri, type: NODE_TYPE.ARTIST, label: artist.name });
-    graph.addEdge(from, artist.uri, edge);
-  }
-};
-
-const ingestTrack = (graph: MusicGraph, track: LibraryTrackItem) => {
-  graph.addNode({ uri: track.uri, type: NODE_TYPE.TRACK, label: track.name });
-  if (track.album?.uri) {
-    graph.addNode({ uri: track.album.uri, type: NODE_TYPE.ALBUM, label: track.album.name });
-    graph.addEdge(track.uri, track.album.uri, EDGE_TYPE.ON_ALBUM);
-  }
-  ingestArtists(graph, track.uri, EDGE_TYPE.PERFORMED_BY, track.artists);
-};
-
-/**
- * Crawls the signed-in user's library into a graph using only proven, rate-limit-free
- * Platform APIs (Tier A): saved artists/albums/tracks and playlists, plus the
- * track→artist, track→album and album→artist edges those objects carry.
- */
+// Tier A only: proven, rate-limit-free Platform APIs, plus the edges saved objects carry.
 export async function buildLibraryGraph(signal?: AbortSignal): Promise<LibraryGraph> {
   const graph = new MusicGraph();
   const images = new Map<string, string>();
