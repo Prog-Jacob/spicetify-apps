@@ -22,6 +22,7 @@ type Props = {
   focused: boolean;
   onExpand: (node: GraphNode) => void;
   onFocus: (node: GraphNode) => void;
+  onSelect: (node: GraphNode) => void;
   onClearFocus: () => void;
 };
 
@@ -33,12 +34,13 @@ const Inspector = ({
   focused,
   onExpand,
   onFocus,
+  onSelect,
   onClearFocus,
 }: Props) => {
   const neighbors = useMemo(() => (node ? graph.neighbors(node.uri) : []), [graph, node]);
 
   return (
-    <aside className="flex h-full w-72 flex-col gap-3 overflow-y-auto border-l border-spice-button/30 bg-spice-card/60 p-4 backdrop-blur">
+    <aside className="flex h-full w-72 flex-col gap-3 overflow-y-auto border-s border-spice-button/30 bg-spice-card/60 p-4 backdrop-blur">
       {focused && (
         <ButtonSecondary buttonSize="sm" className="self-start" onClick={onClearFocus}>
           {t('inspector.clearFocus')}
@@ -83,11 +85,17 @@ const Inspector = ({
           <TextComponent variant="mesto" semanticColor="textSubdued" className="mt-1">
             {t('inspector.connections', { count: neighbors.length })}
           </TextComponent>
-          <ul className="flex flex-col gap-1.5">
+          <ul className="flex flex-col gap-0.5">
             {neighbors.map((n) => (
-              <li key={n.uri} className="flex items-center gap-2 truncate">
-                <NodeTypeDot type={n.type} />
-                <span className="truncate text-sm text-spice-text">{n.label}</span>
+              <li key={n.uri}>
+                <button
+                  type="button"
+                  onClick={() => onSelect(n)}
+                  className="flex w-full items-center gap-2 truncate rounded px-1 py-0.5 text-start hover:bg-spice-highlight/20"
+                >
+                  <NodeTypeDot type={n.type} />
+                  <span className="truncate text-sm text-spice-text">{n.label}</span>
+                </button>
               </li>
             ))}
           </ul>

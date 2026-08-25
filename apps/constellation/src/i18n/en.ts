@@ -2,6 +2,8 @@ const en = {
   'app.title': 'Constellation',
   'app.loading': 'Mapping your library…',
   'app.error': 'Could not load your library.',
+  'app.empty':
+    'Your library looks empty. Save some songs, artists, or playlists in Spotify, then reopen Constellation.',
 
   'type.track': 'Track',
   'type.artist': 'Artist',

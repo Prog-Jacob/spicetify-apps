@@ -84,67 +84,69 @@ const App = () => {
 
   if (!ready) return null;
 
+  const renderBody = () => {
+    if (failed && !library) return <Centered>{t('app.error')}</Centered>;
+    if (!library) return <Centered>{t('app.loading')}</Centered>;
+    if (library.graph.isEmpty()) return <Centered>{t('app.empty')}</Centered>;
+    return (
+      <>
+        <div className="relative flex-1">
+          <GraphView
+            ref={viewRef}
+            graph={library.graph}
+            images={library.images}
+            revision={revision}
+            nodeVisible={nodeVisible}
+            nodeColor={nodeColor}
+            extraLinks={extraLinks}
+            sizeByDegree={sizeByDegree}
+            onSelect={setSelected}
+          />
+          <div className="absolute start-3 top-3 z-10 flex w-64 flex-col gap-2">
+            <NodeSearchBox
+              graph={library.graph}
+              revision={revision}
+              isVisible={nodeVisible}
+              onPick={focusOn}
+            />
+            <TypeFilter visibleTypes={visibleTypes} onToggle={toggleType} />
+            <div className="flex flex-wrap gap-1.5">
+              {lenses.map((lens) => (
+                <ToggleChip key={lens.label} active={lens.active} onToggle={lens.onToggle}>
+                  {lens.label}
+                </ToggleChip>
+              ))}
+            </div>
+            {timeBounds && (
+              <AddedSinceFilter
+                min={timeBounds.min}
+                max={timeBounds.max}
+                since={since}
+                onChange={setSince}
+              />
+            )}
+          </div>
+          <GraphExportToolbar onExportImage={exportImage} onExportData={exportData} />
+        </div>
+        <Inspector
+          node={selected}
+          graph={library.graph}
+          expanded={expanded}
+          expandingUri={expandingUri}
+          focused={focusUri !== null}
+          onExpand={expand}
+          onFocus={focusNeighborhood}
+          onSelect={focusOn}
+          onClearFocus={clearFocus}
+        />
+      </>
+    );
+  };
+
   return (
     <ErrorBoundary scope={__APP_NAME__} title={t('app.error')}>
       {updateUrl && <UpdateBanner appName={__APP_NAME__} releaseUrl={updateUrl} />}
-      <div className="absolute inset-0 flex">
-        {failed && !library ? (
-          <Centered>{t('app.error')}</Centered>
-        ) : !library ? (
-          <Centered>{t('app.loading')}</Centered>
-        ) : (
-          <>
-            <div className="relative flex-1">
-              <GraphView
-                ref={viewRef}
-                graph={library.graph}
-                images={library.images}
-                revision={revision}
-                nodeVisible={nodeVisible}
-                nodeColor={nodeColor}
-                extraLinks={extraLinks}
-                sizeByDegree={sizeByDegree}
-                onSelect={setSelected}
-              />
-              <div className="absolute left-3 top-3 z-10 flex w-64 flex-col gap-2">
-                <NodeSearchBox
-                  graph={library.graph}
-                  revision={revision}
-                  isVisible={nodeVisible}
-                  onPick={focusOn}
-                />
-                <TypeFilter visibleTypes={visibleTypes} onToggle={toggleType} />
-                <div className="flex flex-wrap gap-1.5">
-                  {lenses.map((lens) => (
-                    <ToggleChip key={lens.label} active={lens.active} onToggle={lens.onToggle}>
-                      {lens.label}
-                    </ToggleChip>
-                  ))}
-                </div>
-                {timeBounds && (
-                  <AddedSinceFilter
-                    min={timeBounds.min}
-                    max={timeBounds.max}
-                    since={since}
-                    onChange={setSince}
-                  />
-                )}
-              </div>
-              <GraphExportToolbar onExportImage={exportImage} onExportData={exportData} />
-            </div>
-            <Inspector
-              node={selected}
-              graph={library.graph}
-              expanded={expanded}
-              expandingUri={expandingUri}
-              focused={focusUri !== null}
-              onExpand={expand}
-              onFocus={focusNeighborhood}
-              onClearFocus={clearFocus}
-            />
-          </>
-        )}
-      </div>
+      <div className="absolute inset-0 flex">{renderBody()}</div>
     </ErrorBoundary>
   );
 };

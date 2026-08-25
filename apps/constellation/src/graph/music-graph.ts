@@ -56,4 +56,8 @@ export class MusicGraph {
   get size(): number {
     return this.nodeByUri.size;
   }
+
+  isEmpty(): boolean {
+    return this.nodeByUri.size <= 1;
+  }
 }
