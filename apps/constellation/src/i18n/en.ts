@@ -11,7 +11,11 @@ const en = {
 
   'inspector.empty': '{count} in view. Pick a node to inspect it.',
   'inspector.play': 'Play',
+  'inspector.expand': 'Expand',
+  'inspector.expanding': 'Expanding…',
   'inspector.connections': 'Connections ({count})',
+
+  'expand.failed': 'Could not expand this node.',
 } as const;
 
 export default en;

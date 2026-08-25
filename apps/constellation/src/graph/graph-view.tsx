@@ -1,5 +1,4 @@
 import ForceGraph from 'force-graph';
-import { toRenderData } from './render-data';
 import type { MusicGraph } from './music-graph';
 import type { RenderNode } from './render-data';
 import { resolveUriMetadata } from '@shared/api';
@@ -17,6 +16,7 @@ import {
 type Props = {
   graph: MusicGraph;
   images: Map<string, string>;
+  revision: number;
   onSelect: (node: RenderNode | null) => void;
 };
 
@@ -96,13 +96,15 @@ const paintNode = (
   ctx.stroke();
 };
 
-const GraphView = ({ graph, images, onSelect }: Props) => {
+const GraphView = ({ graph, images, revision, onSelect }: Props) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const graphRef = useRef<ForceGraph<RenderNode>>();
   const onSelectRef = useRef(onSelect);
   onSelectRef.current = onSelect;
   // URL per node, resolved lazily; the paint path reads it, so the domain stays image-free.
   const imageByUri = useRef(new Map<string, string>()).current;
+  // Render node per URI, reused across expansions so force-graph keeps settled positions.
+  const renderByUri = useRef(new Map<string, RenderNode>()).current;
 
   useEffect(() => {
     const el = containerRef.current;
@@ -132,7 +134,15 @@ const GraphView = ({ graph, images, onSelect }: Props) => {
   useEffect(() => {
     const fg = graphRef.current;
     if (!fg) return;
-    fg.graphData(toRenderData(graph));
+
+    const nodes = graph.nodes().map((node) => {
+      const existing = renderByUri.get(node.uri);
+      if (existing) return existing;
+      const created: RenderNode = { ...node, id: node.uri };
+      renderByUri.set(node.uri, created);
+      return created;
+    });
+    fg.graphData({ nodes, links: graph.links() });
 
     // The graph auto-pauses rendering when the layout settles, so nudge one repaint each
     // time artwork lands late.
@@ -160,7 +170,7 @@ const GraphView = ({ graph, images, onSelect }: Props) => {
     return () => {
       cancelled = true;
     };
-  }, [graph, images, imageByUri]);
+  }, [graph, images, revision, imageByUri, renderByUri]);
 
   return <div ref={containerRef} className="h-full w-full" />;
 };

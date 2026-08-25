@@ -1,8 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { MusicGraph } from './music-graph';
-import { toRenderData } from './render-data';
 import { monogram, hueFromString } from './node-style';
+import { addPlaylistContents } from '../services/expand-node';
 
 const node = (uri: string) => ({ uri, type: 'artist', label: uri }) as const;
 
@@ -39,10 +39,19 @@ test('neighbors are undirected and unique via the adjacency index', () => {
   );
 });
 
-test('toRenderData projects each node with an id', () => {
+test('addPlaylistContents adds track nodes + containment edges, skipping non-tracks', () => {
   const g = new MusicGraph();
-  g.addNode(node('a'));
-  assert.equal(toRenderData(g).nodes[0].id, 'a');
+  g.addNode({ uri: 'spotify:playlist:p', type: 'playlist', label: 'P' });
+  addPlaylistContents(g, 'spotify:playlist:p', [
+    { uri: 'spotify:track:t1', name: 'One' },
+    { uri: 'spotify:episode:e1', name: 'Ep' },
+    { uri: 'spotify:local:x', name: 'Local' },
+  ]);
+  assert.equal(g.size, 2); // playlist + t1 only
+  assert.deepEqual(
+    g.neighbors('spotify:playlist:p').map((n) => n.uri),
+    ['spotify:track:t1'],
+  );
 });
 
 test('node-style helpers: monogram skips symbols, hue is stable', () => {
