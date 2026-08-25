@@ -15,5 +15,12 @@
       "playlists",
       "podcasts"
     ]
+  },
+  {
+    "name": "Constellation",
+    "description": "A graph view of your Spotify universe: songs, artists, albums, playlists, and people, drawn from the relationships already in your library.",
+    "preview": "apps/constellation/preview/thumbnail.png",
+    "readme": "apps/constellation/README.md",
+    "tags": ["graph", "visualization", "network", "library", "explore", "artists", "playlists"]
   }
 ]
