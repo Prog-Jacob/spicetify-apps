@@ -3,7 +3,7 @@ import { t, loadTranslations } from './i18n';
 import Inspector from './components/inspector';
 import { useUpdateCheck } from '@shared/hooks';
 import TypeFilter from './components/type-filter';
-import ToggleChip from './components/toggle-chip';
+import GraphGuide from './components/graph-guide';
 import { toSnapshot } from './graph/graph-snapshot';
 import NodeSearchBox from './components/node-search-box';
 import { downloadJson, downloadBlob } from '@shared/lib';
@@ -11,18 +11,12 @@ import { useGraphLenses } from './hooks/use-graph-lenses';
 import React, { useState, useEffect, useRef } from 'react';
 import { useGraphExplorer } from './hooks/use-graph-explorer';
 import { useGraphControls } from './hooks/use-graph-controls';
+import GraphPlaceholder from './components/graph-placeholder';
+import GraphNavControls from './components/graph-nav-controls';
 import AddedSinceFilter from './components/added-since-filter';
 import GraphExportToolbar from './components/graph-export-toolbar';
 import GraphView, { type GraphViewHandle } from './graph/graph-view';
-import { TextComponent, UpdateBanner, ErrorBoundary } from '@ui/components';
-
-const Centered = ({ children }: { children: React.ReactNode }) => (
-  <div className="flex h-full w-full items-center justify-center">
-    <TextComponent variant="ballad" semanticColor="textSubdued">
-      {children}
-    </TextComponent>
-  </div>
-);
+import { UpdateBanner, ErrorBoundary, ToggleChip } from '@ui/components';
 
 const App = () => {
   const [ready, setReady] = useState(false);
@@ -72,6 +66,10 @@ const App = () => {
     viewRef.current?.focusNode(node.uri);
   };
 
+  const zoomIn = () => viewRef.current?.zoomBy(1.4);
+  const zoomOut = () => viewRef.current?.zoomBy(0.72);
+  const fitView = () => viewRef.current?.fitView();
+
   const exportData = () => library && downloadJson(toSnapshot(library.graph), 'constellation.json');
   const exportImage = async () => {
     const blob = await viewRef.current?.capturePng();
@@ -85,9 +83,18 @@ const App = () => {
   if (!ready) return null;
 
   const renderBody = () => {
-    if (failed && !library) return <Centered>{t('app.error')}</Centered>;
-    if (!library) return <Centered>{t('app.loading')}</Centered>;
-    if (library.graph.isEmpty()) return <Centered>{t('app.empty')}</Centered>;
+    if (failed && !library)
+      return (
+        <GraphPlaceholder
+          title={t('app.error')}
+          subtitle={t('app.errorSub')}
+          action={{ label: t('app.retry'), onClick: () => location.reload() }}
+        />
+      );
+    if (!library)
+      return <GraphPlaceholder pulse title={t('app.loading')} subtitle={t('app.loadingSub')} />;
+    if (library.graph.isEmpty())
+      return <GraphPlaceholder title={t('app.emptyTitle')} subtitle={t('app.empty')} />;
     return (
       <>
         <div className="relative flex-1">
@@ -100,33 +107,41 @@ const App = () => {
             nodeColor={nodeColor}
             extraLinks={extraLinks}
             sizeByDegree={sizeByDegree}
+            selectedUri={selected?.uri}
+            expanded={expanded}
             onSelect={setSelected}
+            onExpand={expand}
           />
-          <div className="absolute start-3 top-3 z-10 flex w-64 flex-col gap-2">
+          <div className="absolute start-3 top-3 z-10 flex w-72 flex-col gap-2">
             <NodeSearchBox
               graph={library.graph}
               revision={revision}
               isVisible={nodeVisible}
               onPick={focusOn}
             />
-            <TypeFilter visibleTypes={visibleTypes} onToggle={toggleType} />
-            <div className="flex flex-wrap gap-1.5">
-              {lenses.map((lens) => (
-                <ToggleChip key={lens.label} active={lens.active} onToggle={lens.onToggle}>
-                  {lens.label}
-                </ToggleChip>
-              ))}
+            <div className="flex flex-col gap-3 rounded-xl border border-spice-subtext/15 bg-spice-card/80 p-3 shadow-xl backdrop-blur-md">
+              <TypeFilter visibleTypes={visibleTypes} onToggle={toggleType} />
+              <div className="h-px bg-spice-subtext/10" />
+              <div className="flex flex-wrap gap-1.5">
+                {lenses.map((lens) => (
+                  <ToggleChip key={lens.label} active={lens.active} onToggle={lens.onToggle}>
+                    {lens.label}
+                  </ToggleChip>
+                ))}
+              </div>
+              {timeBounds && (
+                <AddedSinceFilter
+                  min={timeBounds.min}
+                  max={timeBounds.max}
+                  since={since}
+                  onChange={setSince}
+                />
+              )}
             </div>
-            {timeBounds && (
-              <AddedSinceFilter
-                min={timeBounds.min}
-                max={timeBounds.max}
-                since={since}
-                onChange={setSince}
-              />
-            )}
           </div>
           <GraphExportToolbar onExportImage={exportImage} onExportData={exportData} />
+          <GraphNavControls onZoomIn={zoomIn} onZoomOut={zoomOut} onFit={fitView} />
+          <GraphGuide />
         </div>
         <Inspector
           node={selected}

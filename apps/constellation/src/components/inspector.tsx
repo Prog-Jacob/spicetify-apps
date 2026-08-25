@@ -5,6 +5,8 @@ import NodeTypeDot from './node-type-dot';
 import type { NodeType, GraphNode } from '../types';
 import { canExpand } from '../services/expand-node';
 import type { MusicGraph } from '../graph/music-graph';
+import { queueTrack } from '../services/spotify-actions';
+import { toDateString, openUriInClient } from '@shared/lib';
 import { TextComponent, ButtonSecondary } from '@ui/components';
 
 const PLAYABLE = new Set<NodeType>([
@@ -38,6 +40,11 @@ const Inspector = ({
   onClearFocus,
 }: Props) => {
   const neighbors = useMemo(() => (node ? graph.neighbors(node.uri) : []), [graph, node]);
+  const breakdown = useMemo(() => {
+    const counts = new Map<NodeType, number>();
+    for (const n of neighbors) counts.set(n.type, (counts.get(n.type) ?? 0) + 1);
+    return [...counts];
+  }, [neighbors]);
 
   return (
     <aside className="flex h-full w-72 flex-col gap-3 overflow-y-auto border-s border-spice-button/30 bg-spice-card/60 p-4 backdrop-blur">
@@ -59,11 +66,26 @@ const Inspector = ({
             </TextComponent>
           </div>
           <TextComponent variant="alto">{node.label}</TextComponent>
+          {node.addedAt && (
+            <TextComponent variant="mesto" semanticColor="textSubdued">
+              {t('inspector.saved', { date: toDateString(node.addedAt) })}
+            </TextComponent>
+          )}
 
           <div className="flex flex-wrap gap-2">
             {PLAYABLE.has(node.type) && (
               <ButtonSecondary buttonSize="sm" onClick={() => Spicetify.Player.playUri(node.uri)}>
                 {t('inspector.play')}
+              </ButtonSecondary>
+            )}
+            {node.type === NODE_TYPE.TRACK && (
+              <ButtonSecondary buttonSize="sm" onClick={() => queueTrack(node.uri)}>
+                {t('inspector.queue')}
+              </ButtonSecondary>
+            )}
+            {PLAYABLE.has(node.type) && (
+              <ButtonSecondary buttonSize="sm" onClick={() => openUriInClient(node.uri)}>
+                {t('inspector.open')}
               </ButtonSecondary>
             )}
             {canExpand(node.type) && !expanded.has(node.uri) && (
@@ -82,9 +104,21 @@ const Inspector = ({
             )}
           </div>
 
-          <TextComponent variant="mesto" semanticColor="textSubdued" className="mt-1">
-            {t('inspector.connections', { count: neighbors.length })}
-          </TextComponent>
+          <div className="mt-1 flex flex-col gap-1 border-t border-spice-subtext/10 pt-3">
+            <TextComponent variant="mesto" semanticColor="textSubdued">
+              {t('inspector.connections', { count: neighbors.length })}
+            </TextComponent>
+            {breakdown.length > 0 && (
+              <div className="flex flex-wrap gap-x-3 gap-y-1">
+                {breakdown.map(([type, count]) => (
+                  <span key={type} className="flex items-center gap-1.5 text-xs text-spice-subtext">
+                    <NodeTypeDot type={type} className="h-2 w-2" />
+                    {count} {t(`type.${type}`)}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
           <ul className="flex flex-col gap-0.5">
             {neighbors.map((n) => (
               <li key={n.uri}>
