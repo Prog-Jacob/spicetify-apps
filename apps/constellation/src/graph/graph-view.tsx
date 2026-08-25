@@ -6,7 +6,14 @@ import type { RenderNode } from './render-data';
 import { resolveUriMetadata } from '@shared/api';
 import { loadImage, paintNode } from './node-paint';
 import React, { useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
-import { nodeRadius, NODE_STYLE, NODE_REL_SIZE, hueFromString } from './node-style';
+import {
+  monogram,
+  nodeRadius,
+  NODE_STYLE,
+  degreeScale,
+  NODE_REL_SIZE,
+  hueFromString,
+} from './node-style';
 
 export type GraphViewHandle = {
   focusNode: (uri: string) => void;
@@ -18,6 +25,7 @@ type Props = {
   images: Map<string, string>;
   revision: number;
   nodeVisible: (node: GraphNode) => boolean;
+  sizeByDegree: boolean;
   onSelect: (node: GraphNode | null) => void;
 };
 
@@ -25,12 +33,14 @@ const FOCUS_MS = 600;
 const FOCUS_ZOOM = 3;
 
 const GraphView = forwardRef<GraphViewHandle, Props>(
-  ({ graph, images, revision, nodeVisible, onSelect }, ref) => {
+  ({ graph, images, revision, nodeVisible, sizeByDegree, onSelect }, ref) => {
     const palette = graphPalette();
     const containerRef = useRef<HTMLDivElement>(null);
     const graphRef = useRef<ForceGraph<RenderNode>>();
     const onSelectRef = useRef(onSelect);
     onSelectRef.current = onSelect;
+    const sizeByDegreeRef = useRef(sizeByDegree);
+    sizeByDegreeRef.current = sizeByDegree;
 
     const imageByUri = useRef(new Map<string, string>()).current;
     const attempted = useRef(new Set<string>()).current;
@@ -62,11 +72,17 @@ const GraphView = forwardRef<GraphViewHandle, Props>(
       const fg = new ForceGraph<RenderNode>(el)
         .backgroundColor(palette.background)
         .nodeRelSize(NODE_REL_SIZE)
-        .nodeVal((node) => NODE_STYLE[node.type].area)
+        .nodeVal(
+          (node) =>
+            NODE_STYLE[node.type].area *
+            (sizeByDegreeRef.current ? degreeScale(node.degree) ** 2 : 1),
+        )
         .linkColor(() => palette.link)
         .onNodeClick((node) => onSelectRef.current(node))
         .onBackgroundClick(() => onSelectRef.current(null))
-        .nodeCanvasObject((node, ctx, scale) => paintNode(node, ctx, scale, palette, imageByUri));
+        .nodeCanvasObject((node, ctx, scale) =>
+          paintNode(node, ctx, scale, palette, imageByUri, sizeByDegreeRef.current),
+        );
 
       const resize = () => fg.width(el.clientWidth).height(el.clientHeight);
       resize();
@@ -89,13 +105,19 @@ const GraphView = forwardRef<GraphViewHandle, Props>(
           attempted.add(node.uri);
           pending.push(node.uri);
         }
+        const degree = graph.degree(node.uri);
         const existing = renderByUri.get(node.uri);
-        if (existing) return existing;
+        if (existing) {
+          existing.degree = degree;
+          return existing;
+        }
         const created: RenderNode = {
           ...node,
           id: node.uri,
           radius: nodeRadius(node.type),
           hue: hueFromString(node.uri),
+          monogram: monogram(node.label),
+          degree,
         };
         renderByUri.set(node.uri, created);
         return created;
@@ -134,6 +156,11 @@ const GraphView = forwardRef<GraphViewHandle, Props>(
         (link) => endVisible(link.source) && endVisible(link.target),
       );
     }, [nodeVisible]);
+
+    // Node sizes changed: re-space the layout for the new radii and repaint.
+    useEffect(() => {
+      graphRef.current?.d3ReheatSimulation().resumeAnimation();
+    }, [sizeByDegree]);
 
     return <div ref={containerRef} className="h-full w-full" />;
   },

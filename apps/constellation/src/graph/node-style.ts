@@ -19,6 +19,12 @@ export const NODE_LEGEND_ORDER = Object.keys(NODE_STYLE) as NodeType[];
 export const nodeRadius = (type: NodeType): number =>
   Math.sqrt(NODE_STYLE[type].area) * NODE_REL_SIZE;
 
+// Log-compressed and capped so mega-hubs don't dwarf the rest.
+const DEGREE_SCALE_K = 0.35;
+const DEGREE_SCALE_MAX = 3;
+export const degreeScale = (degree: number): number =>
+  Math.min(1 + Math.log2(1 + degree) * DEGREE_SCALE_K, DEGREE_SCALE_MAX);
+
 export const monogram = (label: string): string => {
   const first = label
     .trim()

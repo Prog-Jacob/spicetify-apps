@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { MusicGraph } from './music-graph';
 import { searchNodes } from './node-query';
+import { isFresh } from '../services/graph-cache';
 import { monogram, hueFromString } from './node-style';
 import { ingestPlaylistTracks } from '../services/ingest';
 import { toSnapshot, fromSnapshot } from './graph-snapshot';
@@ -25,6 +26,16 @@ test('dedupes edges and drops dangling / self edges', () => {
   g.addEdge('a', 'ghost', 'made_by'); // dangling
   g.addEdge('a', 'a', 'made_by'); // self
   assert.equal(g.links().length, 1);
+});
+
+test('degree counts unique neighbors, zero for unknown', () => {
+  const g = new MusicGraph();
+  ['a', 'b', 'c'].forEach((u) => g.addNode(node(u)));
+  g.addEdge('a', 'b', 'saved');
+  g.addEdge('a', 'c', 'saved');
+  assert.equal(g.degree('a'), 2);
+  assert.equal(g.degree('b'), 1);
+  assert.equal(g.degree('x'), 0);
 });
 
 test('neighbors are undirected and unique via the adjacency index', () => {
@@ -60,6 +71,12 @@ test('node-style helpers: monogram skips symbols, hue is stable', () => {
   assert.equal(monogram('▶ Late Night'), 'L');
   assert.equal(monogram('  '), '?');
   assert.equal(hueFromString('spotify:artist:1'), hueFromString('spotify:artist:1'));
+});
+
+test('isFresh gates the cache by age', () => {
+  const now = 1_000_000;
+  assert.equal(isFresh(now - 500, now, 1000), true);
+  assert.equal(isFresh(now - 1500, now, 1000), false);
 });
 
 test('graph snapshot round-trips nodes/links through the same guarded writes', () => {

@@ -19,14 +19,31 @@ type Props = {
   graph: MusicGraph;
   expanded: Set<string>;
   expandingUri: string | null;
+  focused: boolean;
   onExpand: (node: GraphNode) => void;
+  onFocus: (node: GraphNode) => void;
+  onClearFocus: () => void;
 };
 
-const Inspector = ({ node, graph, expanded, expandingUri, onExpand }: Props) => {
+const Inspector = ({
+  node,
+  graph,
+  expanded,
+  expandingUri,
+  focused,
+  onExpand,
+  onFocus,
+  onClearFocus,
+}: Props) => {
   const neighbors = useMemo(() => (node ? graph.neighbors(node.uri) : []), [graph, node]);
 
   return (
     <aside className="flex h-full w-72 flex-col gap-3 overflow-y-auto border-l border-spice-button/30 bg-spice-card/60 p-4 backdrop-blur">
+      {focused && (
+        <ButtonSecondary buttonSize="sm" className="self-start" onClick={onClearFocus}>
+          {t('inspector.clearFocus')}
+        </ButtonSecondary>
+      )}
       {!node ? (
         <TextComponent variant="mesto" semanticColor="textSubdued">
           {t('inspector.empty', { count: graph.size })}
@@ -54,6 +71,11 @@ const Inspector = ({ node, graph, expanded, expandingUri, onExpand }: Props) => 
                 onClick={() => onExpand(node)}
               >
                 {expandingUri === node.uri ? t('inspector.expanding') : t('inspector.expand')}
+              </ButtonSecondary>
+            )}
+            {neighbors.length > 0 && (
+              <ButtonSecondary buttonSize="sm" onClick={() => onFocus(node)}>
+                {t('inspector.focus')}
               </ButtonSecondary>
             )}
           </div>

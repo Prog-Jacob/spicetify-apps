@@ -7,7 +7,7 @@ type Props = {
   onExportData: () => void;
 };
 
-const GraphActions = ({ onExportImage, onExportData }: Props) => (
+const GraphExportToolbar = ({ onExportImage, onExportData }: Props) => (
   <div className="absolute right-3 top-3 z-10 flex gap-2">
     <ButtonSecondary buttonSize="sm" onClick={onExportImage}>
       {t('actions.exportImage')}
@@ -18,4 +18,4 @@ const GraphActions = ({ onExportImage, onExportData }: Props) => (
   </div>
 );
 
-export default GraphActions;
+export default GraphExportToolbar;

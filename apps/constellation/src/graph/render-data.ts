@@ -6,6 +6,8 @@ export type RenderNode = GraphNode & {
   id: string;
   radius: number;
   hue: number;
+  degree: number;
+  monogram: string;
   x?: number;
   y?: number;
 };

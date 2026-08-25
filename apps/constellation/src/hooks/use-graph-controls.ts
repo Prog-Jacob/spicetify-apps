@@ -12,5 +12,21 @@ export const useGraphControls = () => {
 
   const isVisible = useCallback((node: GraphNode) => visibleTypes.has(node.type), [visibleTypes]);
 
-  return { visibleTypes, toggleType, isVisible };
+  const [sizeByDegree, setSizeByDegree] = useState(false);
+  const toggleSizeLens = useCallback(() => setSizeByDegree((on) => !on), []);
+
+  const [focusUri, setFocusUri] = useState<string | null>(null);
+  const focus = useCallback((uri: string) => setFocusUri(uri), []);
+  const clearFocus = useCallback(() => setFocusUri(null), []);
+
+  return {
+    visibleTypes,
+    toggleType,
+    isVisible,
+    sizeByDegree,
+    toggleSizeLens,
+    focusUri,
+    focus,
+    clearFocus,
+  };
 };

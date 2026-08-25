@@ -1,6 +1,6 @@
 import type { GraphPalette } from './theme';
 import type { RenderNode } from './render-data';
-import { monogram, AVATAR_MIN_SCREEN_RADIUS } from './node-style';
+import { degreeScale, AVATAR_MIN_SCREEN_RADIUS } from './node-style';
 
 const TWO_PI = Math.PI * 2;
 
@@ -46,7 +46,7 @@ const paintAvatar = (node: RenderNode, ctx: CanvasRenderingContext2D, r: number,
     ctx.font = `600 ${r}px sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(monogram(node.label), x, y + 0.5);
+    ctx.fillText(node.monogram, x, y + 0.5);
   }
   ctx.restore();
 };
@@ -57,8 +57,9 @@ export const paintNode = (
   scale: number,
   palette: GraphPalette,
   images: Map<string, string>,
+  sizeByDegree: boolean,
 ) => {
-  const r = node.radius;
+  const r = sizeByDegree ? node.radius * degreeScale(node.degree) : node.radius;
   const x = node.x ?? 0;
   const y = node.y ?? 0;
   const color = palette.color[node.type];

@@ -41,6 +41,10 @@ export class MusicGraph {
     return out;
   }
 
+  degree(uri: string): number {
+    return this.adjacency.get(uri)?.size ?? 0;
+  }
+
   nodes(): GraphNode[] {
     return [...this.nodeByUri.values()];
   }

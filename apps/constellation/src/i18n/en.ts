@@ -13,6 +13,8 @@ const en = {
   'inspector.play': 'Play',
   'inspector.expand': 'Expand',
   'inspector.expanding': 'Expanding…',
+  'inspector.focus': 'Focus neighborhood',
+  'inspector.clearFocus': 'Clear focus',
   'inspector.connections': 'Connections ({count})',
 
   'controls.search': 'Search nodes…',
@@ -20,6 +22,8 @@ const en = {
 
   'actions.exportImage': 'Export image',
   'actions.exportData': 'Export data',
+
+  'lens.byDegree': 'Size by connections',
 
   'expand.failed': 'Could not expand this node.',
 } as const;
