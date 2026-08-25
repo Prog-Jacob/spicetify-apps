@@ -1,8 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { MusicGraph } from './music-graph';
+import { searchNodes } from './node-query';
 import { monogram, hueFromString } from './node-style';
 import { ingestPlaylistTracks } from '../services/ingest';
+import { toSnapshot, fromSnapshot } from './graph-snapshot';
 
 const node = (uri: string) => ({ uri, type: 'artist', label: uri }) as const;
 
@@ -58,4 +60,32 @@ test('node-style helpers: monogram skips symbols, hue is stable', () => {
   assert.equal(monogram('▶ Late Night'), 'L');
   assert.equal(monogram('  '), '?');
   assert.equal(hueFromString('spotify:artist:1'), hueFromString('spotify:artist:1'));
+});
+
+test('graph snapshot round-trips nodes/links through the same guarded writes', () => {
+  const g = new MusicGraph();
+  g.addNode(node('a'));
+  g.addNode({ uri: 'b', type: 'album', label: 'B' });
+  g.addEdge('a', 'b', 'made_by');
+  const restored = fromSnapshot(toSnapshot(g));
+  assert.equal(restored.size, 2);
+  assert.equal(restored.links().length, 1);
+  assert.deepEqual(
+    restored.neighbors('a').map((n) => n.uri),
+    ['b'],
+  );
+});
+
+test('searchNodes ranks prefix hits first, is case-insensitive, and caps results', () => {
+  const nodes = [
+    { uri: 'a', type: 'artist', label: 'The Beatles' },
+    { uri: 'b', type: 'artist', label: 'Beatlejuice' },
+    { uri: 'c', type: 'artist', label: 'Radiohead' },
+  ] as const;
+  assert.deepEqual(
+    searchNodes([...nodes], 'beat').map((n) => n.uri),
+    ['b', 'a'], // "Beatlejuice" (prefix) outranks "The Beatles" (mid-label)
+  );
+  assert.deepEqual(searchNodes([...nodes], ''), []);
+  assert.equal(searchNodes([...nodes], 'a', 1).length, 1);
 });
