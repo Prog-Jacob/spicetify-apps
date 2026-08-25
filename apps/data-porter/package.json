@@ -6,6 +6,6 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "download": "curl -fsSL https://raw.githubusercontent.com/Prog-Jacob/spicetify-apps/main/install.sh | bash -s data-porter",
-    "symlink": "DEST=\"$(dirname $(spicetify -c))/CustomApps/data-porter\" && rm -rf \"$DEST\" && ln -sfn \"$PWD/dist\" \"$DEST\""
+    "symlink": "DEST=\"$(dirname $(spicetify -c))/CustomApps/data-porter\" && rm -rf \"$DEST\" && ln -sfn \"$PWD/dist\" \"$DEST\" && spicetify config custom_apps data-porter >/dev/null"
   }
 }
