@@ -13,6 +13,9 @@ export const NODE_STYLE = {
   track: { area: 2, hue: '#f5b942' },
 } satisfies Record<NodeType, { area: number; hue: string }>;
 
+// Declaration order is a view ordering: legend and filter chips read largest entity to smallest.
+export const NODE_LEGEND_ORDER = Object.keys(NODE_STYLE) as NodeType[];
+
 export const nodeRadius = (type: NodeType): number =>
   Math.sqrt(NODE_STYLE[type].area) * NODE_REL_SIZE;
 

@@ -14,3 +14,5 @@ export const EDGE_TYPE = {
   OWNS: 'owns',
   CONTAINS: 'contains',
 } as const;
+
+export const ALL_NODE_TYPES = Object.values(NODE_TYPE);
