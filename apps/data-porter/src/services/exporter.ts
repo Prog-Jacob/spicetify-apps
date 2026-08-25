@@ -10,6 +10,7 @@ import {
   fetchRootlistPlaylists,
 } from '@shared/api';
 import {
+  sleep,
   SPOTIFY_URI,
   notifyError,
   toDateString,
@@ -169,8 +170,7 @@ export async function buildPlaylists(
 
   for (let i = 0; i < playlistItems.length; i++) {
     signal?.throwIfAborted();
-    if (i > 0 && i % PLAYLIST_BATCH_SIZE === 0)
-      await new Promise<void>((r) => setTimeout(r, BATCH_DELAY_MS));
+    if (i > 0 && i % PLAYLIST_BATCH_SIZE === 0) await sleep(BATCH_DELAY_MS);
 
     const row = playlistItems[i];
     onProgress?.({
