@@ -4,6 +4,7 @@ export type LibraryTrackItem = {
   name: string;
   album: { uri: string; name: string };
   artists: { uri: string; name: string }[];
+  addedAt?: number;
 };
 
 export type LibraryContentItem = {
@@ -12,6 +13,7 @@ export type LibraryContentItem = {
   name: string;
   artists?: { uri: string; name: string }[];
   publisher?: string;
+  addedAt?: number;
 };
 
 export type LibraryPage<T> = {

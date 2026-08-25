@@ -20,7 +20,12 @@ export const ingestArtists = (
 };
 
 export const ingestTrack = (graph: MusicGraph, track: LibraryTrackItem): void => {
-  graph.addNode({ uri: track.uri, type: NODE_TYPE.TRACK, label: track.name });
+  graph.addNode({
+    uri: track.uri,
+    type: NODE_TYPE.TRACK,
+    label: track.name,
+    addedAt: track.addedAt,
+  });
   if (track.album?.uri) {
     graph.addNode({ uri: track.album.uri, type: NODE_TYPE.ALBUM, label: track.album.name });
     graph.addEdge(track.uri, track.album.uri, EDGE_TYPE.ON_ALBUM);

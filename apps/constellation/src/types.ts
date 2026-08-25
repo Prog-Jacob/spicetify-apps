@@ -7,6 +7,7 @@ export type GraphNode = {
   uri: string;
   type: NodeType;
   label: string;
+  addedAt?: number;
 };
 
 export type GraphEdge = {

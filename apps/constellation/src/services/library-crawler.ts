@@ -43,10 +43,20 @@ export async function buildLibraryGraph(signal?: AbortSignal): Promise<LibraryGr
 
   for (const item of contents) {
     if (item.type === NODE_TYPE.ARTIST) {
-      graph.addNode({ uri: item.uri, type: NODE_TYPE.ARTIST, label: item.name });
+      graph.addNode({
+        uri: item.uri,
+        type: NODE_TYPE.ARTIST,
+        label: item.name,
+        addedAt: item.addedAt,
+      });
       graph.addEdge(userUri, item.uri, EDGE_TYPE.SAVED);
     } else if (item.type === NODE_TYPE.ALBUM) {
-      graph.addNode({ uri: item.uri, type: NODE_TYPE.ALBUM, label: item.name });
+      graph.addNode({
+        uri: item.uri,
+        type: NODE_TYPE.ALBUM,
+        label: item.name,
+        addedAt: item.addedAt,
+      });
       graph.addEdge(userUri, item.uri, EDGE_TYPE.SAVED);
       ingestArtists(graph, item.uri, EDGE_TYPE.MADE_BY, item.artists);
     }
