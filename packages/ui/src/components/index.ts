@@ -6,6 +6,7 @@ export { default as SpicetifyIcon } from './icon';
 export { default as FilterBar } from './filter-bar';
 export { default as ErrorCard } from './error-card';
 export { default as PageShell } from './page-shell';
+export { default as IconButton } from './icon-button';
 export { default as ToggleChip } from './toggle-chip';
 export { default as ResultCard } from './result-card';
 export { default as SummaryTile } from './summary-tile';
