@@ -1,6 +1,7 @@
 import { t } from '../i18n';
 import { Input } from '@ui/components';
 import React, { useState } from 'react';
+import FriendsMenu from './friends-menu';
 import type { GraphNode } from '../types';
 
 type Props = {
@@ -12,8 +13,8 @@ type Props = {
 const AddToGraphBox = ({ adding, onAdd, onAdded }: Props) => {
   const [value, setValue] = useState('');
 
-  const submit = async () => {
-    const input = value.trim();
+  const add = async (raw: string) => {
+    const input = raw.trim();
     if (!input || adding) return;
     const node = await onAdd(input);
     if (node) {
@@ -33,19 +34,20 @@ const AddToGraphBox = ({ adding, onAdd, onAdded }: Props) => {
           value={value}
           disabled={adding}
           onChange={(e) => setValue(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && void submit()}
+          onKeyDown={(e) => e.key === 'Enter' && void add(value)}
           placeholder={t('add.placeholder')}
           aria-label={t('add.label')}
         />
         <button
           type="button"
-          onClick={() => void submit()}
+          onClick={() => void add(value)}
           disabled={adding || !value.trim()}
           className="shrink-0 rounded-md bg-spice-button px-3 text-xs font-semibold text-spice-main transition-opacity hover:opacity-90 disabled:opacity-40"
         >
           {adding ? t('add.adding') : t('add.button')}
         </button>
       </div>
+      <FriendsMenu disabled={adding} onPick={(uri) => void add(uri)} />
     </div>
   );
 };

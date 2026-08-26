@@ -42,6 +42,14 @@ export interface PlatformUserAPI {
   getUser(): Promise<SpotifyUserProfile>;
 }
 
+export interface BuddyActivity {
+  user?: { uri?: string; name?: string; imageUrl?: string };
+}
+
+export interface PlatformBuddyFeedAPI {
+  fetchFriendActivity(): Promise<{ friends?: BuddyActivity[] }>;
+}
+
 export interface PlatformPlaylistPermissionsAPI {
   setBasePermission(uri: string, permission: 'BLOCKED'): Promise<void>;
 }

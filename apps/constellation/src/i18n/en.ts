@@ -43,8 +43,13 @@ const en = {
   'add.failed': 'Could not add that to the graph.',
   'add.userFailed': 'That profile is private or does not exist.',
 
-  'actions.exportImage': 'Export image',
-  'actions.exportData': 'Export data',
+  'friends.add': 'Add a friend',
+  'friends.loading': 'Loading friends…',
+  'friends.empty': 'No friends found on Spotify.',
+
+  'actions.export': 'Export',
+  'actions.image': 'Image',
+  'actions.data': 'Data',
 
   'nav.zoomIn': 'Zoom in',
   'nav.zoomOut': 'Zoom out',
