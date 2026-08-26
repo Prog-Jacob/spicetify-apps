@@ -2,8 +2,8 @@ import { MusicGraph } from '../graph/music-graph';
 import { rememberFirstImage } from './node-images';
 import { NODE_TYPE, EDGE_TYPE } from '../constants';
 import { ingestArtists, ingestTrack } from './ingest';
-import { paginate, fetchRootlistPlaylists } from '@shared/api';
 import type { LibraryTrackItem, LibraryContentItem } from '@shared/types';
+import { paginate, fetchRootlistPlaylists, listFriends } from '@shared/api';
 
 export type LibraryGraph = { graph: MusicGraph; images: Map<string, string> };
 
@@ -12,7 +12,7 @@ export async function buildLibraryGraph(signal?: AbortSignal): Promise<LibraryGr
   const graph = new MusicGraph();
   const images = new Map<string, string>();
 
-  const [user, [contents, tracks, playlists]] = await Promise.all([
+  const [user, [contents, tracks, playlists], friends] = await Promise.all([
     Spicetify.Platform.UserAPI.getUser(),
     Promise.all([
       paginate<LibraryContentItem>((p) => Spicetify.Platform.LibraryAPI.getContents(p), {
@@ -25,6 +25,7 @@ export async function buildLibraryGraph(signal?: AbortSignal): Promise<LibraryGr
       }),
       fetchRootlistPlaylists(signal),
     ]),
+    listFriends().catch(() => []),
   ]);
 
   const userUri = user.uri ?? 'spotify:user:me';
@@ -34,6 +35,13 @@ export async function buildLibraryGraph(signal?: AbortSignal): Promise<LibraryGr
     label: user.displayName ?? user.name ?? 'You',
   });
   if (user.imageUrl) images.set(userUri, user.imageUrl);
+
+  for (const friend of friends) {
+    if (friend.uri === userUri) continue;
+    graph.addNode({ uri: friend.uri, type: NODE_TYPE.USER, label: friend.name });
+    graph.addEdge(userUri, friend.uri, EDGE_TYPE.FOLLOWS);
+    if (friend.imageUrl) images.set(friend.uri, friend.imageUrl);
+  }
 
   for (const playlist of playlists) {
     graph.addNode({ uri: playlist.uri, type: NODE_TYPE.PLAYLIST, label: playlist.name });

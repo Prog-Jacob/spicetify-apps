@@ -12,6 +12,7 @@ export const EDGE_TYPE = {
   MADE_BY: 'made_by',
   SAVED: 'saved',
   OWNS: 'owns',
+  FOLLOWS: 'follows',
   CONTAINS: 'contains',
   COLLABORATED: 'collaborated',
   RELATED_TO: 'related_to',
