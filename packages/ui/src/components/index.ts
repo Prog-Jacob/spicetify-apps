@@ -15,4 +15,4 @@ export { default as UpdateBanner } from './update-banner';
 export { default as ErrorBoundary } from './error-boundary';
 export { default as WarningBanner } from './warning-banner';
 
-export const { ButtonPrimary, ButtonSecondary, ButtonTertiary } = Spicetify.ReactComponent;
+export { ButtonPrimary, ButtonSecondary, ButtonTertiary } from './button';
