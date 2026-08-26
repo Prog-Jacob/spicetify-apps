@@ -19,8 +19,12 @@ const AddedSinceFilter = ({ min, max, since, onChange }: Props) => (
       value={since}
       onChange={(e) => onChange(Number(e.target.value))}
       aria-label={t('time.label')}
-      className="h-1 w-full cursor-pointer appearance-none rounded-full bg-spice-subtext/25 accent-spice-button"
+      className="h-1 w-full cursor-pointer appearance-none rounded-full bg-spice-subtext/25 accent-spice-button focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-spice-button focus-visible:ring-offset-2 focus-visible:ring-offset-spice-card"
     />
+    <div className="flex justify-between text-[10px] tabular-nums text-spice-subtext/60">
+      <span>{toDateString(min)}</span>
+      <span>{toDateString(max)}</span>
+    </div>
   </label>
 );
 

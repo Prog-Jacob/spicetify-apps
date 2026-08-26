@@ -1,8 +1,8 @@
 import { t } from '../i18n';
-import { Input } from '@ui/components';
 import type { GraphNode } from '../types';
 import NodeTypeDot from './node-type-dot';
 import { searchNodes } from '../graph/node-query';
+import { Input, SpicetifyIcon } from '@ui/components';
 import type { MusicGraph } from '../graph/music-graph';
 import React, { useId, useMemo, useState } from 'react';
 
@@ -48,6 +48,9 @@ const NodeSearchBox = ({ graph, revision, isVisible, onPick }: Props) => {
 
   return (
     <div className="relative">
+      <span className="pointer-events-none absolute inset-y-0 start-2.5 flex items-center text-spice-subtext">
+        <SpicetifyIcon icon="search" size={14} />
+      </span>
       <Input
         type="text"
         role="combobox"
@@ -60,35 +63,54 @@ const NodeSearchBox = ({ graph, revision, isVisible, onPick }: Props) => {
         onKeyDown={onKeyDown}
         placeholder={t('controls.search')}
         aria-label={t('controls.search')}
+        className="px-8"
       />
+      {query && (
+        <button
+          type="button"
+          onClick={() => retype('')}
+          aria-label={t('controls.clearSearch')}
+          className="absolute inset-y-0 end-2 flex items-center text-spice-subtext transition-colors hover:text-spice-text focus-visible:outline-none focus-visible:text-spice-text"
+        >
+          <SpicetifyIcon icon="x" size={14} />
+        </button>
+      )}
       {query && (
         <ul
           id={listId}
           role="listbox"
-          className="absolute inset-x-0 top-full mt-1 overflow-hidden rounded-md border border-spice-subtext/20 bg-spice-card/95 shadow-lg backdrop-blur"
+          className="absolute inset-x-0 top-full z-20 mt-1 overflow-hidden rounded-xl border border-spice-subtext/20 bg-spice-card/95 shadow-xl backdrop-blur"
         >
           {results.length === 0 ? (
-            <li className="px-3 py-2 text-xs text-spice-subtext/70">{t('controls.noMatches')}</li>
+            <li className="px-3 py-2.5 text-xs text-spice-subtext/70">{t('controls.noMatches')}</li>
           ) : (
-            results.map((node, i) => (
+            <>
               <li
-                key={node.uri}
-                id={`${listId}-${i}`}
-                role="option"
-                aria-selected={i === active}
-                onMouseEnter={() => setActive(i)}
-                onClick={() => pick(node)}
-                className={`flex cursor-pointer items-center gap-2 px-3 py-1.5 text-start text-sm text-spice-text ${
-                  i === active ? 'bg-spice-highlight/20' : ''
-                }`}
+                aria-hidden
+                className="px-3 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-wider text-spice-subtext/60"
               >
-                <NodeTypeDot type={node.type} />
-                <span className="truncate">{node.label}</span>
-                <span className="ms-auto shrink-0 text-[10px] text-spice-subtext/60">
-                  {t(`type.${node.type}`)}
-                </span>
+                {t('controls.resultCount', { count: results.length })}
               </li>
-            ))
+              {results.map((node, i) => (
+                <li
+                  key={node.uri}
+                  id={`${listId}-${i}`}
+                  role="option"
+                  aria-selected={i === active}
+                  onMouseEnter={() => setActive(i)}
+                  onClick={() => pick(node)}
+                  className={`flex cursor-pointer items-center gap-2 px-3 py-1.5 text-start text-sm text-spice-text ${
+                    i === active ? 'bg-spice-highlight/20' : ''
+                  }`}
+                >
+                  <NodeTypeDot type={node.type} />
+                  <span className="truncate">{node.label}</span>
+                  <span className="ms-auto shrink-0 text-[10px] text-spice-subtext/60">
+                    {t(`type.${node.type}`)}
+                  </span>
+                </li>
+              ))}
+            </>
           )}
         </ul>
       )}

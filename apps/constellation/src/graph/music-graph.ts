@@ -57,6 +57,10 @@ export class MusicGraph {
     return this.nodeByUri.size;
   }
 
+  get linkCount(): number {
+    return this.edgeByKey.size;
+  }
+
   isEmpty(): boolean {
     return this.nodeByUri.size <= 1;
   }

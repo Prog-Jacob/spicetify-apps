@@ -27,6 +27,21 @@ const en = {
 
   'controls.search': 'Search nodes…',
   'controls.noMatches': 'No matches',
+  'controls.clearSearch': 'Clear search',
+  'controls.resultCount': '{count} results',
+
+  'scale.summary': '{nodes} nodes · {links} connections',
+  'filters.show': 'Show',
+  'filters.reset': 'Reset',
+  'lens.label': 'Lenses',
+
+  'add.label': 'Add to graph',
+  'add.placeholder': 'Paste a profile, artist, album, or playlist link',
+  'add.button': 'Add',
+  'add.adding': 'Adding…',
+  'add.invalid': 'Paste a Spotify link or URI for a user, artist, album, or playlist.',
+  'add.failed': 'Could not add that to the graph.',
+  'add.userFailed': 'That profile is private or does not exist.',
 
   'actions.exportImage': 'Export image',
   'actions.exportData': 'Export data',
@@ -42,6 +57,7 @@ const en = {
   'time.all': 'All time',
   'time.since': 'Since {date}',
   'time.label': 'Show items added since',
+  'time.section': 'Added since',
 
   'expand.failed': 'Could not expand this node.',
 

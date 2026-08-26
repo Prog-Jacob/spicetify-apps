@@ -27,6 +27,11 @@ export const useGraphControls = () => {
     (type: NodeType) => setVisibleTypes((prev) => toggleInSet(prev, type)),
     [setVisibleTypes],
   );
+  const showAllTypes = useCallback(
+    () => setVisibleTypes(new Set(ALL_NODE_TYPES)),
+    [setVisibleTypes],
+  );
+  const allTypesVisible = visibleTypes.size === ALL_NODE_TYPES.length;
   const isVisible = useCallback((node: GraphNode) => visibleTypes.has(node.type), [visibleTypes]);
 
   const [sizeByDegree, setSizeByDegree] = usePersistentState('sizeByDegree', false);
@@ -53,6 +58,8 @@ export const useGraphControls = () => {
   return {
     visibleTypes,
     toggleType,
+    showAllTypes,
+    allTypesVisible,
     isVisible,
     sizeByDegree,
     toggleSizeLens,

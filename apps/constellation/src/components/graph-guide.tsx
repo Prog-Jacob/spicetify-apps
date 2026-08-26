@@ -1,14 +1,13 @@
 import { t } from '../i18n';
 import React, { useState } from 'react';
 import { graphPalette } from '../graph/theme';
+import { PANEL_SURFACE, FOCUS_RING } from './chrome-styles';
 import { TextComponent, ButtonSecondary } from '@ui/components';
 import { usePersistentState } from '../hooks/use-persistent-state';
 
 const Row = ({ label }: { label: string }) => (
-  <li className="flex gap-2">
-    <span aria-hidden className="text-spice-subtext">
-      •
-    </span>
+  <li className="flex items-start gap-2.5">
+    <span aria-hidden className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-spice-button/70" />
     <TextComponent variant="mesto" semanticColor="textSubdued">
       {label}
     </TextComponent>
@@ -41,17 +40,16 @@ const GraphGuide = () => {
     return (
       <button
         type="button"
-        aria-label={t('guide.help')}
         onClick={() => setOpen(true)}
-        className="absolute bottom-4 start-3 z-20 flex h-8 w-8 items-center justify-center rounded-full border border-spice-subtext/15 bg-spice-card/80 text-spice-subtext shadow-xl backdrop-blur-md transition-colors hover:text-spice-text"
+        className={`absolute bottom-4 start-3 z-20 rounded-full border border-spice-subtext/15 bg-spice-card/80 px-3 py-1.5 text-xs font-medium text-spice-subtext shadow-xl backdrop-blur-md transition-colors hover:text-spice-text ${FOCUS_RING}`}
       >
-        ?
+        {t('guide.help')}
       </button>
     );
   }
 
   return (
-    <div className="absolute bottom-16 start-3 z-20 w-72 rounded-xl border border-spice-subtext/15 bg-spice-card/80 p-4 shadow-xl backdrop-blur-md">
+    <div className={`absolute bottom-16 start-3 z-20 w-72 p-4 ${PANEL_SURFACE}`}>
       <TextComponent variant="viola" weight="bold" semanticColor="textBase">
         {t('guide.title')}
       </TextComponent>
