@@ -2,7 +2,7 @@ import React from 'react';
 import { t } from '../i18n';
 import { toDateString } from '@shared/lib';
 import { FOCUS_RING } from './chrome-styles';
-import { SpicetifyIcon } from '@ui/components';
+import { SpicetifyIcon, Slider } from '@ui/components';
 
 type Props = { min: number; max: number; since: number; onChange: (value: number) => void };
 
@@ -25,15 +25,13 @@ const AddedSinceFilter = ({ min, max, since, onChange }: Props) => (
         </button>
       )}
     </span>
-    <input
-      type="range"
+    <Slider
       min={min}
       max={max}
       step={DAY_MS}
       value={since}
-      onChange={(e) => onChange(Number(e.target.value))}
-      aria-label={t('time.label')}
-      className="h-1 w-full cursor-pointer appearance-none rounded-full bg-spice-subtext/25 accent-spice-button focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-spice-button focus-visible:ring-offset-2 focus-visible:ring-offset-spice-card"
+      onChange={onChange}
+      ariaLabel={t('time.label')}
     />
     <div className="flex justify-between text-[10px] tabular-nums text-spice-subtext/60">
       <span>{toDateString(min)}</span>

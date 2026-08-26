@@ -7,6 +7,7 @@ import type { useGraphControls } from './use-graph-controls';
 import { deriveCollaborations } from '../graph/collaboration';
 import type { LibraryGraph } from '../services/library-crawler';
 import { detectCommunities } from '../graph/community-detection';
+import { commonNeighborhood } from '../graph/common-neighborhood';
 import { addedAtBounds, neighborhoodUris, hasVisibleDegreeOver } from '../graph/node-query';
 
 const NO_LINKS: GraphEdge[] = [];
@@ -17,6 +18,9 @@ export const useGraphLenses = (
   library: LibraryGraph | null,
   revision: number,
   controls: Controls,
+  markedAnchors: string[],
+  pathMode: boolean,
+  pathRadius: number,
 ) => {
   const { isVisible, focusUri, since, setSince, colorByCluster, showCollaborations, showHubsOnly } =
     controls;
@@ -24,6 +28,14 @@ export const useGraphLenses = (
   const focusSet = useMemo(
     () => (focusUri && library ? neighborhoodUris(library.graph, focusUri) : null),
     [focusUri, library, revision],
+  );
+
+  const pathSet = useMemo(
+    () =>
+      pathMode && library && markedAnchors.length >= 2
+        ? commonNeighborhood(library.graph, markedAnchors, pathRadius)
+        : null,
+    [pathMode, markedAnchors, pathRadius, library, revision],
   );
 
   const graph = library?.graph ?? null;
@@ -41,17 +53,18 @@ export const useGraphLenses = (
     (node: GraphNode) =>
       isVisible(node) &&
       (!focusSet || focusSet.has(node.uri)) &&
+      (!pathSet || pathSet.has(node.uri)) &&
       (!node.addedAt || node.addedAt >= since),
-    [isVisible, focusSet, since],
+    [isVisible, focusSet, pathSet, since],
   );
 
   const nodeVisible = useCallback(
     (node: GraphNode) => {
       if (!passesFilters(node)) return false;
-      if (!showHubsOnly || !graph) return true;
+      if (pathSet || !showHubsOnly || !graph) return true;
       return hasVisibleDegreeOver(graph, node.uri, passesFilters, 1);
     },
-    [passesFilters, showHubsOnly, graph],
+    [passesFilters, showHubsOnly, graph, pathSet],
   );
 
   const clusterColorByUri = useMemo(() => {

@@ -4,11 +4,11 @@ import { useGraphPalette } from './theme';
 import { openUriInClient } from '@shared/lib';
 import type { MusicGraph } from './music-graph';
 import { neighborhoodUris } from './node-query';
-import { configureForces } from './force-config';
 import { canExpand } from '../services/expand-node';
 import type { GraphNode, GraphEdge } from '../types';
 import { useNodeArtwork } from '../hooks/use-node-artwork';
 import { effectiveRadius, NODE_REL_SIZE } from './node-style';
+import { applyForces, type PhysicsParams } from './force-config';
 import type { PinnedPositions } from '../services/session-store';
 import { paintNode, emphasisFor, type PaintOptions } from './node-paint';
 import { projectNodes, type RenderNode, type RenderLink } from './render-data';
@@ -40,10 +40,15 @@ type Props = {
   nodeColor: (node: RenderNode) => string;
   extraLinks: GraphEdge[];
   sizeByDegree: boolean;
+  physics: PhysicsParams;
+  frozen: boolean;
+  marked: Set<string>;
   selectedUri?: string;
   expanded: Set<string>;
   pins: PinnedPositions;
   onSelect: (node: GraphNode | null) => void;
+  onToggleMark: (node: GraphNode) => void;
+  onBackgroundClick: () => void;
   onExpand: (node: GraphNode) => void;
   onPin: (uri: string, x: number, y: number) => void;
 };
@@ -63,10 +68,15 @@ const GraphView = forwardRef<GraphViewHandle, Props>(
       nodeColor,
       extraLinks,
       sizeByDegree,
+      physics,
+      frozen,
+      marked,
       selectedUri,
       expanded,
       pins,
       onSelect,
+      onToggleMark,
+      onBackgroundClick,
       onExpand,
       onPin,
     },
@@ -88,6 +98,8 @@ const GraphView = forwardRef<GraphViewHandle, Props>(
     sizeByDegreeRef.current = sizeByDegree;
     const nodeColorRef = useRef(nodeColor);
     nodeColorRef.current = nodeColor;
+    const physicsRef = useRef(physics);
+    physicsRef.current = physics;
     const graphDataRef = useRef(graph);
     graphDataRef.current = graph;
     const selectedUriRef = useRef(selectedUri);
@@ -96,6 +108,12 @@ const GraphView = forwardRef<GraphViewHandle, Props>(
     pinsRef.current = pins;
     const onPinRef = useRef(onPin);
     onPinRef.current = onPin;
+    const markedRef = useRef(marked);
+    markedRef.current = marked;
+    const onToggleMarkRef = useRef(onToggleMark);
+    onToggleMarkRef.current = onToggleMark;
+    const onBackgroundClickRef = useRef(onBackgroundClick);
+    onBackgroundClickRef.current = onBackgroundClick;
 
     const imageByUri = useRef(new Map<string, string>()).current;
     const renderByUri = useRef(new Map<string, RenderNode>()).current;
@@ -114,6 +132,11 @@ const GraphView = forwardRef<GraphViewHandle, Props>(
       const fg = graphRef.current;
       fg?.nodeColor(fg.nodeColor());
     }, []);
+
+    const radiusFor = useCallback(
+      (node: RenderNode) => effectiveRadius(node.radius, node.degree, sizeByDegreeRef.current),
+      [],
+    );
 
     const setFocus = useCallback(
       (uri: string | null) => {
@@ -174,6 +197,7 @@ const GraphView = forwardRef<GraphViewHandle, Props>(
         emphasis: 'none',
         expandable: false,
         pinned: false,
+        marked: false,
       };
 
       const fg = new ForceGraph<RenderNode, RenderLink>(el)
@@ -194,7 +218,11 @@ const GraphView = forwardRef<GraphViewHandle, Props>(
           if (isIncident(link, focusUriRef.current)) return 2;
           return link.type === EDGE_TYPE.COLLABORATED ? 1.5 : 1;
         })
-        .onNodeClick((node) => {
+        .onNodeClick((node, event) => {
+          if (event.shiftKey) {
+            onToggleMarkRef.current(node);
+            return;
+          }
           const now = Date.now();
           const last = lastClickRef.current;
           if (last.uri === node.uri && now - last.at < DOUBLE_CLICK_MS) {
@@ -205,7 +233,7 @@ const GraphView = forwardRef<GraphViewHandle, Props>(
           lastClickRef.current = { uri: node.uri, at: now };
         })
         .onNodeRightClick((node) => openUriInClient(node.uri))
-        .onBackgroundClick(() => onSelectRef.current(null))
+        .onBackgroundClick(() => onBackgroundClickRef.current())
         .onNodeHover((node) => {
           hoverUriRef.current = node ? node.uri : null;
           setFocus(hoverUriRef.current ?? selectedUriRef.current ?? null);
@@ -227,10 +255,11 @@ const GraphView = forwardRef<GraphViewHandle, Props>(
           paintOpts.emphasis = emphasisFor(node.uri, focusUriRef.current, focusSetRef.current);
           paintOpts.expandable = canExpand(node.type) && !expandedRef.current.has(node.uri);
           paintOpts.pinned = pinsRef.current[node.uri] !== undefined;
+          paintOpts.marked = markedRef.current.has(node.uri);
           paintNode(node, ctx, scale, paintOpts);
         });
 
-      configureForces(fg);
+      applyForces(fg, physicsRef.current, radiusFor);
 
       const resize = () => fg.width(el.clientWidth).height(el.clientHeight);
       resize();
@@ -242,7 +271,7 @@ const GraphView = forwardRef<GraphViewHandle, Props>(
         observer.disconnect();
         fg._destructor();
       };
-    }, [imageByUri]);
+    }, [imageByUri, radiusFor]);
 
     useEffect(() => {
       graphRef.current?.backgroundColor(palette.background).resumeAnimation();
@@ -283,15 +312,28 @@ const GraphView = forwardRef<GraphViewHandle, Props>(
     useEffect(() => {
       const fg = graphRef.current;
       if (!fg) return;
-      const collide = fg.d3Force('collide') as
-        { radius: (r: (node: RenderNode) => number) => void } | undefined;
-      collide?.radius((node) => effectiveRadius(node.radius, node.degree, sizeByDegree) + 4);
-      fg.d3ReheatSimulation().resumeAnimation();
-    }, [sizeByDegree]);
+      applyForces(fg, physics, radiusFor);
+      if (!frozen) fg.d3ReheatSimulation();
+      fg.resumeAnimation();
+    }, [physics, sizeByDegree, frozen, radiusFor]);
+
+    useEffect(() => {
+      const fg = graphRef.current;
+      if (!fg) return;
+      if (frozen) {
+        for (const node of renderByUri.values()) {
+          node.fx = node.x;
+          node.fy = node.y;
+        }
+      } else {
+        applyPins();
+      }
+      fg.resumeAnimation();
+    }, [frozen, renderByUri, applyPins]);
 
     useEffect(() => {
       requestRedraw();
-    }, [nodeColor, requestRedraw]);
+    }, [nodeColor, marked, requestRedraw]);
 
     useEffect(() => {
       if (!hoverUriRef.current) setFocus(selectedUri ?? null);

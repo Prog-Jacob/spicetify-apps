@@ -7,6 +7,7 @@ import { isFresh } from '../services/graph-cache';
 import { deriveCollaborations } from './collaboration';
 import { detectCommunities } from './community-detection';
 import { ingestPlaylistTracks } from '../services/ingest';
+import { commonNeighborhood } from './common-neighborhood';
 import { toSnapshot, fromSnapshot } from './graph-snapshot';
 import { parseArtistOverview, parseAlbumTracks } from '../services/graphql-enrichment';
 
@@ -81,6 +82,45 @@ test('ingestPlaylistTracks adds track nodes + containment edges, skipping non-tr
     g.neighbors('spotify:playlist:p').map((n) => n.uri),
     ['spotify:track:t1'],
   );
+});
+
+test('commonNeighborhood keeps nodes within reach of both anchors, dropping one-sided detours', () => {
+  const g = new MusicGraph();
+  ['a', 'p1', 't', 'p2', 'b'].forEach((u) => g.addNode(node(u)));
+  // a-p1-t-p2-b: t is shared (2 hops from each); p1/p2 are private to one side.
+  g.addEdge('a', 'p1', 'saved');
+  g.addEdge('p1', 't', 'saved');
+  g.addEdge('t', 'p2', 'saved');
+  g.addEdge('p2', 'b', 'saved');
+  assert.deepEqual([...commonNeighborhood(g, ['a', 'b'], 2)].sort(), ['a', 'b', 't']);
+  // Radius 1 reaches the shared node from neither side, so only the anchors remain.
+  assert.deepEqual([...commonNeighborhood(g, ['a', 'b'], 1)].sort(), ['a', 'b']);
+});
+
+test('commonNeighborhood surfaces a directly shared neighbor at radius 1', () => {
+  const g = new MusicGraph();
+  ['a', 'b', 'x'].forEach((u) => g.addNode(node(u)));
+  g.addEdge('a', 'x', 'saved');
+  g.addEdge('b', 'x', 'saved');
+  assert.deepEqual([...commonNeighborhood(g, ['a', 'b'], 1)].sort(), ['a', 'b', 'x']);
+});
+
+test('commonNeighborhood unions each anchor pair and is just the anchors below two', () => {
+  const g = new MusicGraph();
+  ['a', 'b', 'c', 'm', 'n'].forEach((u) => g.addNode(node(u)));
+  // m is shared by a&b, n by b&c; nothing is shared by a&c.
+  g.addEdge('a', 'm', 'saved');
+  g.addEdge('m', 'b', 'saved');
+  g.addEdge('b', 'n', 'saved');
+  g.addEdge('n', 'c', 'saved');
+  assert.deepEqual([...commonNeighborhood(g, ['a', 'b', 'c'], 1)].sort(), [
+    'a',
+    'b',
+    'c',
+    'm',
+    'n',
+  ]);
+  assert.deepEqual([...commonNeighborhood(g, ['a'], 2)], ['a']);
 });
 
 test('node-style helpers: monogram skips symbols', () => {

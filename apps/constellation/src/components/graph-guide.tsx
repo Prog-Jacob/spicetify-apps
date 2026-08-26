@@ -48,9 +48,9 @@ const GraphGuide = () => {
           </TextComponent>
           <ul className="mt-3 flex flex-col gap-1.5">
             <Row label={t('guide.click')} />
-            <Row label={t('guide.hover')} />
             <Row label={t('guide.drag')} />
-            <Row label={t('guide.expand')} />
+            <Row label={t('guide.mark')} />
+            <Row label={t('guide.controls')} />
             <Row label={t('guide.zoom')} />
           </ul>
           <div className="mt-3 h-px bg-spice-subtext/10" />
@@ -70,7 +70,7 @@ const GraphGuide = () => {
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
         className={cn(
-          'inline-flex appearance-none items-center rounded-full border border-spice-subtext/25 bg-spice-card/80 px-3 py-1.5 text-xs font-medium shadow-lg backdrop-blur-md transition-colors hover:text-spice-text',
+          'inline-flex items-center rounded-full border border-spice-subtext/25 bg-spice-card/80 px-3 py-1.5 text-xs font-medium shadow-lg backdrop-blur-md transition-colors hover:text-spice-text',
           open ? 'text-spice-text' : 'text-spice-subtext',
           FOCUS_RING,
         )}

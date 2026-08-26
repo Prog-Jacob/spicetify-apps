@@ -2,13 +2,15 @@ import type { GraphNode } from './types';
 import { t, loadTranslations } from './i18n';
 import Inspector from './components/inspector';
 import { useUpdateCheck } from '@shared/hooks';
+import { usePhysics } from './hooks/use-physics';
 import GraphGuide from './components/graph-guide';
+import ControlDock from './components/control-dock';
 import { toSnapshot } from './graph/graph-snapshot';
-import ControlPanel from './components/control-panel';
-import GraphManager from './components/graph-manager';
+import SelectionBar from './components/selection-bar';
 import NodeSearchBox from './components/node-search-box';
 import { downloadJson, downloadBlob } from '@shared/lib';
 import { useGraphLenses } from './hooks/use-graph-lenses';
+import { useMarkedNodes } from './hooks/use-marked-nodes';
 import React, { useState, useEffect, useRef } from 'react';
 import { UpdateBanner, ErrorBoundary } from '@ui/components';
 import { useGraphExplorer } from './hooks/use-graph-explorer';
@@ -42,11 +44,17 @@ const App = () => {
     releaseAllPins,
   } = useGraphExplorer();
   const controls = useGraphControls();
+  const physics = usePhysics();
+  const marks = useMarkedNodes();
   const { sizeByDegree, focusUri, focus, clearFocus } = controls;
+
   const { nodeVisible, nodeColor, extraLinks, timeBounds } = useGraphLenses(
     library,
     revision,
     controls,
+    marks.anchors,
+    marks.pathMode,
+    marks.pathRadius,
   );
   const viewRef = useRef<GraphViewHandle>(null);
   const updateUrl = useUpdateCheck(__APP_NAME__, __APP_VERSION__);
@@ -82,6 +90,21 @@ const App = () => {
     if (!node) clearFocus();
   };
 
+  const clearMarksAndSelection = () => {
+    selectNode(null);
+    marks.clear();
+  };
+
+  const removeMarked = () => {
+    if (!library) return;
+    for (const uri of marks.anchors) {
+      const node = library.graph.node(uri);
+      if (node) removeEntity(node);
+    }
+    if (selected && marks.marked.has(selected.uri)) selectNode(null);
+    marks.clear();
+  };
+
   const renderBody = () => {
     if (failed && !library)
       return (
@@ -107,46 +130,54 @@ const App = () => {
             nodeColor={nodeColor}
             extraLinks={extraLinks}
             sizeByDegree={sizeByDegree}
+            physics={physics.physics}
+            frozen={physics.frozen}
+            marked={marks.marked}
             selectedUri={selected?.uri}
             expanded={expanded}
             pins={pins}
             onSelect={selectNode}
+            onToggleMark={(node) => marks.toggle(node.uri)}
+            onBackgroundClick={clearMarksAndSelection}
             onExpand={expand}
             onPin={pinNode}
           />
-          <div className="animate-fade-in-up absolute bottom-14 start-3 top-3 z-10 flex w-72 flex-col gap-2 overflow-y-auto">
+          <div className="animate-fade-in-up absolute bottom-14 start-3 top-3 z-10 flex w-72 flex-col gap-2">
             <NodeSearchBox
               graph={library.graph}
               revision={revision}
               isVisible={nodeVisible}
               onPick={focusOn}
             />
-            <ControlPanel
+            <ControlDock
               graph={library.graph}
-              controls={controls}
-              timeBounds={timeBounds}
-              pinnedCount={Object.keys(pins).length}
-              expandProgress={expandProgress}
-              onExpandAll={() => expandAll(nodeVisible)}
-              onCancelExpandAll={cancelExpandAll}
-              onReleasePins={releaseAllPins}
-            />
-            <GraphManager
-              graph={library.graph}
-              revision={revision}
-              removed={removed}
-              adding={adding}
-              onAdd={addEntity}
-              onAdded={focusOn}
-              onRemove={(node) => {
-                removeEntity(node);
-                if (selected?.uri === node.uri) selectNode(null);
+              physics={physics}
+              view={{
+                controls,
+                timeBounds,
+                pinnedCount: Object.keys(pins).length,
+                expandProgress,
+                onExpandAll: () => expandAll(nodeVisible),
+                onCancelExpandAll: cancelExpandAll,
+                onReleasePins: releaseAllPins,
               }}
-              onRestore={(uri) => void restoreEntity(uri)}
-              onSelect={focusOn}
+              nodes={{
+                graph: library.graph,
+                revision,
+                removed,
+                adding,
+                onAdd: addEntity,
+                onAdded: focusOn,
+                onRemove: (node) => {
+                  removeEntity(node);
+                  if (selected?.uri === node.uri) selectNode(null);
+                },
+                onRestore: (uri) => void restoreEntity(uri),
+                onSelect: focusOn,
+              }}
             />
           </div>
-          <div className="animate-fade-in-up [animation-delay:80ms]">
+          <div className="animate-fade-in-up absolute end-3 top-3 z-10 [animation-delay:80ms]">
             <GraphExportToolbar onExportImage={exportImage} onExportData={exportData} />
           </div>
           <div className="animate-fade-in-up absolute bottom-4 start-3 z-10 [animation-delay:120ms]">
@@ -155,6 +186,19 @@ const App = () => {
           <div className="animate-fade-in-up absolute bottom-4 end-3 z-10 [animation-delay:120ms]">
             <GraphNavControls onZoomIn={zoomIn} onZoomOut={zoomOut} onFit={fitView} />
           </div>
+          {marks.marked.size > 0 && (
+            <div className="absolute bottom-4 left-1/2 z-10 -translate-x-1/2">
+              <SelectionBar
+                count={marks.marked.size}
+                pathMode={marks.pathMode}
+                onTogglePath={marks.togglePathMode}
+                radius={marks.pathRadius}
+                onRadiusChange={marks.setPathRadius}
+                onRemove={removeMarked}
+                onClear={marks.clear}
+              />
+            </div>
+          )}
         </div>
         {selected && (
           <Inspector

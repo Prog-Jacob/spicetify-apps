@@ -41,6 +41,10 @@ export class MusicGraph {
     }
   }
 
+  node(uri: string): GraphNode | undefined {
+    return this.nodeByUri.get(uri);
+  }
+
   neighbors(uri: string): GraphNode[] {
     const out: GraphNode[] = [];
     for (const other of this.adjacency.get(uri) ?? []) {

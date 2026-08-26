@@ -104,7 +104,10 @@ export type PaintOptions = {
   emphasis: NodeEmphasis;
   expandable: boolean;
   pinned: boolean;
+  marked: boolean;
 };
+
+const MARK_RING = 'rgba(96, 208, 255, 0.95)';
 
 const paintPinBadge = (ctx: CanvasRenderingContext2D, x: number, y: number, r: number) => {
   const bx = x - r * 0.72;
@@ -153,7 +156,7 @@ export const paintNode = (
   node: RenderNode,
   ctx: CanvasRenderingContext2D,
   scale: number,
-  { color, images, sizeByDegree, emphasis, expandable, pinned }: PaintOptions,
+  { color, images, sizeByDegree, emphasis, expandable, pinned, marked }: PaintOptions,
 ) => {
   const r = effectiveRadius(node.radius, node.degree, sizeByDegree);
   const screenR = r * scale;
@@ -161,7 +164,7 @@ export const paintNode = (
   const y = node.y ?? 0;
 
   ctx.save();
-  if (emphasis === 'dim') ctx.globalAlpha = 0.16;
+  if (emphasis === 'dim' && !marked) ctx.globalAlpha = 0.16;
   if (emphasis === 'active') {
     ctx.shadowColor = color;
     ctx.shadowBlur = 12;
@@ -193,12 +196,22 @@ export const paintNode = (
     ctx.stroke();
   }
 
+  if (marked) {
+    ctx.globalAlpha = 1;
+    ctx.lineWidth = 2.5 / scale;
+    ctx.strokeStyle = MARK_RING;
+    ctx.beginPath();
+    ctx.arc(x, y, r + 4 / scale, 0, TWO_PI);
+    ctx.stroke();
+  }
+
   if (expandable && emphasis === 'active' && screenR >= AVATAR_MIN_SCREEN_RADIUS) {
     paintExpandBadge(ctx, x, y, r);
   }
 
   if (pinned && screenR >= AVATAR_MIN_SCREEN_RADIUS) paintPinBadge(ctx, x, y, r);
 
-  if (screenR >= LABEL_MIN_SCREEN_RADIUS || emphasis === 'active') paintLabel(node, ctx, scale, r);
+  if (screenR >= LABEL_MIN_SCREEN_RADIUS || emphasis === 'active' || marked)
+    paintLabel(node, ctx, scale, r);
   ctx.restore();
 };

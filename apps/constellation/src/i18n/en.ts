@@ -38,10 +38,26 @@ const en = {
   'filters.reset': 'Reset',
   'lens.label': 'Lenses',
 
-  'controls.title': 'Controls',
   'panel.hide': 'Hide',
 
-  'manage.title': 'Manage graph',
+  'dock.title': 'Controls',
+  'dock.view': 'View',
+  'dock.physics': 'Physics',
+  'dock.nodes': 'Nodes',
+
+  'physics.repulsion': 'Repulsion',
+  'physics.linkLength': 'Link length',
+  'physics.gravity': 'Gravity',
+  'physics.spacing': 'Node spacing',
+  'physics.freeze': 'Freeze',
+  'physics.reset': 'Reset',
+
+  'selection.count': '{count} selected',
+  'selection.paths': 'Paths between',
+  'selection.reach': 'Reach',
+  'selection.remove': 'Remove',
+  'selection.clear': 'Clear selection',
+
   'manage.search': 'Search to remove…',
   'manage.filter': 'Filter list',
   'manage.emptyPool': 'The graph is empty.',
@@ -83,12 +99,12 @@ const en = {
 
   'expand.failed': 'Could not expand this node.',
 
-  'guide.title': 'Explore your library',
-  'guide.click': 'Click a node to inspect it.',
-  'guide.hover': 'Hover a node to highlight its neighbours.',
-  'guide.drag': 'Drag a node to pin it in place.',
-  'guide.expand': 'Double-click a node to expand it.',
-  'guide.zoom': 'Scroll to zoom in and out.',
+  'guide.title': 'How to explore',
+  'guide.click': 'Click a node to inspect it, double-click to expand its connections.',
+  'guide.drag': 'Drag a node to pin it, hover to highlight its neighbours.',
+  'guide.mark': 'Shift-click several nodes, then Paths between to trace how they link.',
+  'guide.controls': 'Open Controls to filter by type, tune physics, and manage nodes.',
+  'guide.zoom': 'Scroll or the +/- buttons zoom, drag the background to pan.',
   'guide.legendLibrary': 'Library links',
   'guide.legendCollab': 'Collaborations',
   'guide.dismiss': 'Got it',
