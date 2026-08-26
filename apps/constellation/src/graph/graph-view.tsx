@@ -110,11 +110,19 @@ const GraphView = forwardRef<GraphViewHandle, Props>(
 
     useNodeArtwork(graph, images, revision, graphRef, imageByUri);
 
-    const setFocus = useCallback((uri: string | null) => {
-      focusUriRef.current = uri;
-      focusSetRef.current = uri ? neighborhoodUris(graphDataRef.current, uri) : null;
-      graphRef.current?.resumeAnimation();
+    const requestRedraw = useCallback(() => {
+      const fg = graphRef.current;
+      fg?.nodeColor(fg.nodeColor());
     }, []);
+
+    const setFocus = useCallback(
+      (uri: string | null) => {
+        focusUriRef.current = uri;
+        focusSetRef.current = uri ? neighborhoodUris(graphDataRef.current, uri) : null;
+        requestRedraw();
+      },
+      [requestRedraw],
+    );
 
     const applyPins = useCallback(() => {
       for (const node of renderByUri.values()) {
@@ -282,8 +290,8 @@ const GraphView = forwardRef<GraphViewHandle, Props>(
     }, [sizeByDegree]);
 
     useEffect(() => {
-      graphRef.current?.resumeAnimation();
-    }, [nodeColor]);
+      requestRedraw();
+    }, [nodeColor, requestRedraw]);
 
     useEffect(() => {
       if (!hoverUriRef.current) setFocus(selectedUri ?? null);
