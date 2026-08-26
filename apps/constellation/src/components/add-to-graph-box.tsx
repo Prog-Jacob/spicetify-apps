@@ -3,6 +3,7 @@ import { Input } from '@ui/components';
 import React, { useState } from 'react';
 import FriendsMenu from './friends-menu';
 import type { GraphNode } from '../types';
+import { FOCUS_RING, SECTION_LABEL } from './chrome-styles';
 
 type Props = {
   adding: boolean;
@@ -25,9 +26,7 @@ const AddToGraphBox = ({ adding, onAdd, onAdded }: Props) => {
 
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-xs font-semibold uppercase tracking-wide text-spice-subtext/80">
-        {t('add.label')}
-      </label>
+      <label className={SECTION_LABEL}>{t('add.label')}</label>
       <div className="flex gap-1.5">
         <Input
           type="text"
@@ -42,7 +41,7 @@ const AddToGraphBox = ({ adding, onAdd, onAdded }: Props) => {
           type="button"
           onClick={() => void add(value)}
           disabled={adding || !value.trim()}
-          className="shrink-0 rounded-md bg-spice-button px-3 text-xs font-semibold text-spice-main transition-opacity hover:opacity-90 disabled:opacity-40"
+          className={`shrink-0 rounded-lg bg-spice-button px-3.5 text-xs font-semibold text-spice-main transition hover:brightness-110 disabled:opacity-40 ${FOCUS_RING}`}
         >
           {adding ? t('add.adding') : t('add.button')}
         </button>

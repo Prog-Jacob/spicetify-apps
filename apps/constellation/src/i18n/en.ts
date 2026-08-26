@@ -66,7 +66,7 @@ const en = {
 
   'lens.byDegree': 'Size by connections',
   'lens.byCluster': 'Color by cluster',
-  'lens.common': 'Common only',
+  'lens.connected': 'Connected only',
   'edges.collaborations': 'Collaborations',
 
   'time.all': 'All time',

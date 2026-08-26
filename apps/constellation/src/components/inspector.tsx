@@ -5,20 +5,20 @@ import { NODE_TYPE } from '../constants';
 import NodeTypeDot from './node-type-dot';
 import { monogram } from '../graph/node-style';
 import { useGraphPalette } from '../graph/theme';
+import { isPlayable } from '../graph/node-query';
 import { canExpand } from '../services/expand-node';
 import type { NodeType, GraphNode } from '../types';
 import type { MusicGraph } from '../graph/music-graph';
 import { queueTrack } from '../services/spotify-actions';
 import { toDateString, openUriInClient } from '@shared/lib';
 import { FOCUS_RING, FOCUS_RING_INSET } from './chrome-styles';
-import { TextComponent, ButtonPrimary, ButtonSecondary, SpicetifyIcon } from '@ui/components';
-
-const PLAYABLE = new Set<NodeType>([
-  NODE_TYPE.TRACK,
-  NODE_TYPE.ARTIST,
-  NODE_TYPE.ALBUM,
-  NODE_TYPE.PLAYLIST,
-]);
+import {
+  IconButton,
+  TextComponent,
+  ButtonPrimary,
+  SpicetifyIcon,
+  ButtonSecondary,
+} from '@ui/components';
 
 type Props = {
   node: GraphNode;
@@ -99,7 +99,7 @@ const Inspector = ({
     for (const n of neighbors) counts.set(n.type, (counts.get(n.type) ?? 0) + 1);
     return [...counts].sort((a, b) => b[1] - a[1]);
   }, [neighbors]);
-  const playable = PLAYABLE.has(node.type);
+  const playable = isPlayable(node.type);
 
   return (
     <aside className="animate-fade-in-up relative z-20 flex h-full w-80 shrink-0 flex-col overflow-y-auto border-s border-spice-subtext/15 bg-spice-card/85 backdrop-blur-md">
@@ -122,17 +122,13 @@ const Inspector = ({
               {t('inspector.clearFocus')}
             </button>
           )}
-          <button
-            type="button"
-            aria-label={t('inspector.close')}
+          <IconButton
+            icon="x"
+            label={t('inspector.close')}
             onClick={onClose}
-            className={cn(
-              'flex h-6 w-6 items-center justify-center rounded-md text-spice-subtext transition-colors hover:bg-spice-highlight/25 hover:text-spice-text',
-              FOCUS_RING,
-            )}
-          >
-            <SpicetifyIcon icon="x" size={14} />
-          </button>
+            size={14}
+            className="h-7 w-7"
+          />
         </div>
       </header>
 
@@ -208,25 +204,23 @@ const Inspector = ({
           )}
         </div>
 
-        <ul className="flex flex-col gap-px">
+        <ul className="flex flex-col gap-0.5">
           {neighbors.map((n) => (
             <li key={n.uri}>
               <button
                 type="button"
                 onClick={() => onSelect(n)}
                 className={cn(
-                  'group flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-start transition-colors',
-                  'hover:bg-spice-highlight/25',
+                  'group flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-start transition-colors',
+                  'hover:bg-spice-text/[0.1]',
                   FOCUS_RING_INSET,
                 )}
               >
                 <NodeTypeDot type={n.type} />
                 <span className="truncate text-sm text-spice-text">{n.label}</span>
-                <SpicetifyIcon
-                  icon="chevron-right"
-                  size={12}
-                  className="ms-auto shrink-0 text-spice-subtext opacity-0 transition-opacity group-hover:opacity-100"
-                />
+                <span className="ms-auto shrink-0 text-[10px] font-medium uppercase tracking-wider text-spice-subtext/50 opacity-0 transition-opacity group-hover:opacity-100">
+                  {t(`type.${n.type}`)}
+                </span>
               </button>
             </li>
           ))}

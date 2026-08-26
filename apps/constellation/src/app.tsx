@@ -120,14 +120,13 @@ const App = () => {
             <ControlPanel
               graph={library.graph}
               controls={controls}
-              revision={revision}
               timeBounds={timeBounds}
               adding={adding}
               pinnedCount={Object.keys(pins).length}
               expandProgress={expandProgress}
               onAdd={addEntity}
               onAdded={focusOn}
-              onExpandAll={expandAll}
+              onExpandAll={() => expandAll(nodeVisible)}
               onCancelExpandAll={cancelExpandAll}
               onReleasePins={releaseAllPins}
             />

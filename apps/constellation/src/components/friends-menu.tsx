@@ -1,10 +1,13 @@
 import { t } from '../i18n';
 import { cn } from '@shared/lib';
 import React, { useState } from 'react';
-import { FOCUS_RING } from './chrome-styles';
 import { SpicetifyIcon } from '@ui/components';
 import { monogram } from '../graph/node-style';
 import { listFriends, type Friend } from '@shared/api';
+import { FOCUS_RING, ACTION_BUTTON } from './chrome-styles';
+
+const DROPDOWN_SURFACE =
+  'rounded-lg border border-spice-subtext/15 bg-spice-card shadow-[0_12px_32px_-10px_rgba(0,0,0,0.6)]';
 
 type Props = {
   disabled: boolean;
@@ -27,7 +30,13 @@ const FriendsMenu = ({ disabled, onPick }: Props) => {
   const toggle = async () => {
     const next = !open;
     setOpen(next);
-    if (next && friends === null) setFriends(await listFriends());
+    if (next && friends === null) {
+      try {
+        setFriends(await listFriends());
+      } catch {
+        setFriends([]);
+      }
+    }
   };
 
   const pick = (friend: Friend) => {
@@ -41,17 +50,15 @@ const FriendsMenu = ({ disabled, onPick }: Props) => {
         type="button"
         disabled={disabled}
         onClick={() => void toggle()}
-        className={cn(
-          'flex items-center gap-1.5 self-start rounded-md border border-spice-subtext/25 px-2.5 py-1 text-xs font-medium text-spice-subtext transition-colors',
-          'hover:border-spice-subtext/50 hover:text-spice-text disabled:opacity-40',
-          FOCUS_RING,
-        )}
+        className={cn('self-start', ACTION_BUTTON)}
       >
         <SpicetifyIcon icon="follow" size={13} />
         {t('friends.add')}
       </button>
       {open && (
-        <ul className="absolute inset-x-0 top-full z-20 mt-1.5 max-h-56 overflow-y-auto rounded-md border border-spice-subtext/20 bg-spice-card/95 p-1 shadow-lg backdrop-blur">
+        <ul
+          className={`absolute inset-x-0 top-full z-20 mt-1.5 max-h-56 overflow-y-auto p-1 ${DROPDOWN_SURFACE}`}
+        >
           {friends === null ? (
             <li className="px-2 py-1.5 text-xs text-spice-subtext/70">{t('friends.loading')}</li>
           ) : friends.length === 0 ? (

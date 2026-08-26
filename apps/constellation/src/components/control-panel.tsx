@@ -1,22 +1,20 @@
+import React from 'react';
 import { t } from '../i18n';
 import TypeFilter from './type-filter';
-import React, { useMemo } from 'react';
 import type { GraphNode } from '../types';
 import AddToGraphBox from './add-to-graph-box';
-import { userCount } from '../graph/shared-nodes';
 import AddedSinceFilter from './added-since-filter';
 import type { MusicGraph } from '../graph/music-graph';
-import { ToggleChip, SpicetifyIcon } from '@ui/components';
-import { PANEL_SURFACE, FOCUS_RING } from './chrome-styles';
 import { usePersistentState } from '../hooks/use-persistent-state';
 import type { useGraphControls } from '../hooks/use-graph-controls';
+import { ToggleChip, SpicetifyIcon, IconButton } from '@ui/components';
+import { PANEL_SURFACE, FOCUS_RING, ACTION_BUTTON, SECTION_LABEL } from './chrome-styles';
 
 type GraphControls = ReturnType<typeof useGraphControls>;
 
 type Props = {
   graph: MusicGraph;
   controls: GraphControls;
-  revision: number;
   timeBounds: { min: number; max: number } | null;
   adding: boolean;
   pinnedCount: number;
@@ -28,18 +26,16 @@ type Props = {
   onReleasePins: () => void;
 };
 
-const chipButton = `flex items-center gap-1 rounded-md border border-spice-subtext/25 px-2 py-0.5 text-[11px] font-medium text-spice-subtext transition-colors hover:border-spice-subtext/50 hover:bg-spice-highlight/15 hover:text-spice-text ${FOCUS_RING}`;
-
-const SectionLabel = ({ children }: { children: React.ReactNode }) => (
-  <span className="text-[11px] font-semibold uppercase tracking-wider text-spice-subtext/70">
+const Section = ({ label, children }: { label: string; children: React.ReactNode }) => (
+  <div className="flex flex-col gap-2">
+    <span className={SECTION_LABEL}>{label}</span>
     {children}
-  </span>
+  </div>
 );
 
 const ControlPanel = ({
   graph,
   controls,
-  revision,
   timeBounds,
   adding,
   pinnedCount,
@@ -51,14 +47,13 @@ const ControlPanel = ({
   onReleasePins,
 }: Props) => {
   const [collapsed, setCollapsed] = usePersistentState('controlsCollapsed', false);
-  const hasMultipleUsers = useMemo(() => userCount(graph) >= 2, [graph, revision]);
 
   if (collapsed)
     return (
       <button
         type="button"
         onClick={() => setCollapsed(false)}
-        className={`animate-fade-in-up flex items-center gap-1.5 self-start px-3 py-2 text-xs font-medium text-spice-text ${PANEL_SURFACE} ${FOCUS_RING}`}
+        className={`animate-fade-in-up flex items-center gap-2 self-start px-3 py-2 text-xs font-medium text-spice-text ${PANEL_SURFACE} ${FOCUS_RING}`}
       >
         <SpicetifyIcon icon="list-view" size={14} />
         {t('panel.show')}
@@ -77,71 +72,74 @@ const ControlPanel = ({
       active: controls.showCollaborations,
       onToggle: controls.toggleCollaborations,
     },
+    {
+      label: t('lens.connected'),
+      active: controls.showHubsOnly,
+      onToggle: controls.toggleHubsOnly,
+    },
   ];
-  if (hasMultipleUsers)
-    lenses.push({
-      label: t('lens.common'),
-      active: controls.showCommonOnly,
-      onToggle: controls.toggleCommonOnly,
-    });
+
+  const hasActions = pinnedCount > 0 || !controls.allTypesVisible;
 
   return (
-    <div className={`animate-fade-in-up flex flex-col gap-3.5 p-3.5 ${PANEL_SURFACE}`}>
+    <div
+      className={`animate-fade-in-up flex max-h-[calc(100vh-7rem)] flex-col gap-3.5 overflow-y-auto p-3.5 ${PANEL_SURFACE}`}
+    >
       <div className="flex items-center justify-between gap-2">
-        <span className="text-xs text-spice-subtext">
+        <span className="text-xs font-medium tabular-nums text-spice-subtext">
           {t('scale.summary', { nodes: graph.size, links: graph.linkCount })}
         </span>
-        <div className="flex items-center gap-1.5">
+        <IconButton
+          icon="minimize"
+          label={t('panel.hide')}
+          onClick={() => setCollapsed(true)}
+          size={13}
+          className="h-7 w-7"
+        />
+      </div>
+
+      {hasActions && (
+        <div className="flex flex-wrap items-center gap-1.5">
           {pinnedCount > 0 && (
-            <button type="button" onClick={onReleasePins} className={chipButton}>
+            <button type="button" onClick={onReleasePins} className={ACTION_BUTTON}>
               <SpicetifyIcon icon="locked" size={11} />
               {t('controls.releasePins', { count: pinnedCount })}
             </button>
           )}
           {!controls.allTypesVisible && (
-            <button type="button" onClick={controls.showAllTypes} className={chipButton}>
+            <button type="button" onClick={controls.showAllTypes} className={ACTION_BUTTON}>
               <SpicetifyIcon icon="x" size={11} />
               {t('filters.reset')}
             </button>
           )}
-          <button
-            type="button"
-            aria-label={t('panel.hide')}
-            onClick={() => setCollapsed(true)}
-            className={`flex h-6 w-6 items-center justify-center rounded-md text-spice-subtext transition-colors hover:bg-spice-highlight/25 hover:text-spice-text ${FOCUS_RING}`}
-          >
-            <SpicetifyIcon icon="minimize" size={13} />
-          </button>
         </div>
-      </div>
+      )}
 
       <div className="h-px bg-spice-subtext/10" />
       <AddToGraphBox adding={adding} onAdd={onAdd} onAdded={onAdded} />
 
       {expandProgress ? (
         <div className="flex items-center justify-between gap-2">
-          <span className="text-xs text-spice-subtext">
+          <span className="text-xs tabular-nums text-spice-subtext">
             {t('actions.expanding', { done: expandProgress.done, total: expandProgress.total })}
           </span>
-          <button type="button" onClick={onCancelExpandAll} className={chipButton}>
+          <button type="button" onClick={onCancelExpandAll} className={ACTION_BUTTON}>
             <SpicetifyIcon icon="x" size={11} />
             {t('actions.cancel')}
           </button>
         </div>
       ) : (
-        <button type="button" onClick={onExpandAll} className={`self-start ${chipButton}`}>
+        <button type="button" onClick={onExpandAll} className={`self-start ${ACTION_BUTTON}`}>
           <SpicetifyIcon icon="plus-alt" size={12} />
           {t('actions.expandAll')}
         </button>
       )}
 
-      <div className="flex flex-col gap-2">
-        <SectionLabel>{t('filters.show')}</SectionLabel>
+      <Section label={t('filters.show')}>
         <TypeFilter visibleTypes={controls.visibleTypes} onToggle={controls.toggleType} />
-      </div>
+      </Section>
 
-      <div className="flex flex-col gap-2">
-        <SectionLabel>{t('lens.label')}</SectionLabel>
+      <Section label={t('lens.label')}>
         <div className="flex flex-wrap gap-1.5">
           {lenses.map((lens) => (
             <ToggleChip key={lens.label} active={lens.active} onToggle={lens.onToggle}>
@@ -149,18 +147,17 @@ const ControlPanel = ({
             </ToggleChip>
           ))}
         </div>
-      </div>
+      </Section>
 
       {timeBounds && (
-        <div className="flex flex-col gap-2">
-          <SectionLabel>{t('time.section')}</SectionLabel>
+        <Section label={t('time.section')}>
           <AddedSinceFilter
             min={timeBounds.min}
             max={timeBounds.max}
             since={controls.since}
             onChange={controls.setSince}
           />
-        </div>
+        </Section>
       )}
     </div>
   );

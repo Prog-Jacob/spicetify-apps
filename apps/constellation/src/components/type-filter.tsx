@@ -19,7 +19,12 @@ const TypeChip = ({
   active: boolean;
   onToggle: () => void;
 }) => (
-  <ToggleChip active={active} onToggle={onToggle} className="flex items-center gap-1.5">
+  <ToggleChip
+    active={active}
+    onToggle={onToggle}
+    variant="outline"
+    className="flex items-center gap-1.5"
+  >
     <NodeTypeDot type={type} dim={!active} className="h-2 w-2" />
     {t(`type.${type}`)}
   </ToggleChip>
