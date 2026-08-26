@@ -1,6 +1,7 @@
 export { default as Pill } from './pill';
 export { Card, CardContent } from './card';
 export { default as Input } from './input';
+export { default as Slider } from './slider';
 export { default as TextComponent } from './text';
 export { default as SpicetifyIcon } from './icon';
 export { default as FilterBar } from './filter-bar';

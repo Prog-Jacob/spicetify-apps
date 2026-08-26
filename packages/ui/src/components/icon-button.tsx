@@ -21,7 +21,7 @@ const IconButton = ({ icon, label, onClick, size = 16, disabled, active, classNa
     aria-label={label}
     aria-pressed={active}
     className={cn(
-      'flex h-8 w-8 appearance-none items-center justify-center rounded-lg border border-transparent bg-transparent text-spice-subtext transition-colors',
+      'flex h-8 w-8 items-center justify-center rounded-lg border border-transparent bg-transparent text-spice-subtext transition-colors',
       'hover:bg-spice-text/[0.1] hover:text-spice-text',
       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-spice-button focus-visible:ring-offset-1 focus-visible:ring-offset-spice-card',
       'disabled:pointer-events-none disabled:opacity-40',
