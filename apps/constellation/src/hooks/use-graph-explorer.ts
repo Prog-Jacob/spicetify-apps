@@ -44,7 +44,7 @@ export const useGraphExplorer = () => {
     buildLibraryGraph(signal)
       .then(async (lib) => {
         fresh = true;
-        const { seeds } = await seedsReady;
+        const { seeds, removed } = await seedsReady;
         signal.throwIfAborted();
         await Promise.all(
           seeds.map((uri) =>
@@ -52,6 +52,7 @@ export const useGraphExplorer = () => {
           ),
         );
         signal.throwIfAborted();
+        for (const entry of removed) lib.graph.removeNode(entry.uri);
         setLibrary(lib);
         void saveCachedGraph(lib.graph);
       })
@@ -99,6 +100,32 @@ export const useGraphExplorer = () => {
     [library, adding, addSeed, bumpRevision],
   );
 
+  const removeEntity = useCallback(
+    (node: GraphNode) => {
+      if (!library) return;
+      library.graph.removeNode(node.uri);
+      session.removeNode(node);
+      bumpRevision();
+      void saveCachedGraph(library.graph);
+    },
+    [library, session.removeNode, bumpRevision],
+  );
+
+  const restoreEntity = useCallback(
+    async (uri: string) => {
+      if (!library) return;
+      try {
+        await addExternalEntity(library.graph, library.images, uri);
+        session.restoreNode(uri);
+        bumpRevision();
+        void saveCachedGraph(library.graph);
+      } catch (e) {
+        notifyError(e, t('add.failed'));
+      }
+    },
+    [library, session.restoreNode, bumpRevision],
+  );
+
   return {
     library,
     failed,
@@ -111,6 +138,9 @@ export const useGraphExplorer = () => {
     expandProgress,
     addEntity,
     adding,
+    removeEntity,
+    restoreEntity,
+    removed: session.removed,
     pins: session.pins,
     pinNode: session.pinNode,
     unpinNode: session.unpinNode,

@@ -32,6 +32,15 @@ export class MusicGraph {
     else this.adjacency.set(from, new Set([to]));
   }
 
+  removeNode(uri: string): void {
+    if (!this.nodeByUri.delete(uri)) return;
+    for (const other of this.adjacency.get(uri) ?? []) this.adjacency.get(other)?.delete(uri);
+    this.adjacency.delete(uri);
+    for (const [key, edge] of this.edgeByKey) {
+      if (edge.source === uri || edge.target === uri) this.edgeByKey.delete(key);
+    }
+  }
+
   neighbors(uri: string): GraphNode[] {
     const out: GraphNode[] = [];
     for (const other of this.adjacency.get(uri) ?? []) {

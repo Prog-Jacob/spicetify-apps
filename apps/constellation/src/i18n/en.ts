@@ -12,7 +12,7 @@ const en = {
   'type.artist': 'Artist',
   'type.album': 'Album',
   'type.playlist': 'Playlist',
-  'type.user': 'You',
+  'type.user': 'User',
 
   'inspector.play': 'Play',
   'inspector.queue': 'Add to queue',
@@ -23,6 +23,7 @@ const en = {
   'inspector.focus': 'Focus neighborhood',
   'inspector.clearFocus': 'Clear focus',
   'inspector.unpin': 'Unpin',
+  'inspector.remove': 'Remove from graph',
   'inspector.close': 'Close',
   'inspector.connections': 'Connections ({count})',
 
@@ -37,8 +38,17 @@ const en = {
   'filters.reset': 'Reset',
   'lens.label': 'Lenses',
 
-  'panel.show': 'Controls',
-  'panel.hide': 'Hide controls',
+  'controls.title': 'Controls',
+  'panel.hide': 'Hide',
+
+  'manage.title': 'Manage graph',
+  'manage.search': 'Search to remove…',
+  'manage.filter': 'Filter list',
+  'manage.emptyPool': 'The graph is empty.',
+  'manage.allHidden': 'All types hidden, enable a chip above.',
+  'manage.more': '+{count} more, search to narrow',
+  'manage.removed': 'Removed ({count})',
+  'manage.restore': 'Restore to graph',
 
   'actions.expandAll': 'Expand all',
   'actions.expanding': 'Expanding {done}/{total}…',
@@ -51,10 +61,6 @@ const en = {
   'add.invalid': 'Paste a Spotify link or URI for a user, artist, album, or playlist.',
   'add.failed': 'Could not add that to the graph.',
   'add.userFailed': 'That profile is private or does not exist.',
-
-  'friends.add': 'Add a friend',
-  'friends.loading': 'Loading friends…',
-  'friends.empty': 'No friends found on Spotify.',
 
   'actions.export': 'Export',
   'actions.image': 'Image',

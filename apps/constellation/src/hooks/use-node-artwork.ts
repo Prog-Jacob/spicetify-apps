@@ -1,3 +1,4 @@
+import { NODE_TYPE } from '../constants';
 import type ForceGraph from 'force-graph';
 import { loadImage } from '../graph/node-paint';
 import { resolveUriMetadata } from '@shared/api';
@@ -34,7 +35,7 @@ export const useNodeArtwork = (
 
     const pending: string[] = [];
     for (const node of graph.nodes()) {
-      if (node.type !== 'track' && !imageByUri.has(node.uri) && !attempted.has(node.uri)) {
+      if (node.type !== NODE_TYPE.TRACK && !imageByUri.has(node.uri) && !attempted.has(node.uri)) {
         attempted.add(node.uri);
         pending.push(node.uri);
       }

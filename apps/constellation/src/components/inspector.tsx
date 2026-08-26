@@ -1,8 +1,10 @@
 import { t } from '../i18n';
 import { cn } from '@shared/lib';
+import NodeRow from './node-row';
 import React, { useMemo } from 'react';
 import { NODE_TYPE } from '../constants';
 import NodeTypeDot from './node-type-dot';
+import { FOCUS_RING } from './chrome-styles';
 import { monogram } from '../graph/node-style';
 import { useGraphPalette } from '../graph/theme';
 import { isPlayable } from '../graph/node-query';
@@ -11,7 +13,6 @@ import type { NodeType, GraphNode } from '../types';
 import type { MusicGraph } from '../graph/music-graph';
 import { queueTrack } from '../services/spotify-actions';
 import { toDateString, openUriInClient } from '@shared/lib';
-import { FOCUS_RING, FOCUS_RING_INSET } from './chrome-styles';
 import {
   IconButton,
   TextComponent,
@@ -34,6 +35,7 @@ type Props = {
   onSelect: (node: GraphNode) => void;
   onClearFocus: () => void;
   onUnpin: () => void;
+  onRemove: (node: GraphNode) => void;
   onClose: () => void;
 };
 
@@ -91,6 +93,7 @@ const Inspector = ({
   onSelect,
   onClearFocus,
   onUnpin,
+  onRemove,
   onClose,
 }: Props) => {
   const neighbors = useMemo(() => graph.neighbors(node.uri), [graph, node, revision]);
@@ -186,6 +189,7 @@ const Inspector = ({
             />
           )}
           {pinned && <ActionButton icon="locked" label={t('inspector.unpin')} onClick={onUnpin} />}
+          <ActionButton icon="minus" label={t('inspector.remove')} onClick={() => onRemove(node)} />
         </div>
 
         <div className="flex flex-col gap-2 border-t border-spice-subtext/10 pt-3">
@@ -206,23 +210,13 @@ const Inspector = ({
 
         <ul className="flex flex-col gap-0.5">
           {neighbors.map((n) => (
-            <li key={n.uri}>
-              <button
-                type="button"
-                onClick={() => onSelect(n)}
-                className={cn(
-                  'group flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-start transition-colors',
-                  'hover:bg-spice-text/[0.1]',
-                  FOCUS_RING_INSET,
-                )}
-              >
-                <NodeTypeDot type={n.type} />
-                <span className="truncate text-sm text-spice-text">{n.label}</span>
-                <span className="ms-auto shrink-0 text-[10px] font-medium uppercase tracking-wider text-spice-subtext/50 opacity-0 transition-opacity group-hover:opacity-100">
-                  {t(`type.${n.type}`)}
-                </span>
-              </button>
-            </li>
+            <NodeRow
+              key={n.uri}
+              type={n.type}
+              label={n.label}
+              revealTag
+              onSelect={() => onSelect(n)}
+            />
           ))}
         </ul>
       </div>

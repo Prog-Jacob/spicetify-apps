@@ -1,7 +1,6 @@
 import { t } from '../i18n';
 import { Input } from '@ui/components';
 import React, { useState } from 'react';
-import FriendsMenu from './friends-menu';
 import type { GraphNode } from '../types';
 import { FOCUS_RING, SECTION_LABEL } from './chrome-styles';
 
@@ -41,12 +40,11 @@ const AddToGraphBox = ({ adding, onAdd, onAdded }: Props) => {
           type="button"
           onClick={() => void add(value)}
           disabled={adding || !value.trim()}
-          className={`shrink-0 rounded-lg bg-spice-button px-3.5 text-xs font-semibold text-spice-main transition hover:brightness-110 disabled:opacity-40 ${FOCUS_RING}`}
+          className={`shrink-0 appearance-none rounded-lg border-0 bg-spice-button px-3.5 text-xs font-semibold text-spice-main transition-[filter,background-color,color] hover:brightness-110 disabled:cursor-not-allowed disabled:bg-spice-text/[0.08] disabled:text-spice-subtext ${FOCUS_RING}`}
         >
           {adding ? t('add.adding') : t('add.button')}
         </button>
       </div>
-      <FriendsMenu disabled={adding} onPick={(uri) => void add(uri)} />
     </div>
   );
 };

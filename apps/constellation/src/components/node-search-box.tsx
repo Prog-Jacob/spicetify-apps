@@ -1,8 +1,8 @@
 import { t } from '../i18n';
+import SearchField from './search-field';
 import type { GraphNode } from '../types';
-import NodeTypeDot from './node-type-dot';
+import { NodeRowContent } from './node-row';
 import { searchNodes } from '../graph/node-query';
-import { Input, SpicetifyIcon } from '@ui/components';
 import type { MusicGraph } from '../graph/music-graph';
 import React, { useId, useMemo, useState } from 'react';
 
@@ -48,33 +48,18 @@ const NodeSearchBox = ({ graph, revision, isVisible, onPick }: Props) => {
 
   return (
     <div className="relative">
-      <span className="pointer-events-none absolute inset-y-0 start-2.5 flex items-center text-spice-subtext">
-        <SpicetifyIcon icon="search" size={14} />
-      </span>
-      <Input
-        type="text"
+      <SearchField
+        value={query}
+        onChange={retype}
+        onClear={() => retype('')}
+        placeholder={t('controls.search')}
         role="combobox"
         aria-expanded={query.length > 0}
         aria-controls={listId}
         aria-activedescendant={results.length ? `${listId}-${active}` : undefined}
         aria-autocomplete="list"
-        value={query}
-        onChange={(e) => retype(e.target.value)}
         onKeyDown={onKeyDown}
-        placeholder={t('controls.search')}
-        aria-label={t('controls.search')}
-        className="px-8"
       />
-      {query && (
-        <button
-          type="button"
-          onClick={() => retype('')}
-          aria-label={t('controls.clearSearch')}
-          className="absolute inset-y-0 end-2 flex items-center text-spice-subtext transition-colors hover:text-spice-text focus-visible:outline-none focus-visible:text-spice-text"
-        >
-          <SpicetifyIcon icon="x" size={14} />
-        </button>
-      )}
       {query && (
         <ul
           id={listId}
@@ -99,15 +84,11 @@ const NodeSearchBox = ({ graph, revision, isVisible, onPick }: Props) => {
                   aria-selected={i === active}
                   onMouseEnter={() => setActive(i)}
                   onClick={() => pick(node)}
-                  className={`flex cursor-pointer items-center gap-2 px-3 py-1.5 text-start text-sm text-spice-text ${
+                  className={`group flex cursor-pointer items-center gap-2.5 px-3 py-1.5 text-start ${
                     i === active ? 'bg-spice-highlight/20' : ''
                   }`}
                 >
-                  <NodeTypeDot type={node.type} />
-                  <span className="truncate">{node.label}</span>
-                  <span className="ms-auto shrink-0 text-[10px] text-spice-subtext/60">
-                    {t(`type.${node.type}`)}
-                  </span>
+                  <NodeRowContent type={node.type} label={node.label} />
                 </li>
               ))}
             </>

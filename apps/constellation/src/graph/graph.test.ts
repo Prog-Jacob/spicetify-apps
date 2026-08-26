@@ -31,6 +31,19 @@ test('dedupes edges and drops dangling / self edges', () => {
   assert.equal(g.links().length, 1);
 });
 
+test('removeNode drops the node, its edges, and neighbor adjacency', () => {
+  const g = new MusicGraph();
+  ['a', 'b', 'c'].forEach((u) => g.addNode(node(u)));
+  g.addEdge('a', 'b', 'saved');
+  g.addEdge('a', 'c', 'saved');
+  g.removeNode('a');
+  assert.equal(g.size, 2);
+  assert.equal(g.linkCount, 0);
+  assert.equal(g.degree('b'), 0);
+  assert.deepEqual(g.neighbors('b'), []);
+  g.removeNode('missing'); // no-op, no throw
+});
+
 test('degree counts unique neighbors, zero for unknown', () => {
   const g = new MusicGraph();
   ['a', 'b', 'c'].forEach((u) => g.addNode(node(u)));

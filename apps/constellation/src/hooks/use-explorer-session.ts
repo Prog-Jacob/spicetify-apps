@@ -1,3 +1,4 @@
+import type { GraphNode } from '../types';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   loadSession,
@@ -43,6 +44,26 @@ export const useExplorerSession = () => {
       mutate((s) => (s.seeds.includes(uri) ? s : { ...s, seeds: [...s.seeds, uri] })),
     [mutate],
   );
+  const removeNode = useCallback(
+    (node: GraphNode) =>
+      mutate((s) => ({
+        ...s,
+        seeds: s.seeds.filter((u) => u !== node.uri),
+        removed: s.removed.some((e) => e.uri === node.uri)
+          ? s.removed
+          : [...s.removed, { uri: node.uri, type: node.type, label: node.label }],
+      })),
+    [mutate],
+  );
+  const restoreNode = useCallback(
+    (uri: string) =>
+      mutate((s) =>
+        s.removed.some((e) => e.uri === uri)
+          ? { ...s, removed: s.removed.filter((e) => e.uri !== uri) }
+          : s,
+      ),
+    [mutate],
+  );
   const pinNode = useCallback(
     (uri: string, x: number, y: number) =>
       mutate((s) => ({ ...s, pins: { ...s.pins, [uri]: { x, y } } })),
@@ -65,8 +86,11 @@ export const useExplorerSession = () => {
 
   return {
     pins: session.pins,
+    removed: session.removed,
     seedsReady: seedsReady.current,
     addSeed,
+    removeNode,
+    restoreNode,
     pinNode,
     unpinNode,
     releaseAllPins,

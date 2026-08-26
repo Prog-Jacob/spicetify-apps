@@ -10,14 +10,16 @@ type Props = {
   onToggle: (type: NodeType) => void;
 };
 
-const TypeChip = ({
+export const TypeChip = ({
   type,
   active,
   onToggle,
+  count,
 }: {
   type: NodeType;
   active: boolean;
   onToggle: () => void;
+  count?: number;
 }) => (
   <ToggleChip
     active={active}
@@ -27,6 +29,7 @@ const TypeChip = ({
   >
     <NodeTypeDot type={type} dim={!active} className="h-2 w-2" />
     {t(`type.${type}`)}
+    {count !== undefined && <span className="tabular-nums text-spice-subtext/70">{count}</span>}
   </ToggleChip>
 );
 
