@@ -17,6 +17,9 @@ type LinkEnd = string | number | RenderNode | undefined;
 const endNode = (end: LinkEnd): RenderNode | undefined =>
   typeof end === 'object' && end !== null ? end : undefined;
 
+const endUri = (end: LinkEnd): string | undefined =>
+  typeof end === 'string' ? end : endNode(end)?.uri;
+
 const isIncident = (link: RenderLink, focus: string | null): boolean =>
   focus !== null && (endNode(link.source)?.uri === focus || endNode(link.target)?.uri === focus);
 
@@ -191,11 +194,12 @@ const GraphView = forwardRef<GraphViewHandle, Props>(
 
       const resize = () => fg.width(el.clientWidth).height(el.clientHeight);
       resize();
-      window.addEventListener('resize', resize);
+      const observer = new ResizeObserver(resize);
+      observer.observe(el);
       graphRef.current = fg;
 
       return () => {
-        window.removeEventListener('resize', resize);
+        observer.disconnect();
         fg._destructor();
       };
     }, [palette, imageByUri]);
@@ -203,23 +207,15 @@ const GraphView = forwardRef<GraphViewHandle, Props>(
     useEffect(() => {
       const fg = graphRef.current;
       if (!fg) return;
-      fg.graphData({
-        nodes: projectNodes(graph, renderByUri),
-        links: [...graph.links(), ...extraLinks],
-      });
-    }, [graph, revision, extraLinks, renderByUri]);
-
-    useEffect(() => {
-      const fg = graphRef.current;
-      if (!fg) return;
-      const endVisible = (end: LinkEnd) => {
-        const node = endNode(end);
-        return node ? nodeVisible(node) : false;
-      };
-      fg.nodeVisibility(nodeVisible).linkVisibility(
-        (link) => endVisible(link.source) && endVisible(link.target),
+      const nodes = projectNodes(graph, renderByUri).filter(nodeVisible);
+      const shown = new Set(nodes.map((node) => node.uri));
+      const links = [...graph.links(), ...extraLinks].filter(
+        (link) => shown.has(endUri(link.source) ?? '') && shown.has(endUri(link.target) ?? ''),
       );
-    }, [nodeVisible]);
+      fg.graphData({ nodes, links });
+      fitted.current = false;
+      fg.d3ReheatSimulation().resumeAnimation();
+    }, [graph, revision, extraLinks, nodeVisible, renderByUri]);
 
     // Size changes the layout spacing, so reheat; colour doesn't, so just repaint.
     useEffect(() => {
@@ -234,7 +230,7 @@ const GraphView = forwardRef<GraphViewHandle, Props>(
       if (!hoverUriRef.current) setFocus(selectedUri ?? null);
     }, [selectedUri, setFocus]);
 
-    return <div ref={containerRef} className="h-full w-full" />;
+    return <div ref={containerRef} className="h-full w-full overflow-hidden" />;
   },
 );
 
