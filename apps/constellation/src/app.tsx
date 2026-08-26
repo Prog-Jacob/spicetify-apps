@@ -73,7 +73,7 @@ const App = () => {
       return <GraphPlaceholder title={t('app.emptyTitle')} subtitle={t('app.empty')} />;
     return (
       <>
-        <div className="relative flex-1">
+        <div className="relative min-w-0 flex-1">
           <GraphView
             ref={viewRef}
             graph={library.graph}

@@ -93,7 +93,7 @@ const Inspector = ({
   }, [neighbors]);
 
   return (
-    <aside className="flex h-full w-72 flex-col overflow-y-auto border-s border-spice-subtext/15 bg-spice-card/60 backdrop-blur">
+    <aside className="flex h-full w-72 shrink-0 flex-col overflow-y-auto border-s border-spice-subtext/15 bg-spice-card/60 backdrop-blur">
       {focused && (
         <button
           type="button"
