@@ -88,6 +88,8 @@ const GraphView = forwardRef<GraphViewHandle, Props>(
     const imageByUri = useRef(new Map<string, string>()).current;
     const renderByUri = useRef(new Map<string, RenderNode>()).current;
     const fitted = useRef(false);
+    const lastGraphRef = useRef<MusicGraph | null>(null);
+    const lastExtraLinksRef = useRef<GraphEdge[] | null>(null);
     const hoverUriRef = useRef<string | null>(null);
     const focusUriRef = useRef<string | null>(null);
     const focusSetRef = useRef<Set<string> | null>(null);
@@ -213,8 +215,13 @@ const GraphView = forwardRef<GraphViewHandle, Props>(
         (link) => shown.has(endUri(link.source) ?? '') && shown.has(endUri(link.target) ?? ''),
       );
       fg.graphData({ nodes, links });
-      fitted.current = false;
-      fg.d3ReheatSimulation().resumeAnimation();
+      const topologyChanged =
+        lastGraphRef.current !== graph || lastExtraLinksRef.current !== extraLinks;
+      if (lastGraphRef.current !== graph) fitted.current = false;
+      lastGraphRef.current = graph;
+      lastExtraLinksRef.current = extraLinks;
+      if (topologyChanged) fg.d3ReheatSimulation();
+      fg.resumeAnimation();
     }, [graph, revision, extraLinks, nodeVisible, renderByUri]);
 
     // Size changes the layout spacing, so reheat; colour doesn't, so just repaint.
