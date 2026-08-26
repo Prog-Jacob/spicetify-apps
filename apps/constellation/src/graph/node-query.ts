@@ -1,12 +1,35 @@
-import type { GraphNode } from '../types';
+import { NODE_TYPE } from '../constants';
 import type { MusicGraph } from './music-graph';
+import type { NodeType, GraphNode } from '../types';
 
 const DEFAULT_LIMIT = 8;
+
+const PLAYABLE = new Set<NodeType>([
+  NODE_TYPE.TRACK,
+  NODE_TYPE.ARTIST,
+  NODE_TYPE.ALBUM,
+  NODE_TYPE.PLAYLIST,
+]);
+
+export const isPlayable = (type: NodeType): boolean => PLAYABLE.has(type);
 
 export const neighborhoodUris = (graph: MusicGraph, uri: string): Set<string> => {
   const uris = new Set(graph.neighbors(uri).map((n) => n.uri));
   uris.add(uri);
   return uris;
+};
+
+export const hasVisibleDegreeOver = (
+  graph: MusicGraph,
+  uri: string,
+  isVisible: (node: GraphNode) => boolean,
+  min: number,
+): boolean => {
+  let visible = 0;
+  for (const neighbor of graph.neighbors(uri)) {
+    if (isVisible(neighbor) && ++visible > min) return true;
+  }
+  return false;
 };
 
 export const addedAtBounds = (graph: MusicGraph): { min: number; max: number } | null => {

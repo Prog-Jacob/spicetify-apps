@@ -1,7 +1,7 @@
 import type { NodeType } from '../types';
 
 export const NODE_REL_SIZE = 4;
-export const AVATAR_MIN_SCREEN_RADIUS = 7;
+export const AVATAR_MIN_SCREEN_RADIUS = 6;
 export const LABEL_MIN_SCREEN_RADIUS = 13;
 
 // Fixed categorical hues (not theme-derived) so types stay distinct on any theme; only `accent`
@@ -25,6 +25,9 @@ const DEGREE_SCALE_K = 0.35;
 const DEGREE_SCALE_MAX = 3;
 export const degreeScale = (degree: number): number =>
   Math.min(1 + Math.log2(1 + degree) * DEGREE_SCALE_K, DEGREE_SCALE_MAX);
+
+export const effectiveRadius = (radius: number, degree: number, sizeByDegree: boolean): number =>
+  sizeByDegree ? radius * degreeScale(degree) : radius;
 
 // Golden-angle hue spacing keeps adjacent community ids visually distinct.
 const GOLDEN_ANGLE = 137.508;

@@ -17,6 +17,11 @@ const typesCodec: Codec<Set<NodeType>> = {
   serialize: (set) => JSON.stringify([...set]),
 };
 
+const usePersistentToggle = (key: string): [boolean, () => void] => {
+  const [on, setOn] = usePersistentState(key, false);
+  return [on, useCallback(() => setOn((prev) => !prev), [setOn])];
+};
+
 export const useGraphControls = () => {
   const [visibleTypes, setVisibleTypes] = usePersistentState(
     'visibleTypes',
@@ -34,28 +39,14 @@ export const useGraphControls = () => {
   const allTypesVisible = visibleTypes.size === ALL_NODE_TYPES.length;
   const isVisible = useCallback((node: GraphNode) => visibleTypes.has(node.type), [visibleTypes]);
 
-  const [sizeByDegree, setSizeByDegree] = usePersistentState('sizeByDegree', false);
-  const toggleSizeLens = useCallback(() => setSizeByDegree((on) => !on), [setSizeByDegree]);
-
-  const [colorByCluster, setColorByCluster] = usePersistentState('colorByCluster', false);
-  const toggleClusterLens = useCallback(() => setColorByCluster((on) => !on), [setColorByCluster]);
-
-  const [showCollaborations, setShowCollaborations] = usePersistentState(
-    'showCollaborations',
-    false,
-  );
-  const toggleCollaborations = useCallback(
-    () => setShowCollaborations((on) => !on),
-    [setShowCollaborations],
-  );
-
-  const [showCommonOnly, setShowCommonOnly] = usePersistentState('showCommonOnly', false);
-  const toggleCommonOnly = useCallback(() => setShowCommonOnly((on) => !on), [setShowCommonOnly]);
+  const [sizeByDegree, toggleSizeLens] = usePersistentToggle('sizeByDegree');
+  const [colorByCluster, toggleClusterLens] = usePersistentToggle('colorByCluster');
+  const [showCollaborations, toggleCollaborations] = usePersistentToggle('showCollaborations');
+  const [showHubsOnly, toggleHubsOnly] = usePersistentToggle('showHubsOnly');
 
   const [since, setSince] = usePersistentState('since', 0);
 
   const [focusUri, setFocusUri] = useState<string | null>(null);
-  const focus = useCallback((uri: string) => setFocusUri(uri), []);
   const clearFocus = useCallback(() => setFocusUri(null), []);
 
   return {
@@ -70,12 +61,12 @@ export const useGraphControls = () => {
     toggleClusterLens,
     showCollaborations,
     toggleCollaborations,
-    showCommonOnly,
-    toggleCommonOnly,
+    showHubsOnly,
+    toggleHubsOnly,
     since,
     setSince,
     focusUri,
-    focus,
+    focus: setFocusUri,
     clearFocus,
   };
 };

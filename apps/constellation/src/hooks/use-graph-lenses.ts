@@ -1,6 +1,4 @@
-import { NODE_TYPE } from '../constants';
 import { useGraphPalette } from '../graph/theme';
-import { sharedUris } from '../graph/shared-nodes';
 import { clusterColor } from '../graph/node-style';
 import type { GraphNode, GraphEdge } from '../types';
 import type { RenderNode } from '../graph/render-data';
@@ -9,7 +7,7 @@ import type { useGraphControls } from './use-graph-controls';
 import { deriveCollaborations } from '../graph/collaboration';
 import type { LibraryGraph } from '../services/library-crawler';
 import { detectCommunities } from '../graph/community-detection';
-import { addedAtBounds, neighborhoodUris } from '../graph/node-query';
+import { addedAtBounds, neighborhoodUris, hasVisibleDegreeOver } from '../graph/node-query';
 
 const NO_LINKS: GraphEdge[] = [];
 
@@ -20,25 +18,15 @@ export const useGraphLenses = (
   revision: number,
   controls: Controls,
 ) => {
-  const {
-    isVisible,
-    focusUri,
-    since,
-    setSince,
-    colorByCluster,
-    showCollaborations,
-    showCommonOnly,
-  } = controls;
+  const { isVisible, focusUri, since, setSince, colorByCluster, showCollaborations, showHubsOnly } =
+    controls;
 
   const focusSet = useMemo(
     () => (focusUri && library ? neighborhoodUris(library.graph, focusUri) : null),
     [focusUri, library, revision],
   );
 
-  const commonSet = useMemo(
-    () => (showCommonOnly && library ? sharedUris(library.graph) : null),
-    [showCommonOnly, library, revision],
-  );
+  const graph = library?.graph ?? null;
 
   const timeBounds = useMemo(
     () => (library ? addedAtBounds(library.graph) : null),
@@ -49,13 +37,21 @@ export const useGraphLenses = (
     if (timeBounds && since > timeBounds.max) setSince(timeBounds.min);
   }, [timeBounds, since, setSince]);
 
-  const nodeVisible = useCallback(
+  const passesFilters = useCallback(
     (node: GraphNode) =>
       isVisible(node) &&
       (!focusSet || focusSet.has(node.uri)) &&
-      (!commonSet || commonSet.has(node.uri) || node.type === NODE_TYPE.USER) &&
       (!node.addedAt || node.addedAt >= since),
-    [isVisible, focusSet, commonSet, since],
+    [isVisible, focusSet, since],
+  );
+
+  const nodeVisible = useCallback(
+    (node: GraphNode) => {
+      if (!passesFilters(node)) return false;
+      if (!showHubsOnly || !graph) return true;
+      return hasVisibleDegreeOver(graph, node.uri, passesFilters, 1);
+    },
+    [passesFilters, showHubsOnly, graph],
   );
 
   const clusterColorByUri = useMemo(() => {

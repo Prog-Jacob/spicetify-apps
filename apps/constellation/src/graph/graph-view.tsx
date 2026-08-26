@@ -3,12 +3,13 @@ import { EDGE_TYPE } from '../constants';
 import { useGraphPalette } from './theme';
 import { openUriInClient } from '@shared/lib';
 import type { MusicGraph } from './music-graph';
+import { neighborhoodUris } from './node-query';
 import { configureForces } from './force-config';
 import { canExpand } from '../services/expand-node';
 import type { GraphNode, GraphEdge } from '../types';
 import { useNodeArtwork } from '../hooks/use-node-artwork';
+import { effectiveRadius, NODE_REL_SIZE } from './node-style';
 import type { PinnedPositions } from '../services/session-store';
-import { NODE_STYLE, degreeScale, NODE_REL_SIZE } from './node-style';
 import { paintNode, emphasisFor, type PaintOptions } from './node-paint';
 import { projectNodes, type RenderNode, type RenderLink } from './render-data';
 import React, { useEffect, useRef, useImperativeHandle, forwardRef, useCallback } from 'react';
@@ -72,6 +73,8 @@ const GraphView = forwardRef<GraphViewHandle, Props>(
     ref,
   ) => {
     const palette = useGraphPalette();
+    const paletteRef = useRef(palette);
+    paletteRef.current = palette;
     const containerRef = useRef<HTMLDivElement>(null);
     const graphRef = useRef<ForceGraph<RenderNode, RenderLink>>();
     const onSelectRef = useRef(onSelect);
@@ -99,6 +102,8 @@ const GraphView = forwardRef<GraphViewHandle, Props>(
     const fitted = useRef(false);
     const lastGraphRef = useRef<MusicGraph | null>(null);
     const lastExtraLinksRef = useRef<GraphEdge[] | null>(null);
+    const lastRevisionRef = useRef<number>(-1);
+    const baseLinksRef = useRef<RenderLink[]>([]);
     const hoverUriRef = useRef<string | null>(null);
     const focusUriRef = useRef<string | null>(null);
     const focusSetRef = useRef<Set<string> | null>(null);
@@ -107,9 +112,7 @@ const GraphView = forwardRef<GraphViewHandle, Props>(
 
     const setFocus = useCallback((uri: string | null) => {
       focusUriRef.current = uri;
-      focusSetRef.current = uri
-        ? new Set([uri, ...graphDataRef.current.neighbors(uri).map((n) => n.uri)])
-        : null;
+      focusSetRef.current = uri ? neighborhoodUris(graphDataRef.current, uri) : null;
       graphRef.current?.resumeAnimation();
     }, []);
 
@@ -166,15 +169,16 @@ const GraphView = forwardRef<GraphViewHandle, Props>(
       };
 
       const fg = new ForceGraph<RenderNode, RenderLink>(el)
-        .backgroundColor(palette.background)
+        .backgroundColor(paletteRef.current.background)
         .cooldownTime(4000)
         .nodeRelSize(NODE_REL_SIZE)
         .nodeVal(
           (node) =>
-            NODE_STYLE[node.type].area *
-            (sizeByDegreeRef.current ? degreeScale(node.degree) ** 2 : 1),
+            (effectiveRadius(node.radius, node.degree, sizeByDegreeRef.current) / NODE_REL_SIZE) **
+            2,
         )
         .linkColor((link) => {
+          const palette = paletteRef.current;
           if (isIncident(link, focusUriRef.current)) return palette.color.artist;
           return link.type === EDGE_TYPE.COLLABORATED ? palette.color.artist : palette.link;
         })
@@ -230,18 +234,27 @@ const GraphView = forwardRef<GraphViewHandle, Props>(
         observer.disconnect();
         fg._destructor();
       };
-    }, [palette, imageByUri]);
+    }, [imageByUri]);
+
+    useEffect(() => {
+      graphRef.current?.backgroundColor(palette.background).resumeAnimation();
+    }, [palette]);
 
     useEffect(() => {
       const fg = graphRef.current;
       if (!fg) return;
+      const linksChanged =
+        lastGraphRef.current !== graph ||
+        lastExtraLinksRef.current !== extraLinks ||
+        lastRevisionRef.current !== revision;
+      if (linksChanged)
+        baseLinksRef.current = [...graph.links(), ...extraLinks].map((link) => ({ ...link }));
+
       const nodes = projectNodes(graph, renderByUri).filter(nodeVisible);
       const shown = new Set(nodes.map((node) => node.uri));
-      const links = [...graph.links(), ...extraLinks]
-        .filter(
-          (link) => shown.has(endUri(link.source) ?? '') && shown.has(endUri(link.target) ?? ''),
-        )
-        .map((link) => ({ ...link }));
+      const links = baseLinksRef.current.filter(
+        (link) => shown.has(endUri(link.source) ?? '') && shown.has(endUri(link.target) ?? ''),
+      );
       fg.graphData({ nodes, links });
       applyPins();
       const topologyChanged =
@@ -249,6 +262,7 @@ const GraphView = forwardRef<GraphViewHandle, Props>(
       if (lastGraphRef.current !== graph) fitted.current = false;
       lastGraphRef.current = graph;
       lastExtraLinksRef.current = extraLinks;
+      lastRevisionRef.current = revision;
       if (topologyChanged) fg.d3ReheatSimulation();
       fg.resumeAnimation();
     }, [graph, revision, extraLinks, nodeVisible, renderByUri, applyPins]);
@@ -258,9 +272,13 @@ const GraphView = forwardRef<GraphViewHandle, Props>(
       graphRef.current?.resumeAnimation();
     }, [pins, applyPins]);
 
-    // Size changes the layout spacing, so reheat; colour doesn't, so just repaint.
     useEffect(() => {
-      graphRef.current?.d3ReheatSimulation().resumeAnimation();
+      const fg = graphRef.current;
+      if (!fg) return;
+      const collide = fg.d3Force('collide') as
+        { radius: (r: (node: RenderNode) => number) => void } | undefined;
+      collide?.radius((node) => effectiveRadius(node.radius, node.degree, sizeByDegree) + 4);
+      fg.d3ReheatSimulation().resumeAnimation();
     }, [sizeByDegree]);
 
     useEffect(() => {
