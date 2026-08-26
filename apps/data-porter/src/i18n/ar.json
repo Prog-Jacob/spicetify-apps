@@ -8,6 +8,7 @@
 
   "export.title": "تصدير بياناتك",
   "export.subtitle": "اختر ما تريد تضمينه، ثم حمّل كملف JSON.",
+  "export.mode": "وضع التصدير",
   "export.myData": "بياناتي",
   "export.anotherUser": "مستخدم آخر",
   "export.whatToInclude": "ماذا تريد تضمينه",

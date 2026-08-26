@@ -5,8 +5,8 @@ import { UpdateBanner, ErrorBoundary, PageShell } from '@ui/components';
 
 const App = () => {
   const [ready, setReady] = useState(false);
-  const updateUrl = useUpdateCheck(__APP_NAME__, __APP_VERSION__);
-  const banner = updateUrl ? <UpdateBanner appName={__APP_NAME__} releaseUrl={updateUrl} /> : null;
+  const update = useUpdateCheck();
+  const banner = update ? <UpdateBanner releaseUrl={update.url} version={update.version} /> : null;
 
   useEffect(() => {
     loadTranslations().finally(() => setReady(true));

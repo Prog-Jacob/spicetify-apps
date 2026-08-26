@@ -57,7 +57,7 @@ const App = () => {
     marks.pathRadius,
   );
   const viewRef = useRef<GraphViewHandle>(null);
-  const updateUrl = useUpdateCheck(__APP_NAME__, __APP_VERSION__);
+  const update = useUpdateCheck();
 
   const focusOn = (node: GraphNode) => {
     setSelected(node);
@@ -228,7 +228,7 @@ const App = () => {
 
   return (
     <ErrorBoundary scope={__APP_NAME__} title={t('app.error')}>
-      {updateUrl && <UpdateBanner appName={__APP_NAME__} releaseUrl={updateUrl} />}
+      {update && <UpdateBanner releaseUrl={update.url} version={update.version} />}
       <div className="absolute inset-0 flex overflow-hidden">{renderBody()}</div>
     </ErrorBoundary>
   );

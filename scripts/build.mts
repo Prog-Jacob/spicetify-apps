@@ -1,8 +1,8 @@
 import { join } from 'path';
 import { execSync } from 'child_process';
 import pkg from 'esbuild-plugin-external-global';
-import { ROOT, APPS_DIR, readPkg } from './lib.mts';
 import { build, context, type BuildOptions } from 'esbuild';
+import { ROOT, APPS_DIR, readPkg, readManifest } from './lib.mts';
 import type { BundledLocales } from '../packages/shared/src/i18n/types.ts';
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'fs';
 
@@ -17,14 +17,6 @@ interface PackageJson {
   author?: Author;
   contributors?: Author[];
   i18n?: { bundleLocales?: string[] };
-}
-
-interface ManifestEntry {
-  name: string;
-  description: string;
-  preview: string;
-  readme: string;
-  tags: string[];
 }
 
 const rootPkg: PackageJson = readPkg();
@@ -64,6 +56,7 @@ const buildOptions = (appName: string): BuildOptions => {
   const outDir = join(appDir, 'dist');
   const appPkg: PackageJson = readPkg(appDir);
   const appVersion = appPkg.version ?? '0.0.0';
+  const manifestEntry = readManifest().find((e) => e.preview?.startsWith(`apps/${appName}/`));
 
   return {
     entryPoints: [join(appDir, 'src', 'index.tsx')],
@@ -85,12 +78,7 @@ const buildOptions = (appName: string): BuildOptions => {
         name: 'copy-assets',
         setup(build) {
           build.onEnd(() => {
-            const rootManifest = join(ROOT, 'manifest.json');
-            if (!existsSync(rootManifest)) return;
-
-            const entries: ManifestEntry[] = JSON.parse(readFileSync(rootManifest, 'utf-8'));
-            const entry = entries.find((e) => e.preview?.startsWith(`apps/${appName}/`));
-            if (!entry) return;
+            if (!manifestEntry) return;
 
             const iconPath = join(appDir, 'src', 'styles', 'icon.svg');
             const iconFilledPath = join(appDir, 'src', 'styles', 'icon-filled.svg');
@@ -99,7 +87,7 @@ const buildOptions = (appName: string): BuildOptions => {
             writeFileSync(
               join(outDir, 'manifest.json'),
               JSON.stringify({
-                ...entry,
+                ...manifestEntry,
                 authors: rootPkg.contributors ?? [rootPkg.author].filter(Boolean),
                 icon: readFileSync(iconPath, 'utf-8').trim(),
                 'active-icon': readFileSync(iconFilledPath, 'utf-8').trim(),
@@ -113,6 +101,7 @@ const buildOptions = (appName: string): BuildOptions => {
       __APP_NAME__: JSON.stringify(appName),
       __APP_VERSION__: JSON.stringify(appVersion),
       __REPO__: JSON.stringify(rootPkg.repository ?? ''),
+      __APP_DISPLAY_NAME__: JSON.stringify(manifestEntry?.name ?? appName),
       __BUNDLED_LOCALES__: JSON.stringify(bundleI18n ? collectBundledLocales(appName) : {}),
     },
     alias: {

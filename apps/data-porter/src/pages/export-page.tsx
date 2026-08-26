@@ -27,17 +27,16 @@ const MODE = { MY_DATA: 'my-data', OTHER_USER: 'other-user' } as const;
 type Status = (typeof EXPORT_STATUS)[keyof typeof EXPORT_STATUS];
 type Mode = (typeof MODE)[keyof typeof MODE];
 
-const MODES: readonly { value: Mode; labelKey: MessageKey }[] = [
-  { value: MODE.MY_DATA, labelKey: 'export.myData' },
-  { value: MODE.OTHER_USER, labelKey: 'export.anotherUser' },
+const MODES: readonly { value: Mode; labelKey: MessageKey; icon: Spicetify.Icon }[] = [
+  { value: MODE.MY_DATA, labelKey: 'export.myData', icon: 'library' },
+  { value: MODE.OTHER_USER, labelKey: 'export.anotherUser', icon: 'artist' },
 ];
 
 type ExportPageProps = {
-  banner?: React.ReactNode;
   onGoToImport?: () => void;
 };
 
-const ExportPage = ({ banner, onGoToImport }: ExportPageProps) => {
+const ExportPage = ({ onGoToImport }: ExportPageProps) => {
   const aborter = useAbortController();
   const [userInput, setUserInput] = useState('');
   const [mode, setMode] = useState<Mode>(MODE.MY_DATA);
@@ -99,7 +98,6 @@ const ExportPage = ({ banner, onGoToImport }: ExportPageProps) => {
       title={t('export.title')}
       subtitle={t('export.subtitle')}
       version={__APP_VERSION__}
-      banner={banner}
       navButton={
         onGoToImport ? (
           <ButtonSecondary onClick={onGoToImport} buttonSize="md">
@@ -108,26 +106,33 @@ const ExportPage = ({ banner, onGoToImport }: ExportPageProps) => {
         ) : null
       }
     >
-      <div className="flex gap-1">
-        {MODES.map(({ value, labelKey }) => (
-          <ButtonTertiary
+      <div
+        role="group"
+        aria-label={t('export.mode')}
+        className="flex w-fit gap-1 rounded-full bg-spice-highlight/60 p-1"
+      >
+        {MODES.map(({ value, labelKey, icon }) => (
+          <button
             key={value}
+            type="button"
+            aria-pressed={mode === value}
             onClick={() => switchMode(value)}
-            buttonSize="sm"
             disabled={isFetching}
             className={cn(
+              'flex cursor-pointer items-center gap-1.5 rounded-full border-0 px-4 py-1.5 text-sm font-medium transition-colors disabled:cursor-default disabled:opacity-60',
               mode === value
-                ? 'border-spice-button text-spice-text'
-                : 'text-spice-subtext hover:text-spice-text',
+                ? 'bg-spice-text text-spice-main'
+                : 'bg-transparent text-spice-subtext hover:bg-spice-highlight hover:text-spice-text',
             )}
           >
+            <SpicetifyIcon icon={icon} size={14} />
             {t(labelKey)}
-          </ButtonTertiary>
+          </button>
         ))}
       </div>
 
-      {mode === MODE.MY_DATA && (
-        <>
+      <div hidden={mode !== MODE.MY_DATA}>
+        <div className="flex flex-col gap-8">
           <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between">
               <TextComponent variant="alto" weight="bold">
@@ -159,11 +164,11 @@ const ExportPage = ({ banner, onGoToImport }: ExportPageProps) => {
                 : t('export.count', { selected: selected.size, total: DATA_TYPES.length })}
             </ButtonPrimary>
           )}
-        </>
-      )}
+        </div>
+      </div>
 
-      {mode === MODE.OTHER_USER && (
-        <>
+      <div hidden={mode !== MODE.OTHER_USER}>
+        <div className="flex flex-col gap-8">
           <div className="flex flex-col gap-3">
             <TextComponent variant="alto" weight="bold">
               {t('export.spotifyProfile')}
@@ -185,8 +190,8 @@ const ExportPage = ({ banner, onGoToImport }: ExportPageProps) => {
               {t('export.exportUserData')}
             </ButtonPrimary>
           )}
-        </>
-      )}
+        </div>
+      </div>
 
       {isFetching && progress && (
         <ProgressCard

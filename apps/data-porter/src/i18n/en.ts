@@ -13,6 +13,7 @@ const en = {
   // Export page
   'export.title': 'Export Your Data',
   'export.subtitle': 'Choose what to include, then download as JSON.',
+  'export.mode': 'Export mode',
   'export.myData': 'My Data',
   'export.anotherUser': 'Another User',
   'export.whatToInclude': 'What to include',
