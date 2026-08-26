@@ -1,4 +1,5 @@
 import { t } from '../i18n';
+import { cn } from '@shared/lib';
 import React, { useState } from 'react';
 import { useGraphPalette } from '../graph/theme';
 import { PANEL_SURFACE, FOCUS_RING } from './chrome-styles';
@@ -36,40 +37,46 @@ const GraphGuide = () => {
     setOpen(false);
   };
 
-  if (!open) {
-    return (
+  return (
+    <div className="relative flex flex-col items-start">
+      {open && (
+        <div
+          className={`animate-fade-in-up absolute bottom-full start-0 z-20 mb-2 w-72 p-4 ${PANEL_SURFACE}`}
+        >
+          <TextComponent variant="viola" weight="bold" semanticColor="textBase">
+            {t('guide.title')}
+          </TextComponent>
+          <ul className="mt-3 flex flex-col gap-1.5">
+            <Row label={t('guide.click')} />
+            <Row label={t('guide.hover')} />
+            <Row label={t('guide.drag')} />
+            <Row label={t('guide.expand')} />
+            <Row label={t('guide.zoom')} />
+          </ul>
+          <div className="mt-3 h-px bg-spice-subtext/10" />
+          <div className="mt-3 flex flex-col gap-1.5">
+            <Swatch color={palette.link} label={t('guide.legendLibrary')} />
+            <Swatch color={palette.color.artist} label={t('guide.legendCollab')} />
+          </div>
+          <div className="mt-4 flex justify-end">
+            <ButtonSecondary buttonSize="sm" onClick={dismiss}>
+              {t('guide.dismiss')}
+            </ButtonSecondary>
+          </div>
+        </div>
+      )}
       <button
         type="button"
-        onClick={() => setOpen(true)}
-        className={`absolute bottom-4 start-3 z-20 rounded-full border border-spice-subtext/15 bg-spice-card/80 px-3 py-1.5 text-xs font-medium text-spice-subtext shadow-xl backdrop-blur-md transition-colors hover:text-spice-text ${FOCUS_RING}`}
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+        className={cn(
+          'inline-flex appearance-none items-center rounded-full border border-spice-subtext/25 bg-spice-card/80 px-3 py-1.5 text-xs font-medium shadow-lg backdrop-blur-md transition-colors hover:text-spice-text',
+          open ? 'text-spice-text' : 'text-spice-subtext',
+          FOCUS_RING,
+        )}
       >
         {t('guide.help')}
       </button>
-    );
-  }
-
-  return (
-    <div className={`absolute bottom-16 start-3 z-20 w-72 p-4 ${PANEL_SURFACE}`}>
-      <TextComponent variant="viola" weight="bold" semanticColor="textBase">
-        {t('guide.title')}
-      </TextComponent>
-      <ul className="mt-3 flex flex-col gap-1.5">
-        <Row label={t('guide.click')} />
-        <Row label={t('guide.hover')} />
-        <Row label={t('guide.drag')} />
-        <Row label={t('guide.expand')} />
-        <Row label={t('guide.zoom')} />
-      </ul>
-      <div className="mt-3 h-px bg-spice-subtext/10" />
-      <div className="mt-3 flex flex-col gap-1.5">
-        <Swatch color={palette.link} label={t('guide.legendLibrary')} />
-        <Swatch color={palette.color.artist} label={t('guide.legendCollab')} />
-      </div>
-      <div className="mt-4 flex justify-end">
-        <ButtonSecondary buttonSize="sm" onClick={dismiss}>
-          {t('guide.dismiss')}
-        </ButtonSecondary>
-      </div>
     </div>
   );
 };

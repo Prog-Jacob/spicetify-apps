@@ -42,7 +42,7 @@ export const useGraphControls = () => {
   const [sizeByDegree, toggleSizeLens] = usePersistentToggle('sizeByDegree');
   const [colorByCluster, toggleClusterLens] = usePersistentToggle('colorByCluster');
   const [showCollaborations, toggleCollaborations] = usePersistentToggle('showCollaborations');
-  const [showHubsOnly, toggleHubsOnly] = usePersistentToggle('showHubsOnly');
+  const [showHubsOnly, toggleHubsOnly] = usePersistentToggle('connectedOnly');
 
   const [since, setSince] = usePersistentState('since', 0);
 

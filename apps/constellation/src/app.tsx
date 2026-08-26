@@ -5,6 +5,7 @@ import { useUpdateCheck } from '@shared/hooks';
 import GraphGuide from './components/graph-guide';
 import { toSnapshot } from './graph/graph-snapshot';
 import ControlPanel from './components/control-panel';
+import GraphManager from './components/graph-manager';
 import NodeSearchBox from './components/node-search-box';
 import { downloadJson, downloadBlob } from '@shared/lib';
 import { useGraphLenses } from './hooks/use-graph-lenses';
@@ -32,6 +33,9 @@ const App = () => {
     expandProgress,
     addEntity,
     adding,
+    removeEntity,
+    restoreEntity,
+    removed,
     pins,
     pinNode,
     unpinNode,
@@ -110,7 +114,7 @@ const App = () => {
             onExpand={expand}
             onPin={pinNode}
           />
-          <div className="animate-fade-in-up absolute start-3 top-3 z-10 flex w-72 flex-col gap-2">
+          <div className="animate-fade-in-up absolute bottom-14 start-3 top-3 z-10 flex w-72 flex-col gap-2 overflow-y-auto">
             <NodeSearchBox
               graph={library.graph}
               revision={revision}
@@ -121,23 +125,36 @@ const App = () => {
               graph={library.graph}
               controls={controls}
               timeBounds={timeBounds}
-              adding={adding}
               pinnedCount={Object.keys(pins).length}
               expandProgress={expandProgress}
-              onAdd={addEntity}
-              onAdded={focusOn}
               onExpandAll={() => expandAll(nodeVisible)}
               onCancelExpandAll={cancelExpandAll}
               onReleasePins={releaseAllPins}
+            />
+            <GraphManager
+              graph={library.graph}
+              revision={revision}
+              removed={removed}
+              adding={adding}
+              onAdd={addEntity}
+              onAdded={focusOn}
+              onRemove={(node) => {
+                removeEntity(node);
+                if (selected?.uri === node.uri) selectNode(null);
+              }}
+              onRestore={(uri) => void restoreEntity(uri)}
+              onSelect={focusOn}
             />
           </div>
           <div className="animate-fade-in-up [animation-delay:80ms]">
             <GraphExportToolbar onExportImage={exportImage} onExportData={exportData} />
           </div>
-          <div className="animate-fade-in-up [animation-delay:120ms]">
+          <div className="animate-fade-in-up absolute bottom-4 start-3 z-10 [animation-delay:120ms]">
+            <GraphGuide />
+          </div>
+          <div className="animate-fade-in-up absolute bottom-4 end-3 z-10 [animation-delay:120ms]">
             <GraphNavControls onZoomIn={zoomIn} onZoomOut={zoomOut} onFit={fitView} />
           </div>
-          <GraphGuide />
         </div>
         {selected && (
           <Inspector
@@ -154,6 +171,10 @@ const App = () => {
             onSelect={focusOn}
             onClearFocus={clearFocus}
             onUnpin={() => unpinNode(selected.uri)}
+            onRemove={(node) => {
+              removeEntity(node);
+              selectNode(null);
+            }}
             onClose={() => selectNode(null)}
           />
         )}

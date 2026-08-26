@@ -11,12 +11,7 @@ type Props = {
 };
 
 const GraphNavControls = ({ onZoomIn, onZoomOut, onFit }: Props) => (
-  <div
-    className={cn(
-      'absolute bottom-4 end-3 z-10 flex flex-col gap-0.5 rounded-xl p-1',
-      PANEL_SURFACE,
-    )}
-  >
+  <div className={cn('flex flex-col gap-0.5 rounded-xl p-1', PANEL_SURFACE)}>
     <IconButton icon="plus2px" label={t('nav.zoomIn')} onClick={onZoomIn} />
     <IconButton icon="minus" label={t('nav.zoomOut')} onClick={onZoomOut} />
     <div className="mx-1.5 my-0.5 h-px bg-spice-subtext/12" />
