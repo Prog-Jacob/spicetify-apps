@@ -17,7 +17,7 @@ export type UserProfile = {
   following_count?: number;
 };
 
-export const userProfileUrl = (userId: string): string => `${BASE}/${encodeURIComponent(userId)}`;
+const userProfileUrl = (userId: string): string => `${BASE}/${encodeURIComponent(userId)}`;
 
 export const getProfile = (userId: string): Promise<UserProfile> =>
   cosmos.get<UserProfile>(`${userProfileUrl(userId)}?${MARKET}`);

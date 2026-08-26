@@ -7,9 +7,7 @@ export {
   getProfile,
   getFollowing,
   getFollowers,
-  userProfileUrl,
   getPublicPlaylists,
   type UserProfile,
   type ProfileEntry,
-  type ProfilePlaylist,
 } from './profile-view';
