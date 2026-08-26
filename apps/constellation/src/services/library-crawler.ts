@@ -1,20 +1,11 @@
-import { spotifyImageUrl } from '@shared/lib';
 import { MusicGraph } from '../graph/music-graph';
+import { rememberFirstImage } from './node-images';
 import { NODE_TYPE, EDGE_TYPE } from '../constants';
 import { ingestArtists, ingestTrack } from './ingest';
 import { paginate, fetchRootlistPlaylists } from '@shared/api';
-import type { SpotifyImage, LibraryTrackItem, LibraryContentItem } from '@shared/types';
+import type { LibraryTrackItem, LibraryContentItem } from '@shared/types';
 
-// Graph topology plus the artwork the crawl already carries. LibraryAPI returns artwork inline,
-// so avatars are populated here for free rather than waiting on per-node oEmbed. Images ride
-// alongside rather than on the domain nodes.
 export type LibraryGraph = { graph: MusicGraph; images: Map<string, string> };
-
-const rememberImage = (images: Map<string, string>, uri: string, list?: SpotifyImage[]): void => {
-  if (images.has(uri)) return;
-  const url = spotifyImageUrl(list?.[0]?.url);
-  if (url) images.set(uri, url);
-};
 
 // Tier A only: proven, rate-limit-free Platform APIs, plus the edges saved objects carry.
 export async function buildLibraryGraph(signal?: AbortSignal): Promise<LibraryGraph> {
@@ -47,7 +38,7 @@ export async function buildLibraryGraph(signal?: AbortSignal): Promise<LibraryGr
   for (const playlist of playlists) {
     graph.addNode({ uri: playlist.uri, type: NODE_TYPE.PLAYLIST, label: playlist.name });
     graph.addEdge(userUri, playlist.uri, EDGE_TYPE.OWNS);
-    rememberImage(images, playlist.uri, playlist.images);
+    rememberFirstImage(images, playlist.uri, playlist.images);
   }
 
   for (const item of contents) {
@@ -59,7 +50,7 @@ export async function buildLibraryGraph(signal?: AbortSignal): Promise<LibraryGr
         addedAt: item.addedAt,
       });
       graph.addEdge(userUri, item.uri, EDGE_TYPE.SAVED);
-      rememberImage(images, item.uri, item.images);
+      rememberFirstImage(images, item.uri, item.images);
     } else if (item.type === NODE_TYPE.ALBUM) {
       graph.addNode({
         uri: item.uri,
@@ -69,15 +60,15 @@ export async function buildLibraryGraph(signal?: AbortSignal): Promise<LibraryGr
       });
       graph.addEdge(userUri, item.uri, EDGE_TYPE.SAVED);
       ingestArtists(graph, item.uri, EDGE_TYPE.MADE_BY, item.artists);
-      rememberImage(images, item.uri, item.images);
+      rememberFirstImage(images, item.uri, item.images);
     }
   }
 
   for (const track of tracks) {
     ingestTrack(graph, track);
     graph.addEdge(userUri, track.uri, EDGE_TYPE.SAVED);
-    rememberImage(images, track.uri, track.album?.images);
-    if (track.album?.uri) rememberImage(images, track.album.uri, track.album.images);
+    rememberFirstImage(images, track.uri, track.album?.images);
+    if (track.album?.uri) rememberFirstImage(images, track.album.uri, track.album.images);
   }
 
   return { graph, images };

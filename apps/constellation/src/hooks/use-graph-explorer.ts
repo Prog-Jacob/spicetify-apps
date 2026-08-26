@@ -47,7 +47,9 @@ export const useGraphExplorer = () => {
         const { seeds } = await seedsReady;
         signal.throwIfAborted();
         await Promise.all(
-          seeds.map((uri) => addExternalEntity(lib.graph, uri, signal).catch(() => undefined)),
+          seeds.map((uri) =>
+            addExternalEntity(lib.graph, lib.images, uri, signal).catch(() => undefined),
+          ),
         );
         signal.throwIfAborted();
         setLibrary(lib);
@@ -82,7 +84,7 @@ export const useGraphExplorer = () => {
       if (!library || adding) return null;
       setAdding(true);
       try {
-        const node = await addExternalEntity(library.graph, input);
+        const node = await addExternalEntity(library.graph, library.images, input);
         addSeed(node.uri);
         bumpRevision();
         void saveCachedGraph(library.graph);

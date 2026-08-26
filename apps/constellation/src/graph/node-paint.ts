@@ -1,5 +1,5 @@
 import type { RenderNode } from './render-data';
-import { degreeScale, AVATAR_MIN_SCREEN_RADIUS, LABEL_MIN_SCREEN_RADIUS } from './node-style';
+import { effectiveRadius, AVATAR_MIN_SCREEN_RADIUS, LABEL_MIN_SCREEN_RADIUS } from './node-style';
 
 const TWO_PI = Math.PI * 2;
 const LABEL_SCREEN_PX = 11;
@@ -155,7 +155,7 @@ export const paintNode = (
   scale: number,
   { color, images, sizeByDegree, emphasis, expandable, pinned }: PaintOptions,
 ) => {
-  const r = sizeByDegree ? node.radius * degreeScale(node.degree) : node.radius;
+  const r = effectiveRadius(node.radius, node.degree, sizeByDegree);
   const screenR = r * scale;
   const x = node.x ?? 0;
   const y = node.y ?? 0;

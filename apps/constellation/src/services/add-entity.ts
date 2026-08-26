@@ -1,6 +1,7 @@
 import { t } from '../i18n';
 import { ingestArtists } from './ingest';
 import { expandNode } from './expand-node';
+import { rememberImage } from './node-images';
 import { NODE_TYPE, EDGE_TYPE } from '../constants';
 import type { NodeType, GraphNode } from '../types';
 import type { MusicGraph } from '../graph/music-graph';
@@ -33,7 +34,12 @@ export const parseSpotifyRef = (input: string): SpotifyRef | null => {
   return { type, id, uri: `spotify:${type}:${id}` };
 };
 
-const addUser = async (graph: MusicGraph, id: string, signal?: AbortSignal): Promise<GraphNode> => {
+const addUser = async (
+  graph: MusicGraph,
+  images: Map<string, string>,
+  id: string,
+  signal?: AbortSignal,
+): Promise<GraphNode> => {
   const profile = await getProfile(id).catch(() => {
     throw new ValidationError(t('add.userFailed'));
   });
@@ -42,6 +48,7 @@ const addUser = async (graph: MusicGraph, id: string, signal?: AbortSignal): Pro
   const uri = `${SPOTIFY_URI.USER}${id}`;
   const label = profile?.name || id;
   graph.addNode({ uri, type: NODE_TYPE.USER, label });
+  rememberImage(images, uri, profile?.image_url);
 
   const [playlists, following] = await Promise.all([
     getPublicPlaylists(id, { limit: 50 }).catch(() => []),
@@ -52,11 +59,16 @@ const addUser = async (graph: MusicGraph, id: string, signal?: AbortSignal): Pro
   for (const playlist of playlists) {
     graph.addNode({ uri: playlist.uri, type: NODE_TYPE.PLAYLIST, label: playlist.name });
     graph.addEdge(uri, playlist.uri, EDGE_TYPE.OWNS);
+    rememberImage(images, playlist.uri, playlist.image_url);
   }
-  const followedArtists = following
-    .filter((p) => p.uri.startsWith(SPOTIFY_URI.ARTIST))
-    .map((p) => ({ uri: p.uri, name: p.name ?? p.uri }));
-  ingestArtists(graph, uri, EDGE_TYPE.SAVED, followedArtists);
+  const followedArtists = following.filter((p) => p.uri.startsWith(SPOTIFY_URI.ARTIST));
+  ingestArtists(
+    graph,
+    uri,
+    EDGE_TYPE.SAVED,
+    followedArtists.map((p) => ({ uri: p.uri, name: p.name ?? p.uri })),
+  );
+  for (const artist of followedArtists) rememberImage(images, artist.uri, artist.image_url);
 
   return { uri, type: NODE_TYPE.USER, label };
 };
@@ -67,16 +79,18 @@ const addUser = async (graph: MusicGraph, id: string, signal?: AbortSignal): Pro
  */
 export const addExternalEntity = async (
   graph: MusicGraph,
+  images: Map<string, string>,
   input: string,
   signal?: AbortSignal,
 ): Promise<GraphNode> => {
   const ref = parseSpotifyRef(input);
   if (!ref) throw new ValidationError(t('add.invalid'));
-  if (ref.type === NODE_TYPE.USER) return addUser(graph, ref.id, signal);
+  if (ref.type === NODE_TYPE.USER) return addUser(graph, images, ref.id, signal);
 
   const meta = (await resolveUriMetadata([ref.uri])).get(ref.uri);
   const node: GraphNode = { uri: ref.uri, type: ref.type, label: meta?.name || ref.id };
   graph.addNode(node);
+  rememberImage(images, ref.uri, meta?.imageUrl);
   await expandNode(graph, node, signal);
   return node;
 };
