@@ -21,7 +21,7 @@ export const RowAction = ({
     aria-label={label}
     title={label}
     className={cn(
-      'flex h-6 w-6 shrink-0 appearance-none items-center justify-center rounded-md border border-transparent bg-transparent text-spice-subtext transition-colors',
+      'flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-transparent bg-transparent text-spice-subtext transition-colors',
       'opacity-0 hover:bg-spice-text/10 hover:text-spice-text group-hover:opacity-100 focus-visible:opacity-100',
       FOCUS_RING,
     )}
@@ -72,7 +72,7 @@ const NodeRow = ({
         type="button"
         onClick={onSelect}
         className={cn(
-          'flex min-w-0 flex-1 appearance-none items-center gap-2.5 border-0 bg-transparent py-2 text-start',
+          'flex min-w-0 flex-1 items-center gap-2.5 border-0 bg-transparent py-2 text-start',
           FOCUS_RING_INSET,
         )}
       >

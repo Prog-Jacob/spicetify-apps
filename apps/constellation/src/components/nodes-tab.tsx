@@ -1,5 +1,4 @@
 import { t } from '../i18n';
-import Panel from './panel';
 import GraphRoster from './graph-roster';
 import SearchField from './search-field';
 import { cn, toggleInSet } from '@shared/lib';
@@ -11,7 +10,6 @@ import type { MusicGraph } from '../graph/music-graph';
 import { NODE_LEGEND_ORDER } from '../graph/node-style';
 import type { RemovedEntry } from '../services/session-store';
 import React, { useMemo, useState, useCallback } from 'react';
-import { usePersistentState } from '../hooks/use-persistent-state';
 
 const RemovedList = ({
   removed,
@@ -20,7 +18,7 @@ const RemovedList = ({
   removed: RemovedEntry[];
   onRestore: (uri: string) => void;
 }) => (
-  <div className="mt-3 border-t border-spice-subtext/10 pt-2.5">
+  <div className="mt-1 border-t border-spice-subtext/10 pt-2.5">
     <span className={cn(SECTION_LABEL, 'mb-1 block px-1')}>
       {t('manage.removed', { count: removed.length })}
     </span>
@@ -43,7 +41,7 @@ const RemovedList = ({
   </div>
 );
 
-type Props = {
+export type NodesTabProps = {
   graph: MusicGraph;
   revision: number;
   removed: RemovedEntry[];
@@ -55,7 +53,7 @@ type Props = {
   onSelect: (node: GraphNode) => void;
 };
 
-const GraphManager = ({
+const NodesTab = ({
   graph,
   revision,
   removed,
@@ -65,8 +63,7 @@ const GraphManager = ({
   onRemove,
   onRestore,
   onSelect,
-}: Props) => {
-  const [collapsed, setCollapsed] = usePersistentState('managerCollapsed', true);
+}: NodesTabProps) => {
   const [query, setQuery] = useState('');
   const [muted, setMuted] = useState<Set<NodeType>>(() => new Set());
 
@@ -77,44 +74,34 @@ const GraphManager = ({
 
   const counts = useMemo(() => {
     const c = new Map<NodeType, number>();
-    if (collapsed) return c;
     for (const n of graph.nodes()) c.set(n.type, (c.get(n.type) ?? 0) + 1);
     return c;
-  }, [collapsed, graph, revision]);
+  }, [graph, revision]);
 
   const pool = useMemo(() => {
-    if (collapsed) return [];
     const rank = (type: NodeType) => NODE_LEGEND_ORDER.indexOf(type);
     return graph
       .nodes()
       .filter((n) => !muted.has(n.type))
       .sort((a, b) => rank(a.type) - rank(b.type) || a.label.localeCompare(b.label));
-  }, [collapsed, graph, revision, muted]);
+  }, [graph, revision, muted]);
 
   return (
-    <Panel
-      icon="edit"
-      title={t('manage.title')}
-      collapsed={collapsed}
-      onToggle={() => setCollapsed((c) => !c)}
-      className="w-72"
-    >
-      <div className="flex flex-col gap-2.5 px-3.5 pb-3.5">
-        <AddToGraphBox adding={adding} onAdd={onAdd} onAdded={onAdded} />
-        <SearchField value={query} onChange={setQuery} placeholder={t('manage.search')} />
-        <GraphRoster
-          pool={pool}
-          counts={counts}
-          muted={muted}
-          query={query}
-          onToggleType={toggleType}
-          onRemove={onRemove}
-          onSelect={onSelect}
-        />
-        {removed.length > 0 && <RemovedList removed={removed} onRestore={onRestore} />}
-      </div>
-    </Panel>
+    <div className="flex flex-col gap-2.5">
+      <AddToGraphBox adding={adding} onAdd={onAdd} onAdded={onAdded} />
+      <SearchField value={query} onChange={setQuery} placeholder={t('manage.search')} />
+      <GraphRoster
+        pool={pool}
+        counts={counts}
+        muted={muted}
+        query={query}
+        onToggleType={toggleType}
+        onRemove={onRemove}
+        onSelect={onSelect}
+      />
+      {removed.length > 0 && <RemovedList removed={removed} onRestore={onRestore} />}
+    </div>
   );
 };
 
-export default GraphManager;
+export default NodesTab;

@@ -40,7 +40,7 @@ const AddToGraphBox = ({ adding, onAdd, onAdded }: Props) => {
           type="button"
           onClick={() => void add(value)}
           disabled={adding || !value.trim()}
-          className={`shrink-0 appearance-none rounded-lg border-0 bg-spice-button px-3.5 text-xs font-semibold text-spice-main transition-[filter,background-color,color] hover:brightness-110 disabled:cursor-not-allowed disabled:bg-spice-text/[0.08] disabled:text-spice-subtext ${FOCUS_RING}`}
+          className={`shrink-0 rounded-lg border-0 bg-spice-button px-3.5 text-xs font-semibold text-spice-main transition-[filter,background-color,color] hover:brightness-110 disabled:cursor-not-allowed disabled:bg-spice-text/[0.08] disabled:text-spice-subtext ${FOCUS_RING}`}
         >
           {adding ? t('add.adding') : t('add.button')}
         </button>
