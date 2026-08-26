@@ -42,7 +42,8 @@ const FriendsMenu = ({ disabled, onPick }: Props) => {
         disabled={disabled}
         onClick={() => void toggle()}
         className={cn(
-          'flex items-center gap-1.5 text-xs font-medium text-spice-subtext transition-colors hover:text-spice-text disabled:opacity-40',
+          'flex items-center gap-1.5 self-start rounded-md border border-spice-subtext/25 px-2.5 py-1 text-xs font-medium text-spice-subtext transition-colors',
+          'hover:border-spice-subtext/50 hover:text-spice-text disabled:opacity-40',
           FOCUS_RING,
         )}
       >

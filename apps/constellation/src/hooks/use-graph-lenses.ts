@@ -1,10 +1,12 @@
-import { graphPalette } from '../graph/theme';
+import { NODE_TYPE } from '../constants';
+import { useGraphPalette } from '../graph/theme';
+import { sharedUris } from '../graph/shared-nodes';
 import { clusterColor } from '../graph/node-style';
 import type { GraphNode, GraphEdge } from '../types';
 import type { RenderNode } from '../graph/render-data';
+import { useMemo, useEffect, useCallback } from 'react';
 import type { useGraphControls } from './use-graph-controls';
 import { deriveCollaborations } from '../graph/collaboration';
-import { useMemo, useCallback, useDeferredValue } from 'react';
 import type { LibraryGraph } from '../services/library-crawler';
 import { detectCommunities } from '../graph/community-detection';
 import { addedAtBounds, neighborhoodUris } from '../graph/node-query';
@@ -18,11 +20,24 @@ export const useGraphLenses = (
   revision: number,
   controls: Controls,
 ) => {
-  const { isVisible, focusUri, since, colorByCluster, showCollaborations } = controls;
+  const {
+    isVisible,
+    focusUri,
+    since,
+    setSince,
+    colorByCluster,
+    showCollaborations,
+    showCommonOnly,
+  } = controls;
 
   const focusSet = useMemo(
     () => (focusUri && library ? neighborhoodUris(library.graph, focusUri) : null),
     [focusUri, library, revision],
+  );
+
+  const commonSet = useMemo(
+    () => (showCommonOnly && library ? sharedUris(library.graph) : null),
+    [showCommonOnly, library, revision],
   );
 
   const timeBounds = useMemo(
@@ -30,16 +45,19 @@ export const useGraphLenses = (
     [library, revision],
   );
 
-  const deferredSince = useDeferredValue(since);
+  useEffect(() => {
+    if (timeBounds && since > timeBounds.max) setSince(timeBounds.min);
+  }, [timeBounds, since, setSince]);
+
   const nodeVisible = useCallback(
     (node: GraphNode) =>
       isVisible(node) &&
       (!focusSet || focusSet.has(node.uri)) &&
-      (!node.addedAt || node.addedAt >= deferredSince),
-    [isVisible, focusSet, deferredSince],
+      (!commonSet || commonSet.has(node.uri) || node.type === NODE_TYPE.USER) &&
+      (!node.addedAt || node.addedAt >= since),
+    [isVisible, focusSet, commonSet, since],
   );
 
-  const deferredRevision = useDeferredValue(revision);
   const clusterColorByUri = useMemo(() => {
     if (!colorByCluster || !library) return null;
     const colors = new Map<string, string>();
@@ -47,9 +65,9 @@ export const useGraphLenses = (
       colors.set(uri, clusterColor(community));
     }
     return colors;
-  }, [colorByCluster, library, deferredRevision]);
+  }, [colorByCluster, library, revision]);
 
-  const palette = graphPalette();
+  const palette = useGraphPalette();
   const nodeColor = useCallback(
     (node: RenderNode) => clusterColorByUri?.get(node.uri) ?? palette.color[node.type],
     [clusterColorByUri, palette],

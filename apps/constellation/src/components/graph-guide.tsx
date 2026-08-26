@@ -1,6 +1,6 @@
 import { t } from '../i18n';
 import React, { useState } from 'react';
-import { graphPalette } from '../graph/theme';
+import { useGraphPalette } from '../graph/theme';
 import { PANEL_SURFACE, FOCUS_RING } from './chrome-styles';
 import { TextComponent, ButtonSecondary } from '@ui/components';
 import { usePersistentState } from '../hooks/use-persistent-state';
@@ -29,7 +29,7 @@ const Swatch = ({ color, label }: { color: string; label: string }) => (
 const GraphGuide = () => {
   const [seen, setSeen] = usePersistentState('guide-seen', false);
   const [open, setOpen] = useState(!seen);
-  const palette = graphPalette();
+  const palette = useGraphPalette();
 
   const dismiss = () => {
     setSeen(true);

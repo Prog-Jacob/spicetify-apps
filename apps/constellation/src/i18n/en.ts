@@ -14,7 +14,6 @@ const en = {
   'type.playlist': 'Playlist',
   'type.user': 'You',
 
-  'inspector.empty': '{count} in view. Pick a node to inspect it.',
   'inspector.play': 'Play',
   'inspector.queue': 'Add to queue',
   'inspector.open': 'Open in Spotify',
@@ -23,17 +22,27 @@ const en = {
   'inspector.expanding': 'Expanding…',
   'inspector.focus': 'Focus neighborhood',
   'inspector.clearFocus': 'Clear focus',
+  'inspector.unpin': 'Unpin',
+  'inspector.close': 'Close',
   'inspector.connections': 'Connections ({count})',
 
   'controls.search': 'Search nodes…',
   'controls.noMatches': 'No matches',
   'controls.clearSearch': 'Clear search',
   'controls.resultCount': '{count} results',
+  'controls.releasePins': 'Release {count} pinned',
 
   'scale.summary': '{nodes} nodes · {links} connections',
   'filters.show': 'Show',
   'filters.reset': 'Reset',
   'lens.label': 'Lenses',
+
+  'panel.show': 'Controls',
+  'panel.hide': 'Hide controls',
+
+  'actions.expandAll': 'Expand all',
+  'actions.expanding': 'Expanding {done}/{total}…',
+  'actions.cancel': 'Cancel',
 
   'add.label': 'Add to graph',
   'add.placeholder': 'Paste a profile, artist, album, or playlist link',
@@ -57,12 +66,14 @@ const en = {
 
   'lens.byDegree': 'Size by connections',
   'lens.byCluster': 'Color by cluster',
+  'lens.common': 'Common only',
   'edges.collaborations': 'Collaborations',
 
   'time.all': 'All time',
   'time.since': 'Since {date}',
   'time.label': 'Show items added since',
   'time.section': 'Added since',
+  'time.reset': 'Show all time',
 
   'expand.failed': 'Could not expand this node.',
 

@@ -22,6 +22,9 @@ export const projectNodes = (graph: MusicGraph, cache: Map<string, RenderNode>):
     const existing = cache.get(node.uri);
     if (existing) {
       existing.degree = degree;
+      existing.label = node.label;
+      existing.addedAt = node.addedAt;
+      existing.monogram = monogram(node.label);
       return existing;
     }
     const created: RenderNode = {

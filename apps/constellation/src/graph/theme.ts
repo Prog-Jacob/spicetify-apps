@@ -1,5 +1,6 @@
 import type { NodeType } from '../types';
 import { NODE_STYLE } from './node-style';
+import { useThemeValue } from '@shared/hooks';
 
 export type GraphPalette = {
   background: string;
@@ -17,9 +18,11 @@ const withAlpha = (color: string, alpha: number): string => {
     const n = parseInt(full, 16);
     return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
   }
-  return color.startsWith('rgb(')
-    ? color.replace('rgb(', 'rgba(').replace(')', `, ${alpha})`)
-    : color;
+  if (color.startsWith('rgb(')) return color.replace('rgb(', 'rgba(').replace(')', `, ${alpha})`);
+  if (color.startsWith('hsl(')) return color.replace('hsl(', 'hsla(').replace(')', `, ${alpha})`);
+  if (color.startsWith('rgba(') || color.startsWith('hsla('))
+    return color.replace(/,\s*[\d.]+\s*\)$/, `, ${alpha})`);
+  return color;
 };
 
 export const readGraphPalette = (): GraphPalette => {
@@ -37,5 +40,9 @@ export const readGraphPalette = (): GraphPalette => {
   };
 };
 
-let cached: GraphPalette | undefined;
-export const graphPalette = (): GraphPalette => (cached ??= readGraphPalette());
+const samePalette = (a: GraphPalette, b: GraphPalette): boolean =>
+  a.background === b.background &&
+  a.link === b.link &&
+  (Object.keys(a.color) as NodeType[]).every((k) => a.color[k] === b.color[k]);
+
+export const useGraphPalette = (): GraphPalette => useThemeValue(readGraphPalette, samePalette);

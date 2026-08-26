@@ -49,6 +49,9 @@ export const useGraphControls = () => {
     [setShowCollaborations],
   );
 
+  const [showCommonOnly, setShowCommonOnly] = usePersistentState('showCommonOnly', false);
+  const toggleCommonOnly = useCallback(() => setShowCommonOnly((on) => !on), [setShowCommonOnly]);
+
   const [since, setSince] = usePersistentState('since', 0);
 
   const [focusUri, setFocusUri] = useState<string | null>(null);
@@ -67,6 +70,8 @@ export const useGraphControls = () => {
     toggleClusterLens,
     showCollaborations,
     toggleCollaborations,
+    showCommonOnly,
+    toggleCommonOnly,
     since,
     setSince,
     focusUri,

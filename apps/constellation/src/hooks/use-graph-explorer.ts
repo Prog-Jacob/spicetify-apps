@@ -1,17 +1,19 @@
 import { t } from '../i18n';
 import type { GraphNode } from '../types';
 import { notifyError } from '@shared/lib';
+import { useExpandAll } from './use-expand-all';
 import { useAbortController } from '@shared/hooks';
 import { addExternalEntity } from '../services/add-entity';
+import { useExplorerSession } from './use-explorer-session';
 import { expandNode, canExpand } from '../services/expand-node';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { loadCachedGraph, saveCachedGraph } from '../services/graph-cache';
 import { buildLibraryGraph, type LibraryGraph } from '../services/library-crawler';
 
 /**
- * Owns the explored graph. Expansion mutates the same MusicGraph in place, so `revision`
- * bumps to tell the view to re-project. Load is stale-while-revalidate: a cached snapshot
- * paints instantly while a fresh crawl runs and then replaces it.
+ * Owns the explored graph. Expansion mutates the MusicGraph in place, so `revision` bumps to
+ * re-project the view. Load is stale-while-revalidate: a cached snapshot paints while a fresh crawl
+ * runs, then replaces it. Added seeds (from useExplorerSession) are replayed onto the fresh graph.
  */
 export const useGraphExplorer = () => {
   const [library, setLibrary] = useState<LibraryGraph | null>(null);
@@ -22,6 +24,15 @@ export const useGraphExplorer = () => {
   const expanded = useRef(new Set<string>()).current;
   const aborter = useAbortController();
 
+  const bumpRevision = useCallback(() => setRevision((r) => r + 1), []);
+  const session = useExplorerSession();
+  const { seedsReady, addSeed } = session;
+  const { expandAll, cancelExpandAll, expandProgress } = useExpandAll(
+    library,
+    expanded,
+    bumpRevision,
+  );
+
   useEffect(() => {
     const { signal } = aborter.start();
     let fresh = false;
@@ -31,8 +42,14 @@ export const useGraphExplorer = () => {
     });
 
     buildLibraryGraph(signal)
-      .then((lib) => {
+      .then(async (lib) => {
         fresh = true;
+        const { seeds } = await seedsReady;
+        signal.throwIfAborted();
+        await Promise.all(
+          seeds.map((uri) => addExternalEntity(lib.graph, uri, signal).catch(() => undefined)),
+        );
+        signal.throwIfAborted();
         setLibrary(lib);
         void saveCachedGraph(lib.graph);
       })
@@ -41,7 +58,7 @@ export const useGraphExplorer = () => {
         setFailed(true);
         notifyError(e, t('app.error'));
       });
-  }, [aborter]);
+  }, [aborter, seedsReady]);
 
   const expand = useCallback(
     async (node: GraphNode) => {
@@ -50,14 +67,14 @@ export const useGraphExplorer = () => {
       try {
         await expandNode(library.graph, node);
         expanded.add(node.uri);
-        setRevision((r) => r + 1);
+        bumpRevision();
       } catch (e) {
         notifyError(e, t('expand.failed'));
       } finally {
         setExpandingUri(null);
       }
     },
-    [library, expanded, expandingUri],
+    [library, expanded, expandingUri, bumpRevision],
   );
 
   const addEntity = useCallback(
@@ -66,7 +83,8 @@ export const useGraphExplorer = () => {
       setAdding(true);
       try {
         const node = await addExternalEntity(library.graph, input);
-        setRevision((r) => r + 1);
+        addSeed(node.uri);
+        bumpRevision();
         void saveCachedGraph(library.graph);
         return node;
       } catch (e) {
@@ -76,8 +94,24 @@ export const useGraphExplorer = () => {
         setAdding(false);
       }
     },
-    [library, adding],
+    [library, adding, addSeed, bumpRevision],
   );
 
-  return { library, failed, revision, expand, expanded, expandingUri, addEntity, adding };
+  return {
+    library,
+    failed,
+    revision,
+    expand,
+    expanded,
+    expandingUri,
+    expandAll,
+    cancelExpandAll,
+    expandProgress,
+    addEntity,
+    adding,
+    pins: session.pins,
+    pinNode: session.pinNode,
+    unpinNode: session.unpinNode,
+    releaseAllPins: session.releaseAllPins,
+  };
 };

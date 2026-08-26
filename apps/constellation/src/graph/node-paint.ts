@@ -4,7 +4,7 @@ import { degreeScale, AVATAR_MIN_SCREEN_RADIUS, LABEL_MIN_SCREEN_RADIUS } from '
 const TWO_PI = Math.PI * 2;
 const LABEL_SCREEN_PX = 11;
 
-const IMAGE_CACHE_MAX = 512;
+const IMAGE_CACHE_MAX = 2048;
 const imageCache = new Map<string, HTMLImageElement>();
 
 export const loadImage = (url: string, onReady: () => void): void => {
@@ -39,11 +39,10 @@ const paintAvatar = (
   ctx: CanvasRenderingContext2D,
   r: number,
   color: string,
-  url?: string,
+  img?: HTMLImageElement,
 ) => {
   const x = node.x ?? 0;
   const y = node.y ?? 0;
-  const img = readyImage(url);
 
   ctx.save();
   ctx.beginPath();
@@ -104,12 +103,37 @@ export type PaintOptions = {
   sizeByDegree: boolean;
   emphasis: NodeEmphasis;
   expandable: boolean;
+  pinned: boolean;
+};
+
+const paintPinBadge = (ctx: CanvasRenderingContext2D, x: number, y: number, r: number) => {
+  const bx = x - r * 0.72;
+  const by = y - r * 0.72;
+  const br = r * 0.28;
+  // Mirror of the expand badge to the top-left, so a pinned expandable node shows both.
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+  ctx.beginPath();
+  ctx.arc(bx, by, br + r * 0.05, 0, TWO_PI);
+  ctx.fill();
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+  ctx.beginPath();
+  ctx.arc(bx, by, br, 0, TWO_PI);
+  ctx.fill();
+  ctx.fillStyle = 'rgba(30, 215, 96, 0.95)';
+  ctx.beginPath();
+  ctx.arc(bx, by, br * 0.5, 0, TWO_PI);
+  ctx.fill();
 };
 
 const paintExpandBadge = (ctx: CanvasRenderingContext2D, x: number, y: number, r: number) => {
   const bx = x + r * 0.72;
   const by = y - r * 0.72;
-  const br = r * 0.34;
+  const br = r * 0.3;
+  // Dark seat first so the badge reads cleanly over the node rim.
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+  ctx.beginPath();
+  ctx.arc(bx, by, br + r * 0.05, 0, TWO_PI);
+  ctx.fill();
   ctx.fillStyle = 'rgba(30, 215, 96, 0.95)';
   ctx.beginPath();
   ctx.arc(bx, by, br, 0, TWO_PI);
@@ -129,7 +153,7 @@ export const paintNode = (
   node: RenderNode,
   ctx: CanvasRenderingContext2D,
   scale: number,
-  { color, images, sizeByDegree, emphasis, expandable }: PaintOptions,
+  { color, images, sizeByDegree, emphasis, expandable, pinned }: PaintOptions,
 ) => {
   const r = sizeByDegree ? node.radius * degreeScale(node.degree) : node.radius;
   const screenR = r * scale;
@@ -143,14 +167,16 @@ export const paintNode = (
     ctx.shadowBlur = 12;
   }
 
-  // Tracks and nodes too small to read artwork render as plain dots.
-  if (node.type === 'track' || screenR < AVATAR_MIN_SCREEN_RADIUS) {
+  const bigEnough = screenR >= AVATAR_MIN_SCREEN_RADIUS;
+  const img = bigEnough ? readyImage(images.get(node.uri)) : undefined;
+  const showAvatar = bigEnough && (node.type !== 'track' || img !== undefined);
+  if (!showAvatar) {
     ctx.fillStyle = color;
     ctx.beginPath();
     ctx.arc(x, y, r, 0, TWO_PI);
     ctx.fill();
   } else {
-    paintAvatar(node, ctx, r, color, images.get(node.uri));
+    paintAvatar(node, ctx, r, color, img);
     ctx.lineWidth = 2 / scale;
     ctx.strokeStyle = color;
     ctx.beginPath();
@@ -167,9 +193,11 @@ export const paintNode = (
     ctx.stroke();
   }
 
-  if (expandable && emphasis !== 'dim' && screenR >= AVATAR_MIN_SCREEN_RADIUS) {
+  if (expandable && emphasis === 'active' && screenR >= AVATAR_MIN_SCREEN_RADIUS) {
     paintExpandBadge(ctx, x, y, r);
   }
+
+  if (pinned && screenR >= AVATAR_MIN_SCREEN_RADIUS) paintPinBadge(ctx, x, y, r);
 
   if (screenR >= LABEL_MIN_SCREEN_RADIUS || emphasis === 'active') paintLabel(node, ctx, scale, r);
   ctx.restore();

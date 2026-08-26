@@ -20,8 +20,23 @@ import GraphView, { type GraphViewHandle } from './graph/graph-view';
 const App = () => {
   const [ready, setReady] = useState(false);
   const [selected, setSelected] = useState<GraphNode | null>(null);
-  const { library, failed, revision, expand, expanded, expandingUri, addEntity, adding } =
-    useGraphExplorer();
+  const {
+    library,
+    failed,
+    revision,
+    expand,
+    expanded,
+    expandingUri,
+    expandAll,
+    cancelExpandAll,
+    expandProgress,
+    addEntity,
+    adding,
+    pins,
+    pinNode,
+    unpinNode,
+    releaseAllPins,
+  } = useGraphExplorer();
   const controls = useGraphControls();
   const { sizeByDegree, focusUri, focus, clearFocus } = controls;
   const { nodeVisible, nodeColor, extraLinks, timeBounds } = useGraphLenses(
@@ -58,6 +73,11 @@ const App = () => {
 
   if (!ready) return null;
 
+  const selectNode = (node: GraphNode | null) => {
+    setSelected(node);
+    if (!node) clearFocus();
+  };
+
   const renderBody = () => {
     if (failed && !library)
       return (
@@ -85,8 +105,10 @@ const App = () => {
             sizeByDegree={sizeByDegree}
             selectedUri={selected?.uri}
             expanded={expanded}
-            onSelect={setSelected}
+            pins={pins}
+            onSelect={selectNode}
             onExpand={expand}
+            onPin={pinNode}
           />
           <div className="animate-fade-in-up absolute start-3 top-3 z-10 flex w-72 flex-col gap-2">
             <NodeSearchBox
@@ -98,10 +120,16 @@ const App = () => {
             <ControlPanel
               graph={library.graph}
               controls={controls}
+              revision={revision}
               timeBounds={timeBounds}
               adding={adding}
+              pinnedCount={Object.keys(pins).length}
+              expandProgress={expandProgress}
               onAdd={addEntity}
               onAdded={focusOn}
+              onExpandAll={expandAll}
+              onCancelExpandAll={cancelExpandAll}
+              onReleasePins={releaseAllPins}
             />
           </div>
           <div className="animate-fade-in-up [animation-delay:80ms]">
@@ -112,18 +140,24 @@ const App = () => {
           </div>
           <GraphGuide />
         </div>
-        <Inspector
-          node={selected}
-          graph={library.graph}
-          images={library.images}
-          expanded={expanded}
-          expandingUri={expandingUri}
-          focused={focusUri !== null}
-          onExpand={expand}
-          onFocus={focusNeighborhood}
-          onSelect={focusOn}
-          onClearFocus={clearFocus}
-        />
+        {selected && (
+          <Inspector
+            node={selected}
+            graph={library.graph}
+            revision={revision}
+            images={library.images}
+            expanded={expanded}
+            expandingUri={expandingUri}
+            focused={focusUri !== null}
+            pinned={selected.uri in pins}
+            onExpand={expand}
+            onFocus={focusNeighborhood}
+            onSelect={focusOn}
+            onClearFocus={clearFocus}
+            onUnpin={() => unpinNode(selected.uri)}
+            onClose={() => selectNode(null)}
+          />
+        )}
       </>
     );
   };
