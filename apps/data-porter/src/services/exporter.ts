@@ -1,9 +1,8 @@
 import { t } from '../i18n';
-import { userProfileUrl } from './spotify-urls';
 import { BAN_SET, DATA_TYPE } from '../constants';
 import {
-  cosmos,
   paginate,
+  getProfile,
   BATCH_DELAY_MS,
   type PlaylistRef,
   PLAYLIST_BATCH_SIZE,
@@ -117,9 +116,7 @@ async function fetchRecentlyPlayed() {
 async function fetchUserProfile() {
   const user = await Spicetify.Platform.UserAPI.getUser();
   const userId = user.username ?? '';
-  const enriched = await cosmos
-    .get<{ following_count?: number }>(`${userProfileUrl(userId)}?market=from_token`)
-    .catch(() => null);
+  const enriched = await getProfile(userId).catch(() => null);
   const ps = Spicetify.Platform.initialProductState;
   return {
     displayName: user.displayName ?? user.name ?? '',

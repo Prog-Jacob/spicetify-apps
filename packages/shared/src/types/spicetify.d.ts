@@ -823,7 +823,6 @@ declare namespace Spicetify {
     RecentsAPI: import('./platform-api').PlatformRecentsAPI;
     CollectionPlatformAPI: import('./platform-api').PlatformCollectionAPI;
     UserAPI: import('./platform-api').PlatformUserAPI;
-    BuddyFeedAPI: import('./platform-api').PlatformBuddyFeedAPI;
     PlaylistPermissionsAPI: import('./platform-api').PlatformPlaylistPermissionsAPI;
     ClipboardAPI: import('./platform-api').PlatformClipboardAPI;
     History: import('./platform-api').PlatformHistory;

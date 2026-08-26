@@ -1,9 +1,5 @@
 import { parseUserId } from '@shared/lib';
 
-const BASE_URL = 'https://spclient.wg.spotify.com/user-profile-view/v3/profile';
-
-export const userProfileUrl = (userId: string) => `${BASE_URL}/${encodeURIComponent(userId)}`;
-
 /**
  * Whether an input refers to a Spotify profile (to fetch in-memory) rather than
  * a generic URL pointing at an export file (to download). Reuses `parseUserId`,

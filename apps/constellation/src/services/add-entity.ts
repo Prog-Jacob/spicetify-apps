@@ -4,10 +4,8 @@ import { expandNode } from './expand-node';
 import { NODE_TYPE, EDGE_TYPE } from '../constants';
 import type { NodeType, GraphNode } from '../types';
 import type { MusicGraph } from '../graph/music-graph';
-import { cosmos, resolveUriMetadata } from '@shared/api';
 import { ValidationError, SPOTIFY_URI } from '@shared/lib';
-
-const PROFILE_BASE = 'https://spclient.wg.spotify.com/user-profile-view/v3/profile';
+import { resolveUriMetadata, getProfile, getPublicPlaylists, getFollowing } from '@shared/api';
 
 const ADDABLE: NodeType[] = [
   NODE_TYPE.USER,
@@ -35,39 +33,29 @@ export const parseSpotifyRef = (input: string): SpotifyRef | null => {
   return { type, id, uri: `spotify:${type}:${id}` };
 };
 
-type Profile = { name?: string };
-type Playlists = { public_playlists?: { uri: string; name: string }[] };
-type Following = { profiles?: { uri: string; name: string }[] };
-
-const profileUrl = (id: string, path = '') => `${PROFILE_BASE}/${encodeURIComponent(id)}${path}`;
-
 const addUser = async (graph: MusicGraph, id: string, signal?: AbortSignal): Promise<GraphNode> => {
-  const profile = await cosmos.get<Profile>(profileUrl(id)).catch(() => {
+  const profile = await getProfile(id).catch(() => {
     throw new ValidationError(t('add.userFailed'));
   });
   signal?.throwIfAborted();
 
-  const uri = `spotify:user:${id}`;
+  const uri = `${SPOTIFY_URI.USER}${id}`;
   const label = profile?.name || id;
   graph.addNode({ uri, type: NODE_TYPE.USER, label });
 
   const [playlists, following] = await Promise.all([
-    cosmos
-      .get<Playlists>(profileUrl(id, '/playlists?offset=0&limit=50&market=from_token'))
-      .catch((): Playlists => ({})),
-    cosmos
-      .get<Following>(profileUrl(id, '/following?market=from_token'))
-      .catch((): Following => ({})),
+    getPublicPlaylists(id, { limit: 50 }).catch(() => []),
+    getFollowing(id).catch(() => []),
   ]);
   signal?.throwIfAborted();
 
-  for (const playlist of playlists.public_playlists ?? []) {
+  for (const playlist of playlists) {
     graph.addNode({ uri: playlist.uri, type: NODE_TYPE.PLAYLIST, label: playlist.name });
     graph.addEdge(uri, playlist.uri, EDGE_TYPE.OWNS);
   }
-  const followedArtists = (following.profiles ?? [])
+  const followedArtists = following
     .filter((p) => p.uri.startsWith(SPOTIFY_URI.ARTIST))
-    .map((p) => ({ uri: p.uri, name: p.name }));
+    .map((p) => ({ uri: p.uri, name: p.name ?? p.uri }));
   ingestArtists(graph, uri, EDGE_TYPE.SAVED, followedArtists);
 
   return { uri, type: NODE_TYPE.USER, label };

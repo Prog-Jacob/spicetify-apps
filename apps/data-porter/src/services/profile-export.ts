@@ -1,14 +1,9 @@
 import { t } from '../i18n';
-import { userProfileUrl } from './spotify-urls';
-import { cosmos, PAGE_SIZE } from '@shared/api';
 import { buildPlaylists, emptyLibrary } from './exporter';
 import type { ProgressInfo, LibraryContentItem } from '@shared/types';
-import { parseUserId, ValidationError, SPOTIFY_URI } from '@shared/lib';
 import type { ExportResult, ExportedPlaylist } from '../types/export';
-
-type FollowingResponse = { profiles: { uri: string; name: string }[] };
-type UserProfile = { name: string; total_public_playlists_count: number };
-type PlaylistsResponse = { public_playlists: { uri: string; name: string }[] };
+import { parseUserId, ValidationError, SPOTIFY_URI } from '@shared/lib';
+import { PAGE_SIZE, getProfile, getFollowing, getPublicPlaylists } from '@shared/api';
 
 async function fetchUserPlaylists(
   userId: string,
@@ -22,12 +17,8 @@ async function fetchUserPlaylists(
     signal?.throwIfAborted();
     onProgress({ current: offset, total, label: t('progress.fetchingPlaylistList') });
 
-    const { public_playlists = [] } = await cosmos.get<PlaylistsResponse>(
-      `${userProfileUrl(userId)}/playlists?offset=${offset}&limit=${PAGE_SIZE}&market=from_token`,
-    );
-    items.push(
-      ...public_playlists.map((p) => ({ uri: p.uri, name: p.name, type: 'playlist' as const })),
-    );
+    const page = await getPublicPlaylists(userId, { offset, limit: PAGE_SIZE });
+    items.push(...page.map((p) => ({ uri: p.uri, name: p.name, type: 'playlist' as const })));
   }
 
   return items;
@@ -46,12 +37,12 @@ export async function exportPublicProfile(
   signal?.throwIfAborted();
   onProgress({ current: 0, total: 0, label: t('progress.fetchingProfile') });
 
-  const profile = await cosmos.get<UserProfile>(userProfileUrl(userId));
+  const profile = await getProfile(userId);
 
-  const { name: userName, total_public_playlists_count } = profile;
+  const userName = profile.name;
   const playlistItems = await fetchUserPlaylists(
     userId,
-    total_public_playlists_count,
+    profile.total_public_playlists_count ?? 0,
     onProgress,
     signal,
   );
@@ -66,12 +57,10 @@ export async function exportPublicProfile(
   signal?.throwIfAborted();
   onProgress({ current: 0, total: 0, label: t('progress.fetchingArtists') });
 
-  const { profiles = [] } = await cosmos.get<FollowingResponse>(
-    `${userProfileUrl(userId)}/following?market=from_token`,
-  );
-  const artists = profiles
+  const following = await getFollowing(userId);
+  const artists = following
     .filter((p) => p.uri.startsWith(SPOTIFY_URI.ARTIST))
-    .map((p) => ({ name: p.name, uri: p.uri }));
+    .map((p) => ({ name: p.name ?? p.uri, uri: p.uri }));
 
   if (!playlists.length && !artists.length) {
     warnings.push(t('warn.noPublicData'));
