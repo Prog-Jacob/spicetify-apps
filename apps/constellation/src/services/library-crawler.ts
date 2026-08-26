@@ -2,10 +2,13 @@ import { MusicGraph } from '../graph/music-graph';
 import { rememberFirstImage } from './node-images';
 import { NODE_TYPE, EDGE_TYPE } from '../constants';
 import { ingestArtists, ingestTrack } from './ingest';
+import { attachUserPlaylists } from './user-playlists';
 import type { LibraryTrackItem, LibraryContentItem } from '@shared/types';
 import { paginate, fetchRootlistPlaylists, listFriends } from '@shared/api';
 
 export type LibraryGraph = { graph: MusicGraph; images: Map<string, string> };
+
+const FRIEND_PLAYLIST_CONCURRENCY = 5;
 
 // Tier A only: proven, rate-limit-free Platform APIs, plus the edges saved objects carry.
 export async function buildLibraryGraph(signal?: AbortSignal): Promise<LibraryGraph> {
@@ -36,8 +39,8 @@ export async function buildLibraryGraph(signal?: AbortSignal): Promise<LibraryGr
   });
   if (user.imageUrl) images.set(userUri, user.imageUrl);
 
-  for (const friend of friends) {
-    if (friend.uri === userUri) continue;
+  const followedFriends = friends.filter((friend) => friend.uri !== userUri);
+  for (const friend of followedFriends) {
     graph.addNode({ uri: friend.uri, type: NODE_TYPE.USER, label: friend.name });
     graph.addEdge(userUri, friend.uri, EDGE_TYPE.FOLLOWS);
     if (friend.imageUrl) images.set(friend.uri, friend.imageUrl);
@@ -77,6 +80,17 @@ export async function buildLibraryGraph(signal?: AbortSignal): Promise<LibraryGr
     graph.addEdge(userUri, track.uri, EDGE_TYPE.SAVED);
     rememberFirstImage(images, track.uri, track.album?.images);
     if (track.album?.uri) rememberFirstImage(images, track.album.uri, track.album.images);
+  }
+
+  for (let i = 0; i < followedFriends.length; i += FRIEND_PLAYLIST_CONCURRENCY) {
+    signal?.throwIfAborted();
+    await Promise.all(
+      followedFriends
+        .slice(i, i + FRIEND_PLAYLIST_CONCURRENCY)
+        .map((friend) =>
+          attachUserPlaylists(graph, images, friend.uri, signal).catch(() => undefined),
+        ),
+    );
   }
 
   return { graph, images };

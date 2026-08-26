@@ -35,7 +35,9 @@ const EXPANDERS: Partial<Record<NodeType, Expander>> = {
   [NODE_TYPE.ALBUM]: expandAlbum,
 };
 
-export const canExpand = (type: NodeType): boolean => type in EXPANDERS;
+const EXPANDABLE = new Set<NodeType>(Object.keys(EXPANDERS) as NodeType[]);
+
+export const canExpand = (type: NodeType): boolean => EXPANDABLE.has(type);
 
 export const expandNode = (
   graph: MusicGraph,

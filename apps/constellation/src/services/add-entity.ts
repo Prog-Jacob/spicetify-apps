@@ -4,9 +4,10 @@ import { expandNode } from './expand-node';
 import { rememberImage } from './node-images';
 import { NODE_TYPE, EDGE_TYPE } from '../constants';
 import type { NodeType, GraphNode } from '../types';
+import { attachUserPlaylists } from './user-playlists';
 import type { MusicGraph } from '../graph/music-graph';
 import { ValidationError, SPOTIFY_URI } from '@shared/lib';
-import { resolveUriMetadata, getProfile, getPublicPlaylists, getFollowing } from '@shared/api';
+import { resolveUriMetadata, getProfile, getFollowing } from '@shared/api';
 
 const ADDABLE: NodeType[] = [
   NODE_TYPE.USER,
@@ -50,17 +51,12 @@ const addUser = async (
   graph.addNode({ uri, type: NODE_TYPE.USER, label });
   rememberImage(images, uri, profile?.image_url);
 
-  const [playlists, following] = await Promise.all([
-    getPublicPlaylists(id, { limit: 50 }).catch(() => []),
+  const [, following] = await Promise.all([
+    attachUserPlaylists(graph, images, uri, signal),
     getFollowing(id).catch(() => []),
   ]);
   signal?.throwIfAborted();
 
-  for (const playlist of playlists) {
-    graph.addNode({ uri: playlist.uri, type: NODE_TYPE.PLAYLIST, label: playlist.name });
-    graph.addEdge(uri, playlist.uri, EDGE_TYPE.OWNS);
-    rememberImage(images, playlist.uri, playlist.image_url);
-  }
   const followedArtists = following.filter((p) => p.uri.startsWith(SPOTIFY_URI.ARTIST));
   ingestArtists(
     graph,
