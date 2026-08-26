@@ -9,9 +9,10 @@ const BASE = 'https://spclient.wg.spotify.com/user-profile-view/v3/profile';
 const MARKET = 'market=from_token';
 
 export type ProfileEntry = { uri: string; name?: string; image_url?: string };
-export type ProfilePlaylist = { uri: string; name: string };
+export type ProfilePlaylist = { uri: string; name: string; image_url?: string };
 export type UserProfile = {
   name?: string;
+  image_url?: string;
   total_public_playlists_count?: number;
   following_count?: number;
 };

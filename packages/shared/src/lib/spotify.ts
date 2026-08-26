@@ -14,10 +14,13 @@ export const openUriInClient = (uri: string): void => {
 };
 
 const IMAGE_URI_PREFIX = 'spotify:image:';
+const MOSAIC_URI_PREFIX = 'spotify:mosaic:';
 
 export const spotifyImageUrl = (url?: string): string | undefined => {
   if (!url) return undefined;
   if (url.startsWith(IMAGE_URI_PREFIX))
     return `https://i.scdn.co/image/${url.slice(IMAGE_URI_PREFIX.length)}`;
+  if (url.startsWith(MOSAIC_URI_PREFIX))
+    return `https://i.scdn.co/image/${url.slice(MOSAIC_URI_PREFIX.length).split(':')[0]}`;
   return url.startsWith('http') ? url : undefined;
 };
