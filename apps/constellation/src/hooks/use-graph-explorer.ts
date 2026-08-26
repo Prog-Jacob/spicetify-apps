@@ -2,6 +2,7 @@ import { t } from '../i18n';
 import type { GraphNode } from '../types';
 import { notifyError } from '@shared/lib';
 import { useAbortController } from '@shared/hooks';
+import { addExternalEntity } from '../services/add-entity';
 import { expandNode, canExpand } from '../services/expand-node';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { loadCachedGraph, saveCachedGraph } from '../services/graph-cache';
@@ -17,6 +18,7 @@ export const useGraphExplorer = () => {
   const [failed, setFailed] = useState(false);
   const [revision, setRevision] = useState(0);
   const [expandingUri, setExpandingUri] = useState<string | null>(null);
+  const [adding, setAdding] = useState(false);
   const expanded = useRef(new Set<string>()).current;
   const aborter = useAbortController();
 
@@ -58,5 +60,24 @@ export const useGraphExplorer = () => {
     [library, expanded, expandingUri],
   );
 
-  return { library, failed, revision, expand, expanded, expandingUri };
+  const addEntity = useCallback(
+    async (input: string): Promise<GraphNode | null> => {
+      if (!library || adding) return null;
+      setAdding(true);
+      try {
+        const node = await addExternalEntity(library.graph, input);
+        setRevision((r) => r + 1);
+        void saveCachedGraph(library.graph);
+        return node;
+      } catch (e) {
+        notifyError(e, t('add.failed'));
+        return null;
+      } finally {
+        setAdding(false);
+      }
+    },
+    [library, adding],
+  );
+
+  return { library, failed, revision, expand, expanded, expandingUri, addEntity, adding };
 };
