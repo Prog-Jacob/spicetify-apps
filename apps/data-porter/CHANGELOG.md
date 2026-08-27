@@ -1,5 +1,18 @@
 # @spicetify-apps/data-porter
 
+## 3.1.1
+
+### Patch Changes
+
+- docs(data-porter): refine copy, badges, and preview refs
+- chore(preview): convert preview assets to webp
+- refactor(shared): add profile-view client and reactive theme hook
+- refactor(data-porter): use the shared sleep helper
+- feat(scripts): update symlink script to configure custom apps
+- docs: point README version badge at each app's own package.json
+- refactor(shared): extract fetchRootlistPlaylists into @shared/api
+- feat(data-porter): lift update banner above pages and add segmented export-mode control
+
 ## 3.1.0
 
 ### Minor Changes
