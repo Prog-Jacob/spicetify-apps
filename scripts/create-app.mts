@@ -102,7 +102,7 @@ const manifest = readManifest();
 manifest.push({
   name,
   ...(desc && { description: desc }),
-  preview: `apps/${slug}/preview/thumbnail.png`,
+  preview: `apps/${slug}/preview/thumbnail.webp`,
   readme: `apps/${slug}/README.md`,
   tags: tags
     ? tags
