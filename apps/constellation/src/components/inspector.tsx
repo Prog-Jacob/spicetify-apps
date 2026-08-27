@@ -105,8 +105,8 @@ const Inspector = ({
   const playable = isPlayable(node.type);
 
   return (
-    <aside className="animate-fade-in-up relative z-20 flex h-full w-80 shrink-0 flex-col overflow-y-auto border-s border-spice-subtext/15 bg-spice-card/85 backdrop-blur-md">
-      <header className="flex items-center justify-between gap-2 border-b border-spice-subtext/10 px-4 py-2.5">
+    <aside className="animate-fade-in-up relative z-20 my-3 me-3 flex w-80 shrink-0 flex-col overflow-hidden rounded-2xl border border-spice-subtext/15 bg-spice-card/85 shadow-xl shadow-black/20 backdrop-blur-md">
+      <header className="flex shrink-0 items-center justify-between gap-2 border-b border-spice-subtext/10 px-4 py-2.5">
         <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-spice-subtext">
           <NodeTypeDot type={node.type} className="h-2 w-2" />
           {t(`type.${node.type}`)}
@@ -135,7 +135,7 @@ const Inspector = ({
         </div>
       </header>
 
-      <div className="flex flex-col gap-4 p-4">
+      <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4 [mask-image:linear-gradient(to_bottom,transparent,#000_16px,#000_calc(100%-16px),transparent)]">
         <div className="flex items-start gap-3">
           <NodeAvatar node={node} image={images.get(node.uri)} />
           <div className="flex min-w-0 flex-col gap-0.5 pt-0.5">

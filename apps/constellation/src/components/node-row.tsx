@@ -66,7 +66,7 @@ const NodeRow = ({
   revealTag?: boolean;
   trailing?: React.ReactNode;
 }) => (
-  <li className="group flex items-center gap-2.5 rounded-lg pe-1 ps-2.5 hover:bg-spice-text/[0.06]">
+  <li className="group flex items-center gap-2.5 rounded-lg pe-1 ps-2.5 [contain-intrinsic-size:auto_40px] [content-visibility:auto] hover:bg-spice-text/[0.06]">
     {onSelect ? (
       <button
         type="button"
