@@ -1,9 +1,15 @@
 import { t } from '../i18n';
-import { userProfileUrl } from './spotify-urls';
 import { BAN_SET, DATA_TYPE } from '../constants';
-import { fetchRootlistPlaylists, type PlaylistRef } from './playlist-lookup';
-import { cosmos, paginate, BATCH_DELAY_MS, PLAYLIST_BATCH_SIZE } from '@shared/api';
 import {
+  paginate,
+  getProfile,
+  BATCH_DELAY_MS,
+  type PlaylistRef,
+  PLAYLIST_BATCH_SIZE,
+  fetchRootlistPlaylists,
+} from '@shared/api';
+import {
+  sleep,
   SPOTIFY_URI,
   notifyError,
   toDateString,
@@ -110,9 +116,7 @@ async function fetchRecentlyPlayed() {
 async function fetchUserProfile() {
   const user = await Spicetify.Platform.UserAPI.getUser();
   const userId = user.username ?? '';
-  const enriched = await cosmos
-    .get<{ following_count?: number }>(`${userProfileUrl(userId)}?market=from_token`)
-    .catch(() => null);
+  const enriched = await getProfile(userId).catch(() => null);
   const ps = Spicetify.Platform.initialProductState;
   return {
     displayName: user.displayName ?? user.name ?? '',
@@ -163,8 +167,7 @@ export async function buildPlaylists(
 
   for (let i = 0; i < playlistItems.length; i++) {
     signal?.throwIfAborted();
-    if (i > 0 && i % PLAYLIST_BATCH_SIZE === 0)
-      await new Promise<void>((r) => setTimeout(r, BATCH_DELAY_MS));
+    if (i > 0 && i % PLAYLIST_BATCH_SIZE === 0) await sleep(BATCH_DELAY_MS);
 
     const row = playlistItems[i];
     onProgress?.({

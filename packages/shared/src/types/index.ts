@@ -1,5 +1,6 @@
 export type {
   LibraryPage,
+  SpotifyImage,
   ProgressInfo,
   RootlistItem,
   CollectionItem,

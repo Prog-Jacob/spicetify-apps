@@ -1,9 +1,12 @@
+export type SpotifyImage = { url: string };
+
 export type LibraryTrackItem = {
   type: 'track';
   uri: string;
   name: string;
-  album: { uri: string; name: string };
+  album: { uri: string; name: string; images?: SpotifyImage[] };
   artists: { uri: string; name: string }[];
+  addedAt?: number;
 };
 
 export type LibraryContentItem = {
@@ -11,7 +14,9 @@ export type LibraryContentItem = {
   uri: string;
   name: string;
   artists?: { uri: string; name: string }[];
+  images?: SpotifyImage[];
   publisher?: string;
+  addedAt?: number;
 };
 
 export type LibraryPage<T> = {
@@ -44,6 +49,7 @@ export type RootlistItem = {
   type: 'playlist' | 'folder' | (string & {});
   name: string;
   uri: string;
+  images?: SpotifyImage[];
   items?: RootlistItem[];
 };
 

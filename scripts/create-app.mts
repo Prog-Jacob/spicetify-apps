@@ -89,7 +89,7 @@ json('package.json', {
   scripts: {
     typecheck: 'tsc --noEmit',
     download: `curl -fsSL https://raw.githubusercontent.com/${repo}/main/install.sh | bash -s ${slug}`,
-    symlink: `DEST="$(dirname $(spicetify -c))/CustomApps/${slug}" && rm -rf "$DEST" && ln -sfn "$PWD/dist" "$DEST"`,
+    symlink: `DEST="$(dirname $(spicetify -c))/CustomApps/${slug}" && rm -rf "$DEST" && ln -sfn "$PWD/dist" "$DEST" && spicetify config custom_apps ${slug} >/dev/null`,
   },
 });
 

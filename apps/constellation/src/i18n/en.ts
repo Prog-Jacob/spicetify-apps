@@ -1,0 +1,115 @@
+const en = {
+  'app.title': 'Constellation',
+  'app.loading': 'Mapping your library…',
+  'app.loadingSub': 'Reading your saved songs, artists, albums, and playlists.',
+  'app.error': 'Could not load your library.',
+  'app.errorSub': 'Something interrupted the crawl.',
+  'app.retry': 'Retry',
+  'app.emptyTitle': 'Your library looks empty',
+  'app.empty': 'Save some songs, artists, or playlists in Spotify, then reopen Constellation.',
+
+  'type.track': 'Track',
+  'type.artist': 'Artist',
+  'type.album': 'Album',
+  'type.playlist': 'Playlist',
+  'type.user': 'User',
+
+  'inspector.play': 'Play',
+  'inspector.queue': 'Add to queue',
+  'inspector.open': 'Open in Spotify',
+  'inspector.saved': 'Saved {date}',
+  'inspector.expand': 'Expand',
+  'inspector.expanding': 'Expanding…',
+  'inspector.focus': 'Focus neighborhood',
+  'inspector.clearFocus': 'Clear focus',
+  'inspector.unpin': 'Unpin',
+  'inspector.remove': 'Remove from graph',
+  'inspector.close': 'Close',
+  'inspector.connections': 'Connections ({count})',
+
+  'controls.search': 'Search nodes…',
+  'controls.noMatches': 'No matches',
+  'controls.clearSearch': 'Clear search',
+  'controls.resultCount': '{count} results',
+  'controls.releasePins': 'Release {count} pinned',
+
+  'scale.summary': '{nodes} nodes · {links} connections',
+  'filters.show': 'Show',
+  'filters.reset': 'Reset',
+  'lens.label': 'Lenses',
+
+  'panel.hide': 'Hide',
+
+  'dock.title': 'Controls',
+  'dock.view': 'View',
+  'dock.physics': 'Physics',
+  'dock.nodes': 'Nodes',
+
+  'physics.repulsion': 'Repulsion',
+  'physics.linkLength': 'Link length',
+  'physics.gravity': 'Gravity',
+  'physics.spacing': 'Node spacing',
+  'physics.freeze': 'Freeze',
+  'physics.reset': 'Reset',
+
+  'selection.count': '{count} selected',
+  'selection.paths': 'Paths between',
+  'selection.reach': 'Reach',
+  'selection.remove': 'Remove',
+  'selection.clear': 'Clear selection',
+
+  'manage.search': 'Search to remove…',
+  'manage.filter': 'Filter list',
+  'manage.emptyPool': 'The graph is empty.',
+  'manage.allHidden': 'All types hidden, enable a chip above.',
+  'manage.more': '+{count} more, search to narrow',
+  'manage.removed': 'Removed ({count})',
+  'manage.restore': 'Restore to graph',
+
+  'actions.expandAll': 'Expand all',
+  'actions.expanding': 'Expanding {done}/{total}…',
+  'actions.cancel': 'Cancel',
+
+  'add.label': 'Add to graph',
+  'add.placeholder': 'Paste a profile, artist, album, or playlist link',
+  'add.button': 'Add',
+  'add.adding': 'Adding…',
+  'add.invalid': 'Paste a Spotify link or URI for a user, artist, album, or playlist.',
+  'add.failed': 'Could not add that to the graph.',
+  'add.userFailed': 'That profile is private or does not exist.',
+
+  'actions.export': 'Export',
+  'actions.image': 'Image',
+  'actions.data': 'Data',
+
+  'nav.zoomIn': 'Zoom in',
+  'nav.zoomOut': 'Zoom out',
+  'nav.fit': 'Fit graph to view',
+
+  'lens.byDegree': 'Size by connections',
+  'lens.byCluster': 'Color by cluster',
+  'lens.connected': 'Connected only',
+  'edges.collaborations': 'Collaborations',
+
+  'time.all': 'All time',
+  'time.since': 'Since {date}',
+  'time.label': 'Show items added since',
+  'time.section': 'Added since',
+  'time.reset': 'Show all time',
+
+  'expand.failed': 'Could not expand this node.',
+
+  'guide.title': 'How to explore',
+  'guide.click': 'Click a node to inspect it, double-click to expand its connections.',
+  'guide.drag': 'Drag a node to pin it, hover to highlight its neighbours.',
+  'guide.mark': 'Shift-click several nodes, then Paths between to trace how they link.',
+  'guide.controls': 'Open Controls to filter by type, tune physics, and manage nodes.',
+  'guide.zoom': 'Scroll or the +/- buttons zoom, drag the background to pan.',
+  'guide.legendLibrary': 'Library links',
+  'guide.legendCollab': 'Collaborations',
+  'guide.dismiss': 'Got it',
+  'guide.help': 'Show help',
+} as const;
+
+export default en;
+export type MessageKey = keyof typeof en;

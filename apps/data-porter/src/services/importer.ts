@@ -1,7 +1,7 @@
 import { t } from '../i18n';
 import { batchedWrite } from '@shared/api';
 import type { ProgressInfo } from '@shared/types';
-import { SPOTIFY_URI, notifyError } from '@shared/lib';
+import { sleep, SPOTIFY_URI, notifyError } from '@shared/lib';
 import type { DataType, ExportData, ExportedPlaylist } from '../types/export';
 import type { ImportLogEntry, ImportResult, PlaylistConflictResolution } from '../types/import';
 import {
@@ -278,7 +278,7 @@ export async function importData(
   // Spotify's backend overwrites permissions set immediately after track addition.
   // Wait briefly so the last playlist's tracks have time to settle before we lock them.
   if (privatePlaylists.length > 0) {
-    await new Promise<void>((r) => setTimeout(r, PERMISSION_SETTLE_MS));
+    await sleep(PERMISSION_SETTLE_MS);
     for (const { uri, name } of privatePlaylists) {
       try {
         await Spicetify.Platform.PlaylistPermissionsAPI.setBasePermission(uri, 'BLOCKED');

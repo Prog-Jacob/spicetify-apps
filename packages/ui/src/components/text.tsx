@@ -1,3 +1,4 @@
+import { resolveNativeComponent } from './resolve-native';
 import React, { forwardRef, type CSSProperties, type ComponentProps } from 'react';
 
 const toVar = (sc: string) => `var(--${sc.replace(/([A-Z])/g, '-$1').toLowerCase()})`;
@@ -34,9 +35,6 @@ const FallbackText = forwardRef<React.ElementRef<'span'>, TextProps>(
 );
 FallbackText.displayName = 'TextComponent';
 
-// Broken ones are Proxy(Function) wrappers (typeof 'function').
-// Working Spicetify components are forwardRef objects (typeof 'object').
-const Native = Spicetify.ReactComponent?.TextComponent;
-const TextComponent = typeof Native === 'object' && Native ? Native : FallbackText;
+const TextComponent = resolveNativeComponent<TextProps>('TextComponent', FallbackText);
 
 export default TextComponent;

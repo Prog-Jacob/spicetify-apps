@@ -1,0 +1,97 @@
+import { MusicGraph } from '../graph/music-graph';
+import { rememberFirstImage } from './node-images';
+import { NODE_TYPE, EDGE_TYPE } from '../constants';
+import { ingestArtists, ingestTrack } from './ingest';
+import { attachUserPlaylists } from './user-playlists';
+import type { LibraryTrackItem, LibraryContentItem } from '@shared/types';
+import { paginate, fetchRootlistPlaylists, listFriends } from '@shared/api';
+
+export type LibraryGraph = { graph: MusicGraph; images: Map<string, string> };
+
+const FRIEND_PLAYLIST_CONCURRENCY = 5;
+
+// Tier A only: proven, rate-limit-free Platform APIs, plus the edges saved objects carry.
+export async function buildLibraryGraph(signal?: AbortSignal): Promise<LibraryGraph> {
+  const graph = new MusicGraph();
+  const images = new Map<string, string>();
+
+  const [user, [contents, tracks, playlists], friends] = await Promise.all([
+    Spicetify.Platform.UserAPI.getUser(),
+    Promise.all([
+      paginate<LibraryContentItem>((p) => Spicetify.Platform.LibraryAPI.getContents(p), {
+        context: 'LibraryAPI.getContents',
+        signal,
+      }),
+      paginate<LibraryTrackItem>((p) => Spicetify.Platform.LibraryAPI.getTracks(p), {
+        context: 'LibraryAPI.getTracks',
+        signal,
+      }),
+      fetchRootlistPlaylists(signal),
+    ]),
+    listFriends().catch(() => []),
+  ]);
+
+  const userUri = user.uri ?? 'spotify:user:me';
+  graph.addNode({
+    uri: userUri,
+    type: NODE_TYPE.USER,
+    label: user.displayName ?? user.name ?? 'You',
+  });
+  if (user.imageUrl) images.set(userUri, user.imageUrl);
+
+  const followedFriends = friends.filter((friend) => friend.uri !== userUri);
+  for (const friend of followedFriends) {
+    graph.addNode({ uri: friend.uri, type: NODE_TYPE.USER, label: friend.name });
+    graph.addEdge(userUri, friend.uri, EDGE_TYPE.FOLLOWS);
+    if (friend.imageUrl) images.set(friend.uri, friend.imageUrl);
+  }
+
+  for (const playlist of playlists) {
+    graph.addNode({ uri: playlist.uri, type: NODE_TYPE.PLAYLIST, label: playlist.name });
+    graph.addEdge(userUri, playlist.uri, EDGE_TYPE.OWNS);
+    rememberFirstImage(images, playlist.uri, playlist.images);
+  }
+
+  for (const item of contents) {
+    if (item.type === NODE_TYPE.ARTIST) {
+      graph.addNode({
+        uri: item.uri,
+        type: NODE_TYPE.ARTIST,
+        label: item.name,
+        addedAt: item.addedAt,
+      });
+      graph.addEdge(userUri, item.uri, EDGE_TYPE.SAVED);
+      rememberFirstImage(images, item.uri, item.images);
+    } else if (item.type === NODE_TYPE.ALBUM) {
+      graph.addNode({
+        uri: item.uri,
+        type: NODE_TYPE.ALBUM,
+        label: item.name,
+        addedAt: item.addedAt,
+      });
+      graph.addEdge(userUri, item.uri, EDGE_TYPE.SAVED);
+      ingestArtists(graph, item.uri, EDGE_TYPE.MADE_BY, item.artists);
+      rememberFirstImage(images, item.uri, item.images);
+    }
+  }
+
+  for (const track of tracks) {
+    ingestTrack(graph, track);
+    graph.addEdge(userUri, track.uri, EDGE_TYPE.SAVED);
+    rememberFirstImage(images, track.uri, track.album?.images);
+    if (track.album?.uri) rememberFirstImage(images, track.album.uri, track.album.images);
+  }
+
+  for (let i = 0; i < followedFriends.length; i += FRIEND_PLAYLIST_CONCURRENCY) {
+    signal?.throwIfAborted();
+    await Promise.all(
+      followedFriends
+        .slice(i, i + FRIEND_PLAYLIST_CONCURRENCY)
+        .map((friend) =>
+          attachUserPlaylists(graph, images, friend.uri, signal).catch(() => undefined),
+        ),
+    );
+  }
+
+  return { graph, images };
+}
