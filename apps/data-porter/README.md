@@ -1,17 +1,17 @@
 <div align="center">
   <a href="https://github.com/Prog-Jacob/spicetify-apps/releases?q=data-porter">
-    <img src="preview/preview.gif" width="100%" alt="Data Porter demo" />
+    <img src="preview/preview.webp" width="100%" alt="Data Porter demo" />
   </a>
 
   <br />
 
   <h1>Data Porter</h1>
 
-  <p><strong>Back up, export, transfer, and migrate your Spotify library: playlists, liked songs, albums, artists, and podcasts. Move it to another account or save it as a JSON file.</strong></p>
+  <p><strong>Back up, export, import, transfer, and migrate your Spotify library: playlists, liked songs, albums, artists, and podcasts. Move it to another account or save it as a portable JSON file.</strong></p>
 
   <p>
     <a href="https://github.com/Prog-Jacob/spicetify-apps/releases?q=data-porter"><img src="https://img.shields.io/github/package-json/v/Prog-Jacob/spicetify-apps?filename=apps/data-porter/package.json&style=for-the-badge&colorA=1e1e2e&colorB=a6e3a1&label=version" alt="Version" /></a>
-    <a href="https://github.com/Prog-Jacob/spicetify-apps/releases"><img src="https://img.shields.io/github/downloads/Prog-Jacob/spicetify-apps/total?style=for-the-badge&colorA=1e1e2e&colorB=89b4fa&label=downloads" alt="Downloads" /></a>
+    <a href="https://github.com/Prog-Jacob/spicetify-apps/releases?q=data-porter"><img src="https://img.shields.io/github/downloads/Prog-Jacob/spicetify-apps/spicetify-data-porter.release.zip?style=for-the-badge&colorA=1e1e2e&colorB=89b4fa&label=downloads" alt="Downloads" /></a>
   </p>
 
 <a href="#install">Install</a>
@@ -66,7 +66,7 @@ Drop in a JSON file to restore your data. Works with **Data Porter exports** and
 
 You'll see a preview of what's inside before anything gets written. Click into any data type to inspect its contents before committing to the import.
 
-<img src="preview/import.png" width="100%" alt="Import preview" />
+<img src="preview/import.webp" width="100%" alt="Import preview" />
 
 ---
 
@@ -79,7 +79,7 @@ Before any playlists are created, you review every one. Each playlist shows its 
 
 Apply one choice to all at once, or decide per playlist. Filter by name to find what you need.
 
-<img src="preview/import-conflict.png" width="100%" alt="Playlist review step" />
+<img src="preview/import-conflict.webp" width="100%" alt="Playlist review step" />
 
 ---
 
