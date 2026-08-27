@@ -2,7 +2,7 @@
   {
     "name": "Data Porter",
     "description": "Back up, export, import, transfer, and migrate your Spotify library: playlists, liked songs, albums, artists, and podcasts. Move it to another account or save it as a portable JSON file.",
-    "preview": "apps/data-porter/preview/thumbnail.png",
+    "preview": "apps/data-porter/preview/thumbnail.webp",
     "readme": "apps/data-porter/README.md",
     "tags": [
       "backup",
@@ -19,7 +19,7 @@
   {
     "name": "Constellation",
     "description": "A graph view of your Spotify universe: songs, artists, albums, playlists, and people, drawn from the relationships already in your library.",
-    "preview": "apps/constellation/preview/thumbnail.png",
+    "preview": "apps/constellation/preview/thumbnail.webp",
     "readme": "apps/constellation/README.md",
     "tags": ["graph", "visualization", "network", "library", "explore", "artists", "playlists"]
   }

@@ -1,6 +1,6 @@
 <div align="center">
   <a href="https://github.com/{{REPO}}/releases?q={{SLUG}}">
-    <img src="preview/preview.gif" width="100%" alt="{{NAME}} demo" />
+    <img src="preview/preview.webp" width="100%" alt="{{NAME}} demo" />
   </a>
 
   <br />
