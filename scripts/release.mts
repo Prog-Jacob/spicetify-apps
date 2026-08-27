@@ -25,6 +25,15 @@ const run = (cmd: string) => execSync(cmd, { cwd: ROOT, stdio: 'inherit' });
 const hasChangesets = (): boolean =>
   readdirSync(CHANGESET_DIR).some((f) => f.endsWith('.md') && f !== 'README.md');
 const capture = (cmd: string): string => execSync(cmd, { cwd: ROOT }).toString().trim();
+const tryCapture = (cmd: string): string => {
+  try {
+    return execSync(cmd, { cwd: ROOT, stdio: ['pipe', 'pipe', 'pipe'] })
+      .toString()
+      .trim();
+  } catch {
+    return '';
+  }
+};
 
 if (!appName) {
   console.error('Usage: tsx scripts/release.mts <app-name>');
@@ -43,8 +52,9 @@ const pkgName: string = pkg.name;
 
 // Draft a changeset from commits if none exist yet
 if (!hasChangesets()) {
-  const lastTag = capture(`git describe --tags --match "${appName}-v*" --abbrev=0`);
-  const log = capture(`git log ${lastTag}..HEAD --pretty=format:"%s"`);
+  const lastTag = tryCapture(`git describe --tags --match "${appName}-v*" --abbrev=0`);
+  const range = lastTag ? `${lastTag}..HEAD` : 'HEAD';
+  const log = capture(`git log ${range} --pretty=format:"%s" -- ${join('apps', appName)}`);
   const draftPath = join(CHANGESET_DIR, `draft-${appName}.md`);
 
   if (!log) {
@@ -54,7 +64,9 @@ if (!hasChangesets()) {
 
   writeFileSync(draftPath, `---\n"${pkgName}": minor\n---\n\n${log}\n`);
   spawnSync(process.env.EDITOR || 'vim', [draftPath], { stdio: 'inherit' });
-  console.log(`\nDraft from ${log.split('\n').length} commit(s) since ${lastTag}.`);
+  console.log(
+    `\nDraft from ${log.split('\n').length} commit(s) since ${lastTag || 'the beginning'}.`,
+  );
 
   if (!hasChangesets()) {
     console.log('Aborted.');
