@@ -1,7 +1,6 @@
 import type { GraphNode } from './types';
 import { t, loadTranslations } from './i18n';
 import Inspector from './components/inspector';
-import { useUpdateCheck } from '@shared/hooks';
 import { usePhysics } from './hooks/use-physics';
 import GraphGuide from './components/graph-guide';
 import ControlDock from './components/control-dock';
@@ -17,10 +16,11 @@ import { useGraphExplorer } from './hooks/use-graph-explorer';
 import { useGraphControls } from './hooks/use-graph-controls';
 import GraphPlaceholder from './components/graph-placeholder';
 import GraphNavControls from './components/graph-nav-controls';
+import { useUpdateCheck, useSpicetifyReady } from '@shared/hooks';
 import GraphExportToolbar from './components/graph-export-toolbar';
 import GraphView, { type GraphViewHandle } from './graph/graph-view';
 
-const App = () => {
+const ConstellationApp = () => {
   const [ready, setReady] = useState(false);
   const [selected, setSelected] = useState<GraphNode | null>(null);
   const {
@@ -228,10 +228,20 @@ const App = () => {
 
   return (
     <ErrorBoundary scope={__APP_NAME__} title={t('app.error')}>
-      {update && <UpdateBanner releaseUrl={update.url} version={update.version} />}
+      {update && (
+        <div className="absolute inset-x-0 top-0 z-40">
+          <UpdateBanner releaseUrl={update.url} version={update.version} />
+        </div>
+      )}
       <div className="absolute inset-0 flex overflow-hidden">{renderBody()}</div>
     </ErrorBoundary>
   );
+};
+
+const App = () => {
+  const spicetifyReady = useSpicetifyReady();
+  if (!spicetifyReady) return null;
+  return <ConstellationApp />;
 };
 
 export default App;
