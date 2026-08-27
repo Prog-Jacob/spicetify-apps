@@ -23,12 +23,26 @@
 
 > Export and import your Spotify library: playlists, liked songs, albums, artists, podcasts, and more.
 
-<a href="apps/data-porter"><img src="apps/data-porter/preview/preview.gif" width="100%" alt="Data Porter demo" /></a>
+<a href="apps/data-porter"><img src="apps/data-porter/preview/preview.webp" width="100%" alt="Data Porter demo" /></a>
 
 <p align="center">
   <a href="apps/data-porter">View README</a>
   <span>&nbsp;&middot;&nbsp;</span>
   <a href="https://github.com/Prog-Jacob/spicetify-apps/releases?q=data-porter">Download</a>
+</p>
+
+---
+
+## Constellation
+
+> A graph view of your Spotify universe: songs, artists, albums, playlists, and people, drawn from the relationships already in your library.
+
+<a href="apps/constellation"><img src="apps/constellation/preview/preview.webp" width="100%" alt="Constellation demo" /></a>
+
+<p align="center">
+  <a href="apps/constellation">View README</a>
+  <span>&nbsp;&middot;&nbsp;</span>
+  <a href="https://github.com/Prog-Jacob/spicetify-apps/releases?q=constellation">Download</a>
 </p>
 
 ---
