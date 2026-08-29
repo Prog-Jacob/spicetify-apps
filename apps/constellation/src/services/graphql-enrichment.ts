@@ -1,4 +1,4 @@
-import type { EntityRef, TrackRef } from '../types';
+import type { EntityRef, TrackRef } from '../types/graph';
 
 export type AlbumEnrichment = { tracks: TrackRef[] };
 export type ArtistEnrichment = { related: EntityRef[]; albums: EntityRef[] };
