@@ -18,4 +18,6 @@ export const EDGE_TYPE = {
   RELATED_TO: 'related_to',
 } as const;
 
+export const LIKED_SONGS_URI = 'spotify:collection:tracks';
+
 export const ALL_NODE_TYPES = Object.values(NODE_TYPE);
