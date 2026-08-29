@@ -1,25 +1,21 @@
 import { t } from '../i18n';
-import SearchField from './search-field';
-import type { GraphNode } from '../types';
 import { NodeRowContent } from './node-row';
+import { SearchField } from '@ui/components';
+import type { GraphNode } from '../types/graph';
 import { searchNodes } from '../graph/node-query';
-import type { MusicGraph } from '../graph/music-graph';
 import React, { useId, useMemo, useState } from 'react';
 
 type Props = {
-  graph: MusicGraph;
-  revision: number;
-  isVisible: (node: GraphNode) => boolean;
+  nodes: GraphNode[];
   onPick: (node: GraphNode) => void;
 };
 
-const NodeSearchBox = ({ graph, revision, isVisible, onPick }: Props) => {
+const NodeSearchBox = ({ nodes, onPick }: Props) => {
   const listId = useId();
   const [query, setQuery] = useState('');
   const [active, setActive] = useState(0);
 
-  const visible = useMemo(() => graph.nodes().filter(isVisible), [graph, revision, isVisible]);
-  const results = useMemo(() => (query ? searchNodes(visible, query) : []), [visible, query]);
+  const results = useMemo(() => (query ? searchNodes(nodes, query) : []), [nodes, query]);
 
   const retype = (value: string) => {
     setQuery(value);

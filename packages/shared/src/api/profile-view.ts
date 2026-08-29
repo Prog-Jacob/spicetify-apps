@@ -3,12 +3,12 @@ import { cosmos } from './cosmos';
 /**
  * Client for Spotify's internal `user-profile-view` endpoint: a user's public profile, playlists,
  * and social graph. The URL shape and JSON belong here once, not re-modeled in every app that
- * reads a profile (constellation's graph, data-porter's export, the friends picker).
+ * reads a profile (constellation's graph, data-porter's export).
  */
 const BASE = 'https://spclient.wg.spotify.com/user-profile-view/v3/profile';
 const MARKET = 'market=from_token';
 
-export type ProfileEntry = { uri: string; name?: string; image_url?: string };
+export type ProfileEntry = { uri?: string; name?: string; image_url?: string };
 export type ProfilePlaylist = { uri: string; name: string; image_url?: string };
 export type UserProfile = {
   name?: string;

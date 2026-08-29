@@ -3,6 +3,12 @@ const pad = (n: number) => String(n).padStart(2, '0');
 export const formatArtists = (artists?: { name: string }[]): string =>
   artists?.map((a) => a.name).join(', ') ?? '';
 
+export const toEpochMs = (value?: string | number): number | undefined => {
+  if (value == null) return undefined;
+  const ms = typeof value === 'number' ? value : Date.parse(value);
+  return Number.isNaN(ms) ? undefined : ms;
+};
+
 export const toDateString = (ms: number): string => {
   const d = new Date(ms);
   return isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10);

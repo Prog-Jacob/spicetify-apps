@@ -1,34 +1,54 @@
+import { t } from '../i18n';
+import { ingestArtists } from './ingest';
+import { addLikedSongs } from './liked-songs';
 import { MusicGraph } from '../graph/music-graph';
 import { rememberFirstImage } from './node-images';
-import { NODE_TYPE, EDGE_TYPE } from '../constants';
-import { ingestArtists, ingestTrack } from './ingest';
+import { notifyError, toEpochMs } from '@shared/lib';
 import { attachUserPlaylists } from './user-playlists';
-import type { LibraryTrackItem, LibraryContentItem } from '@shared/types';
-import { paginate, fetchRootlistPlaylists, listFriends } from '@shared/api';
+import type { LibraryContentItem } from '@shared/types';
+import { paginate, fetchRootlistPlaylists } from '@shared/api';
+import { listSocialGraph, type ProfileRef } from './social-graph';
+import { NODE_TYPE, EDGE_TYPE, LIKED_SONGS_URI } from '../constants';
 
-export type LibraryGraph = { graph: MusicGraph; images: Map<string, string> };
+export type LibraryGraph = {
+  graph: MusicGraph;
+  images: Map<string, string>;
+  /** Your own node: what the rest of the graph hangs off, and what a prune measures from. */
+  rootUri: string;
+  expanded: Set<string>;
+};
 
 const FRIEND_PLAYLIST_CONCURRENCY = 5;
 
+export type CrawlPhase = { stage: 'library' | 'profiles'; done?: number; total?: number };
+type CrawlProgress = (phase: CrawlPhase) => void;
+
+/** You, whoever you follow, and the Liked Songs container are seeded whatever your library holds. */
+export const isEmptyLibrary = ({ graph }: LibraryGraph): boolean =>
+  graph.nodes().every((n) => n.type === NODE_TYPE.USER || n.uri === LIKED_SONGS_URI);
+
 // Tier A only: proven, rate-limit-free Platform APIs, plus the edges saved objects carry.
-export async function buildLibraryGraph(signal?: AbortSignal): Promise<LibraryGraph> {
+export async function buildLibraryGraph(
+  signal?: AbortSignal,
+  onProgress?: CrawlProgress,
+): Promise<LibraryGraph> {
   const graph = new MusicGraph();
   const images = new Map<string, string>();
+  onProgress?.({ stage: 'library' });
 
-  const [user, [contents, tracks, playlists], friends] = await Promise.all([
+  const [user, [contents, playlists], social] = await Promise.all([
     Spicetify.Platform.UserAPI.getUser(),
     Promise.all([
       paginate<LibraryContentItem>((p) => Spicetify.Platform.LibraryAPI.getContents(p), {
         context: 'LibraryAPI.getContents',
         signal,
       }),
-      paginate<LibraryTrackItem>((p) => Spicetify.Platform.LibraryAPI.getTracks(p), {
-        context: 'LibraryAPI.getTracks',
-        signal,
-      }),
       fetchRootlistPlaylists(signal),
     ]),
-    listFriends().catch(() => []),
+    listSocialGraph().catch((e: unknown) => {
+      notifyError(e, t('app.friendsFailed'));
+      return { following: [], followers: [] };
+    }),
   ]);
 
   const userUri = user.uri ?? 'spotify:user:me';
@@ -39,12 +59,16 @@ export async function buildLibraryGraph(signal?: AbortSignal): Promise<LibraryGr
   });
   if (user.imageUrl) images.set(userUri, user.imageUrl);
 
-  const followedFriends = friends.filter((friend) => friend.uri !== userUri);
-  for (const friend of followedFriends) {
-    graph.addNode({ uri: friend.uri, type: NODE_TYPE.USER, label: friend.name });
-    graph.addEdge(userUri, friend.uri, EDGE_TYPE.FOLLOWS);
-    if (friend.imageUrl) images.set(friend.uri, friend.imageUrl);
+  const people = new Map<string, ProfileRef>();
+  for (const person of [...social.following, ...social.followers]) {
+    if (person.uri !== userUri) people.set(person.uri, person);
   }
+  for (const person of people.values()) {
+    graph.addNode({ uri: person.uri, type: NODE_TYPE.USER, label: person.name });
+    if (person.imageUrl) images.set(person.uri, person.imageUrl);
+  }
+  for (const person of social.following) graph.addEdge(userUri, person.uri, EDGE_TYPE.FOLLOWS);
+  for (const person of social.followers) graph.addEdge(person.uri, userUri, EDGE_TYPE.FOLLOWS);
 
   for (const playlist of playlists) {
     graph.addNode({ uri: playlist.uri, type: NODE_TYPE.PLAYLIST, label: playlist.name });
@@ -58,7 +82,7 @@ export async function buildLibraryGraph(signal?: AbortSignal): Promise<LibraryGr
         uri: item.uri,
         type: NODE_TYPE.ARTIST,
         label: item.name,
-        addedAt: item.addedAt,
+        addedAt: toEpochMs(item.addedAt),
       });
       graph.addEdge(userUri, item.uri, EDGE_TYPE.SAVED);
       rememberFirstImage(images, item.uri, item.images);
@@ -67,7 +91,7 @@ export async function buildLibraryGraph(signal?: AbortSignal): Promise<LibraryGr
         uri: item.uri,
         type: NODE_TYPE.ALBUM,
         label: item.name,
-        addedAt: item.addedAt,
+        addedAt: toEpochMs(item.addedAt),
       });
       graph.addEdge(userUri, item.uri, EDGE_TYPE.SAVED);
       ingestArtists(graph, item.uri, EDGE_TYPE.MADE_BY, item.artists);
@@ -75,23 +99,18 @@ export async function buildLibraryGraph(signal?: AbortSignal): Promise<LibraryGr
     }
   }
 
-  for (const track of tracks) {
-    ingestTrack(graph, track);
-    graph.addEdge(userUri, track.uri, EDGE_TYPE.SAVED);
-    rememberFirstImage(images, track.uri, track.album?.images);
-    if (track.album?.uri) rememberFirstImage(images, track.album.uri, track.album.images);
-  }
+  addLikedSongs(graph, userUri);
 
-  for (let i = 0; i < followedFriends.length; i += FRIEND_PLAYLIST_CONCURRENCY) {
+  const profiles = [...people.keys()];
+  onProgress?.({ stage: 'profiles', done: 0, total: profiles.length });
+  for (let i = 0; i < profiles.length; i += FRIEND_PLAYLIST_CONCURRENCY) {
     signal?.throwIfAborted();
+    const chunk = profiles.slice(i, i + FRIEND_PLAYLIST_CONCURRENCY);
     await Promise.all(
-      followedFriends
-        .slice(i, i + FRIEND_PLAYLIST_CONCURRENCY)
-        .map((friend) =>
-          attachUserPlaylists(graph, images, friend.uri, signal).catch(() => undefined),
-        ),
+      chunk.map((uri) => attachUserPlaylists(graph, images, uri, signal).catch(() => undefined)),
     );
+    onProgress?.({ stage: 'profiles', done: i + chunk.length, total: profiles.length });
   }
 
-  return { graph, images };
+  return { graph, images, rootUri: userUri, expanded: new Set<string>() };
 }

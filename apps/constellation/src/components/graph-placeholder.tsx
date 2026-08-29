@@ -1,4 +1,5 @@
 import React from 'react';
+import { cn } from '@shared/lib';
 import { TextComponent, ButtonPrimary } from '@ui/components';
 
 type Props = {
@@ -6,6 +7,7 @@ type Props = {
   subtitle?: string;
   pulse?: boolean;
   action?: { label: string; onClick: () => void };
+  className?: string;
 };
 
 const Motif = ({ pulse }: { pulse?: boolean }) => (
@@ -30,8 +32,13 @@ const Motif = ({ pulse }: { pulse?: boolean }) => (
   </svg>
 );
 
-const GraphPlaceholder = ({ title, subtitle, pulse, action }: Props) => (
-  <div className="flex h-full w-full flex-col items-center justify-center gap-4 px-8 text-center">
+const GraphPlaceholder = ({ title, subtitle, pulse, action, className }: Props) => (
+  <div
+    className={cn(
+      'flex h-full w-full flex-col items-center justify-center gap-4 px-8 text-center',
+      className,
+    )}
+  >
     <Motif pulse={pulse} />
     <div className="flex max-w-sm flex-col gap-2">
       <TextComponent variant="alto" weight="bold">

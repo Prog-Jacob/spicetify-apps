@@ -95,6 +95,7 @@ json('package.json', {
 
 json('tsconfig.json', {
   extends: '../../tsconfig.base.json',
+  compilerOptions: { types: ['node'] },
   include: ['src/**/*', '../../packages/shared/src/types/**/*'],
 });
 

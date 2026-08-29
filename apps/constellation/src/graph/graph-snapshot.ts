@@ -1,7 +1,7 @@
 import { MusicGraph } from './music-graph';
-import type { GraphNode, GraphEdge } from '../types';
+import type { GraphNode, GraphEdge } from '../types/graph';
 
-const SNAPSHOT_VERSION = 1;
+export const SNAPSHOT_VERSION = 2;
 
 export type GraphSnapshot = {
   version: number;

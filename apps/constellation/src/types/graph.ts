@@ -1,4 +1,4 @@
-import type { NODE_TYPE, EDGE_TYPE } from './constants';
+import type { NODE_TYPE, EDGE_TYPE } from '../constants';
 
 export type NodeType = (typeof NODE_TYPE)[keyof typeof NODE_TYPE];
 export type EdgeType = (typeof EDGE_TYPE)[keyof typeof EDGE_TYPE];

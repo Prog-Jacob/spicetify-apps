@@ -1,70 +1,86 @@
 import { useGraphPalette } from '../graph/theme';
 import { clusterColor } from '../graph/node-style';
-import type { GraphNode, GraphEdge } from '../types';
+import { pathsBetween } from '../graph/paths-between';
+import { blockCutTree } from '../graph/block-cut-tree';
 import type { RenderNode } from '../graph/render-data';
-import { useMemo, useEffect, useCallback } from 'react';
-import type { useGraphControls } from './use-graph-controls';
+import type { GraphControls } from './use-graph-controls';
+import type { GraphNode, GraphEdge } from '../types/graph';
+import type { GraphSelection } from './use-graph-selection';
 import { deriveCollaborations } from '../graph/collaboration';
+import { useMemo, useCallback, useDeferredValue } from 'react';
 import type { LibraryGraph } from '../services/library-crawler';
 import { detectCommunities } from '../graph/community-detection';
-import { commonNeighborhood } from '../graph/common-neighborhood';
-import { addedAtBounds, neighborhoodUris, hasVisibleDegreeOver } from '../graph/node-query';
+import {
+  adjacencyOf,
+  addedAtBounds,
+  neighborhoodUris,
+  countVisibleNeighbors,
+} from '../graph/node-query';
 
 const NO_LINKS: GraphEdge[] = [];
 
-type Controls = ReturnType<typeof useGraphControls>;
+const MIN_LINKS = 2;
+
+const NO_URIS: string[] = [];
 
 export const useGraphLenses = (
   library: LibraryGraph | null,
   revision: number,
-  controls: Controls,
-  markedAnchors: string[],
-  pathMode: boolean,
-  pathRadius: number,
+  controls: GraphControls,
+  selection: GraphSelection,
 ) => {
-  const { isVisible, focusUri, since, setSince, colorByCluster, showCollaborations, showHubsOnly } =
-    controls;
+  const { isTypeVisible, since, colorByCluster, showCollaborations, connectedOnly } = controls;
+  const { focusUri, anchors, pathMode, pathDetour } = selection;
+  const graph = library?.graph ?? null;
 
   const focusSet = useMemo(
     () => (focusUri && library ? neighborhoodUris(library.graph, focusUri) : null),
     [focusUri, library, revision],
   );
 
-  const pathSet = useMemo(
-    () =>
-      pathMode && library && markedAnchors.length >= 2
-        ? commonNeighborhood(library.graph, markedAnchors, pathRadius)
-        : null,
-    [pathMode, markedAnchors, pathRadius, library, revision],
+  const settledRevision = useDeferredValue(revision);
+
+  const blocks = useMemo(
+    () => (pathMode && library ? blockCutTree(library.graph) : null),
+    [pathMode, library, settledRevision],
   );
 
-  const graph = library?.graph ?? null;
+  const pathSet = useMemo(
+    () => (blocks && library ? pathsBetween(library.graph, blocks, anchors, pathDetour) : null),
+    [blocks, anchors, pathDetour, library],
+  );
 
   const timeBounds = useMemo(
     () => (library ? addedAtBounds(library.graph) : null),
-    [library, revision],
+    [library, settledRevision],
   );
 
-  useEffect(() => {
-    if (timeBounds && since > timeBounds.max) setSince(timeBounds.min);
-  }, [timeBounds, since, setSince]);
+  const effectiveSince = timeBounds && since > timeBounds.max ? timeBounds.min : since;
 
   const passesFilters = useCallback(
     (node: GraphNode) =>
-      isVisible(node) &&
+      isTypeVisible(node) &&
       (!focusSet || focusSet.has(node.uri)) &&
       (!pathSet || pathSet.has(node.uri)) &&
-      (!node.addedAt || node.addedAt >= since),
-    [isVisible, focusSet, pathSet, since],
+      (!node.addedAt || node.addedAt >= effectiveSince),
+    [isTypeVisible, focusSet, pathSet, effectiveSince],
   );
+
+  const extraLinks = useMemo(
+    () => (showCollaborations && library ? deriveCollaborations(library.graph) : NO_LINKS),
+    [showCollaborations, library, settledRevision],
+  );
+
+  const extraNeighbors = useMemo(() => adjacencyOf(extraLinks), [extraLinks]);
 
   const nodeVisible = useCallback(
     (node: GraphNode) => {
       if (!passesFilters(node)) return false;
-      if (pathSet || !showHubsOnly || !graph) return true;
-      return hasVisibleDegreeOver(graph, node.uri, passesFilters, 1);
+      if (pathSet || !connectedOnly || !graph) return true;
+      const extra = extraNeighbors.get(node.uri) ?? NO_URIS;
+      return countVisibleNeighbors(graph, node.uri, extra, passesFilters, MIN_LINKS) >= MIN_LINKS;
     },
-    [passesFilters, showHubsOnly, graph, pathSet],
+    [passesFilters, connectedOnly, graph, pathSet, extraNeighbors],
   );
 
   const clusterColorByUri = useMemo(() => {
@@ -74,7 +90,7 @@ export const useGraphLenses = (
       colors.set(uri, clusterColor(community));
     }
     return colors;
-  }, [colorByCluster, library, revision]);
+  }, [colorByCluster, library, settledRevision]);
 
   const palette = useGraphPalette();
   const nodeColor = useCallback(
@@ -82,10 +98,13 @@ export const useGraphLenses = (
     [clusterColorByUri, palette],
   );
 
-  const extraLinks = useMemo(
-    () => (showCollaborations && library ? deriveCollaborations(library.graph) : NO_LINKS),
-    [showCollaborations, library, revision],
+  const visibleNodes = useMemo(
+    () => (graph ? graph.nodes().filter(nodeVisible) : []),
+    [graph, settledRevision, nodeVisible],
   );
+  const visibleUris = useMemo(() => new Set(visibleNodes.map((n) => n.uri)), [visibleNodes]);
 
-  return { nodeVisible, nodeColor, extraLinks, timeBounds };
+  return { visibleNodes, visibleUris, nodeColor, extraLinks, timeBounds, effectiveSince };
 };
+
+export type GraphLenses = ReturnType<typeof useGraphLenses>;

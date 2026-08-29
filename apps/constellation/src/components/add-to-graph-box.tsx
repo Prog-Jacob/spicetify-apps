@@ -1,8 +1,8 @@
 import { t } from '../i18n';
-import { Input } from '@ui/components';
 import React, { useState } from 'react';
-import type { GraphNode } from '../types';
-import { FOCUS_RING, SECTION_LABEL } from './chrome-styles';
+import type { GraphNode } from '../types/graph';
+import { SECTION_LABEL } from '../styles/chrome';
+import { Input, ButtonPrimary } from '@ui/components';
 
 type Props = {
   adding: boolean;
@@ -36,14 +36,13 @@ const AddToGraphBox = ({ adding, onAdd, onAdded }: Props) => {
           placeholder={t('add.placeholder')}
           aria-label={t('add.label')}
         />
-        <button
-          type="button"
+        <ButtonPrimary
+          buttonSize="sm"
           onClick={() => void add(value)}
           disabled={adding || !value.trim()}
-          className={`shrink-0 rounded-lg border-0 bg-spice-button px-3.5 text-xs font-semibold text-spice-main transition-[filter,background-color,color] hover:brightness-110 disabled:cursor-not-allowed disabled:bg-spice-text/[0.08] disabled:text-spice-subtext ${FOCUS_RING}`}
         >
           {adding ? t('add.adding') : t('add.button')}
-        </button>
+        </ButtonPrimary>
       </div>
     </div>
   );

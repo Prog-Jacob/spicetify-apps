@@ -1,65 +1,67 @@
-import type { GraphNode } from '../types';
-import { useState, useCallback, useRef } from 'react';
-import { saveCachedGraph } from '../services/graph-cache';
+import type { GraphNode } from '../types/graph';
 import { canExpand, expandNode } from '../services/expand-node';
 import type { LibraryGraph } from '../services/library-crawler';
+import { useState, useCallback, useRef, useEffect } from 'react';
 
 const WORKERS = 3;
-const REVISION_EVERY = 8;
+const COMMIT_EVERY = 8;
+
+export type SweepProgress = { done: number; total: number };
+
+export const expandableNodes = (library: LibraryGraph, nodes: GraphNode[]): GraphNode[] =>
+  nodes.filter((n) => canExpand(n) && !library.expanded.has(n.uri));
 
 /**
- * Sweeps the nodes expandable right now (not the ones expansion reveals) so it terminates. Only the
- * nodes currently on screen are swept when `isVisible` is given, so a sweep matches what the user
- * sees under the active filters. A small worker pool paces the calls; revision bumps in batches to
- * avoid a reproject per node.
+ * Sweeps the nodes expandable *right now*, not the ones expansion reveals, so it terminates.
+ * A sweep whose library was replaced mid-flight stops immediately: its graph is no longer on
+ * screen, and committing it would write a discarded snapshot over the fresh one.
  */
 export const useExpandAll = (
   library: LibraryGraph | null,
-  expanded: Set<string>,
-  bumpRevision: () => void,
+  commit: (library: LibraryGraph) => void,
 ) => {
-  const [expandProgress, setExpandProgress] = useState<{ done: number; total: number } | null>(
-    null,
-  );
+  const [progress, setProgress] = useState<SweepProgress | null>(null);
   const cancelled = useRef(false);
+  const currentLibrary = useRef(library);
+  useEffect(() => {
+    currentLibrary.current = library;
+  });
 
   const expandAll = useCallback(
-    async (isVisible?: (node: GraphNode) => boolean) => {
-      if (!library || expandProgress) return;
-      const targets = library.graph
-        .nodes()
-        .filter((n) => canExpand(n.type) && !expanded.has(n.uri) && (!isVisible || isVisible(n)));
+    async (nodes: GraphNode[]) => {
+      if (!library || progress) return;
+      const targets = expandableNodes(library, nodes);
       if (!targets.length) return;
 
       cancelled.current = false;
-      setExpandProgress({ done: 0, total: targets.length });
+      setProgress({ done: 0, total: targets.length });
       let done = 0;
       let cursor = 0;
+      const live = () => !cancelled.current && currentLibrary.current === library;
       const worker = async () => {
-        while (cursor < targets.length && !cancelled.current) {
+        while (cursor < targets.length && live()) {
           const node = targets[cursor++];
           try {
             await expandNode(library.graph, node);
-            expanded.add(node.uri);
+            if (library.graph.node(node.uri)) library.expanded.add(node.uri);
           } catch {
             // one node failing must not abort the whole sweep
           }
           done += 1;
-          setExpandProgress({ done, total: targets.length });
-          if (done % REVISION_EVERY === 0) bumpRevision();
+          setProgress({ done, total: targets.length });
+          if (done % COMMIT_EVERY === 0) commit(library);
         }
       };
       await Promise.all(Array.from({ length: WORKERS }, worker));
-      bumpRevision();
-      void saveCachedGraph(library.graph);
-      setExpandProgress(null);
+      setProgress(null);
+      if (currentLibrary.current === library) commit(library);
     },
-    [library, expandProgress, expanded, bumpRevision],
+    [library, progress, commit],
   );
 
   const cancelExpandAll = useCallback(() => {
     cancelled.current = true;
   }, []);
 
-  return { expandAll, cancelExpandAll, expandProgress };
+  return { expandAll, cancelExpandAll, expandProgress: progress };
 };

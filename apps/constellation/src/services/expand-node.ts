@@ -1,8 +1,16 @@
-import { NODE_TYPE, EDGE_TYPE } from '../constants';
-import type { NodeType, GraphNode } from '../types';
+import { paginate } from '@shared/api';
+import type { LibraryTrackItem } from '@shared/types';
 import type { MusicGraph } from '../graph/music-graph';
+import type { NodeType, GraphNode } from '../types/graph';
+import { NODE_TYPE, EDGE_TYPE, LIKED_SONGS_URI } from '../constants';
 import { parseAlbumTracks, parseArtistOverview } from './graphql-enrichment';
-import { ingestArtists, ingestAlbum, ingestAlbumTrack, ingestPlaylistTracks } from './ingest';
+import {
+  ingestTrack,
+  ingestAlbum,
+  ingestArtists,
+  ingestAlbumTrack,
+  ingestPlaylistTracks,
+} from './ingest';
 
 type Expander = (graph: MusicGraph, node: GraphNode, signal?: AbortSignal) => Promise<void>;
 
@@ -29,18 +37,33 @@ const expandAlbum: Expander = async (graph, node, signal) => {
   for (const track of parseAlbumTracks(raw).tracks) ingestAlbumTrack(graph, node.uri, track);
 };
 
-const EXPANDERS: Partial<Record<NodeType, Expander>> = {
+// Liked Songs is a playlist the PlaylistAPI cannot read; its contents come from the library.
+const expandLikedSongs: Expander = async (graph, node, signal) => {
+  const tracks = await paginate<LibraryTrackItem>(
+    (p) => Spicetify.Platform.LibraryAPI.getTracks(p),
+    { context: 'LibraryAPI.getTracks', signal },
+  );
+  for (const track of tracks) {
+    ingestTrack(graph, track);
+    graph.addEdge(node.uri, track.uri, EDGE_TYPE.CONTAINS);
+  }
+};
+
+const BY_TYPE: Partial<Record<NodeType, Expander>> = {
   [NODE_TYPE.PLAYLIST]: expandPlaylist,
   [NODE_TYPE.ARTIST]: expandArtist,
   [NODE_TYPE.ALBUM]: expandAlbum,
 };
 
-const EXPANDABLE = new Set<NodeType>(Object.keys(EXPANDERS) as NodeType[]);
+const BY_URI: Record<string, Expander> = { [LIKED_SONGS_URI]: expandLikedSongs };
 
-export const canExpand = (type: NodeType): boolean => EXPANDABLE.has(type);
+const expanderFor = (node: GraphNode): Expander | undefined =>
+  BY_URI[node.uri] ?? BY_TYPE[node.type];
+
+export const canExpand = (node: GraphNode): boolean => expanderFor(node) !== undefined;
 
 export const expandNode = (
   graph: MusicGraph,
   node: GraphNode,
   signal?: AbortSignal,
-): Promise<void> => EXPANDERS[node.type]?.(graph, node, signal) ?? Promise.resolve();
+): Promise<void> => expanderFor(node)?.(graph, node, signal) ?? Promise.resolve();

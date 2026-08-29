@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 
+const loaded = () => !!Spicetify.Platform?.History && !!Spicetify.CosmosAsync;
+
 export const useSpicetifyReady = () => {
-  const [ready, setReady] = useState(() => !!Spicetify.Platform?.History);
+  const [ready, setReady] = useState(loaded);
   useEffect(() => {
     if (ready) return;
     const id = setInterval(() => {
-      if (Spicetify.Platform?.History) {
+      if (loaded()) {
         clearInterval(id);
         setReady(true);
       }

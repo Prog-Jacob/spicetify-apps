@@ -3,19 +3,16 @@ import { ingestArtists } from './ingest';
 import { expandNode } from './expand-node';
 import { rememberImage } from './node-images';
 import { NODE_TYPE, EDGE_TYPE } from '../constants';
-import type { NodeType, GraphNode } from '../types';
 import { attachUserPlaylists } from './user-playlists';
 import type { MusicGraph } from '../graph/music-graph';
+import type { NodeType, GraphNode } from '../types/graph';
 import { ValidationError, SPOTIFY_URI } from '@shared/lib';
-import { resolveUriMetadata, getProfile, getFollowing } from '@shared/api';
+import { resolveUriMetadata, getProfile, getFollowing, getFollowers } from '@shared/api';
 
-const ADDABLE: NodeType[] = [
-  NODE_TYPE.USER,
-  NODE_TYPE.ARTIST,
-  NODE_TYPE.ALBUM,
-  NODE_TYPE.PLAYLIST,
-  NODE_TYPE.TRACK,
-];
+// Tracks are deliberately absent. A track has no expander (pulling one in would make every one
+// of the thousands of track nodes expandable, and an Expand-all sweep would explode the graph),
+// so a pasted track link could only ever land as a disconnected dot.
+const ADDABLE: NodeType[] = [NODE_TYPE.USER, NODE_TYPE.ARTIST, NODE_TYPE.ALBUM, NODE_TYPE.PLAYLIST];
 
 type SpotifyRef = { type: NodeType; id: string; uri: string };
 
@@ -26,12 +23,20 @@ const URL_RE = new RegExp(
   'i',
 );
 
+const decodeId = (raw: string): string => {
+  try {
+    return decodeURIComponent(raw);
+  } catch {
+    return raw;
+  }
+};
+
 export const parseSpotifyRef = (input: string): SpotifyRef | null => {
   const s = input.trim();
   const match = s.match(URI_RE) ?? s.match(URL_RE);
   if (!match) return null;
   const type = match[1].toLowerCase() as NodeType;
-  const id = decodeURIComponent(match[2]);
+  const id = decodeId(match[2]);
   return { type, id, uri: `spotify:${type}:${id}` };
 };
 
@@ -51,13 +56,22 @@ const addUser = async (
   graph.addNode({ uri, type: NODE_TYPE.USER, label });
   rememberImage(images, uri, profile?.image_url);
 
-  const [, following] = await Promise.all([
+  const [, following, followers] = await Promise.all([
     attachUserPlaylists(graph, images, uri, signal),
     getFollowing(id).catch(() => []),
+    getFollowers(id).catch(() => []),
   ]);
   signal?.throwIfAborted();
 
-  const followedArtists = following.filter((p) => p.uri.startsWith(SPOTIFY_URI.ARTIST));
+  // Without this a re-added friend lands as a lone dot, even one you follow each other with.
+  for (const person of following)
+    if (person.uri?.startsWith(SPOTIFY_URI.USER)) graph.addEdge(uri, person.uri, EDGE_TYPE.FOLLOWS);
+  for (const person of followers)
+    if (person.uri?.startsWith(SPOTIFY_URI.USER)) graph.addEdge(person.uri, uri, EDGE_TYPE.FOLLOWS);
+
+  const followedArtists = following.flatMap((p) =>
+    p.uri?.startsWith(SPOTIFY_URI.ARTIST) ? [{ ...p, uri: p.uri }] : [],
+  );
   ingestArtists(
     graph,
     uri,

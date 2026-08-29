@@ -3,11 +3,22 @@ import { t } from '../i18n';
 import TextComponent from './text';
 import SpicetifyIcon from './icon';
 import { REPO_RAW } from '@shared/lib';
+import { ButtonSecondary, ButtonTertiary } from './button';
 import React, { useRef, useState, useEffect } from 'react';
+import { usePersistentState, type Codec } from '@shared/hooks';
 
 const COPY_FEEDBACK_MS = 2000;
-const STORAGE_KEY = `${__APP_NAME__}:update-dismissed`;
-const { ButtonSecondary, ButtonTertiary } = Spicetify.ReactComponent;
+
+const dismissedCodec: Codec<string | null> = {
+  parse: (raw) => {
+    try {
+      return JSON.parse(raw) as string | null;
+    } catch {
+      return raw;
+    }
+  },
+  serialize: JSON.stringify,
+};
 
 const INSTALL_COMMAND = navigator.userAgent.toLowerCase().includes('windows')
   ? `iex "& { $(iwr -useb ${REPO_RAW}/install.ps1) } ${__APP_NAME__}"`
@@ -20,14 +31,16 @@ type UpdateBannerProps = {
 };
 
 const UpdateBanner = ({ releaseUrl, version, className }: UpdateBannerProps) => {
-  const [dismissed, setDismissed] = useState(
-    () => localStorage.getItem(STORAGE_KEY) === releaseUrl,
+  const [dismissedRelease, setDismissedRelease] = usePersistentState<string | null>(
+    'update-dismissed',
+    null,
+    dismissedCodec,
   );
   const [copied, setCopied] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout>>();
   useEffect(() => () => clearTimeout(timerRef.current), []);
 
-  if (dismissed) return null;
+  if (dismissedRelease === releaseUrl) return null;
 
   const handleCopy = () => {
     Spicetify.Platform.ClipboardAPI.copy(INSTALL_COMMAND);
@@ -36,10 +49,7 @@ const UpdateBanner = ({ releaseUrl, version, className }: UpdateBannerProps) => 
     timerRef.current = setTimeout(() => setCopied(false), COPY_FEEDBACK_MS);
   };
 
-  const handleDismiss = () => {
-    localStorage.setItem(STORAGE_KEY, releaseUrl);
-    setDismissed(true);
-  };
+  const handleDismiss = () => setDismissedRelease(releaseUrl);
 
   return (
     <div className={className}>

@@ -1,18 +1,17 @@
 import { t } from '../i18n';
 import { cn } from '@shared/lib';
 import NodeRow from './node-row';
-import React, { useMemo } from 'react';
-import { NODE_TYPE } from '../constants';
 import NodeTypeDot from './node-type-dot';
-import { FOCUS_RING } from './chrome-styles';
+import { NODE_TYPE } from '../constants';
 import { monogram } from '../graph/node-style';
+import { FOCUS_RING } from '@ui/styles/surfaces';
 import { useGraphPalette } from '../graph/theme';
-import { isPlayable } from '../graph/node-query';
+import { PANEL_SURFACE } from '../styles/chrome';
 import { canExpand } from '../services/expand-node';
-import type { NodeType, GraphNode } from '../types';
 import type { MusicGraph } from '../graph/music-graph';
-import { queueTrack } from '../services/spotify-actions';
+import type { NodeType, GraphNode } from '../types/graph';
 import { toDateString, openUriInClient } from '@shared/lib';
+import React, { memo, useMemo, useRef, useEffect } from 'react';
 import {
   IconButton,
   TextComponent,
@@ -20,6 +19,15 @@ import {
   SpicetifyIcon,
   ButtonSecondary,
 } from '@ui/components';
+
+const NEIGHBOR_CAP = 120;
+
+const PLAYABLE = new Set<NodeType>([
+  NODE_TYPE.TRACK,
+  NODE_TYPE.ARTIST,
+  NODE_TYPE.ALBUM,
+  NODE_TYPE.PLAYLIST,
+]);
 
 type Props = {
   node: GraphNode;
@@ -30,9 +38,11 @@ type Props = {
   expandingUri: string | null;
   focused: boolean;
   pinned: boolean;
+  marked: boolean;
   onExpand: (node: GraphNode) => void;
   onFocus: (node: GraphNode) => void;
   onSelect: (node: GraphNode) => void;
+  onToggleMark: () => void;
   onClearFocus: () => void;
   onUnpin: () => void;
   onRemove: (node: GraphNode) => void;
@@ -47,8 +57,8 @@ const NodeAvatar = ({ node, image }: { node: GraphNode; image?: string }) => {
     );
   return (
     <span
-      className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg text-lg font-semibold text-white shadow-md"
-      style={{ backgroundColor: palette.color[node.type] }}
+      className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg text-lg font-semibold shadow-md"
+      style={{ backgroundColor: palette.color[node.type], color: palette.text }}
     >
       {monogram(node.label)}
     </span>
@@ -79,6 +89,34 @@ const ActionButton = ({
   );
 };
 
+const NeighborList = memo(
+  ({ neighbors, onSelect }: { neighbors: GraphNode[]; onSelect: (node: GraphNode) => void }) => {
+    const shown = neighbors.slice(0, NEIGHBOR_CAP);
+    const overflow = neighbors.length - shown.length;
+    return (
+      <>
+        <ul className="flex flex-col gap-0.5">
+          {shown.map((n) => (
+            <NodeRow
+              key={n.uri}
+              type={n.type}
+              label={n.label}
+              revealTag
+              onSelect={() => onSelect(n)}
+            />
+          ))}
+        </ul>
+        {overflow > 0 && (
+          <TextComponent variant="minuet" semanticColor="textSubdued">
+            {t('inspector.moreConnections', { count: overflow })}
+          </TextComponent>
+        )}
+      </>
+    );
+  },
+);
+NeighborList.displayName = 'NeighborList';
+
 const Inspector = ({
   node,
   graph,
@@ -88,9 +126,11 @@ const Inspector = ({
   expandingUri,
   focused,
   pinned,
+  marked,
   onExpand,
   onFocus,
   onSelect,
+  onToggleMark,
   onClearFocus,
   onUnpin,
   onRemove,
@@ -102,10 +142,33 @@ const Inspector = ({
     for (const n of neighbors) counts.set(n.type, (counts.get(n.type) ?? 0) + 1);
     return [...counts].sort((a, b) => b[1] - a[1]);
   }, [neighbors]);
-  const playable = isPlayable(node.type);
+  const playable = PLAYABLE.has(node.type);
+  const panelRef = useRef<HTMLElement>(null);
+  const openedFrom = useRef<Element | null>(null);
+
+  useEffect(() => {
+    openedFrom.current = document.activeElement;
+    return () => {
+      const origin = openedFrom.current;
+      if (origin instanceof HTMLElement && origin.isConnected)
+        origin.focus({ preventScroll: true });
+    };
+  }, []);
+
+  useEffect(() => {
+    panelRef.current?.focus({ preventScroll: true });
+  }, [node.uri]);
 
   return (
-    <aside className="animate-fade-in-up relative z-20 my-3 me-3 flex w-80 shrink-0 flex-col overflow-hidden rounded-2xl border border-spice-subtext/15 bg-spice-card/85 shadow-xl shadow-black/20 backdrop-blur-md">
+    <aside
+      ref={panelRef}
+      tabIndex={-1}
+      aria-label={node.label}
+      className={cn(
+        'animate-fade-in-up absolute bottom-16 end-3 top-14 z-20 flex w-80 flex-col overflow-hidden',
+        PANEL_SURFACE,
+      )}
+    >
       <header className="flex shrink-0 items-center justify-between gap-2 border-b border-spice-subtext/10 px-4 py-2.5">
         <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-spice-subtext">
           <NodeTypeDot type={node.type} className="h-2 w-2" />
@@ -156,14 +219,16 @@ const Inspector = ({
               primary
               icon="play"
               label={t('inspector.play')}
-              onClick={() => Spicetify.Player.playUri(node.uri)}
+              onClick={() => void Spicetify.Player.playUri(node.uri)}
             />
           )}
           {node.type === NODE_TYPE.TRACK && (
             <ActionButton
               icon="queue"
               label={t('inspector.queue')}
-              onClick={() => queueTrack(node.uri)}
+              onClick={() =>
+                void Spicetify.addToQueue([{ uri: node.uri }] as Spicetify.ContextTrack[])
+              }
             />
           )}
           {playable && (
@@ -173,7 +238,7 @@ const Inspector = ({
               onClick={() => openUriInClient(node.uri)}
             />
           )}
-          {canExpand(node.type) && !expanded.has(node.uri) && (
+          {canExpand(node) && !expanded.has(node.uri) && (
             <ActionButton
               icon="plus-alt"
               label={expandingUri === node.uri ? t('inspector.expanding') : t('inspector.expand')}
@@ -188,6 +253,11 @@ const Inspector = ({
               onClick={() => onFocus(node)}
             />
           )}
+          <ActionButton
+            icon={marked ? 'check' : 'plus2px'}
+            label={marked ? t('inspector.unmark') : t('inspector.mark')}
+            onClick={onToggleMark}
+          />
           {pinned && <ActionButton icon="locked" label={t('inspector.unpin')} onClick={onUnpin} />}
           <ActionButton icon="minus" label={t('inspector.remove')} onClick={() => onRemove(node)} />
         </div>
@@ -208,17 +278,7 @@ const Inspector = ({
           )}
         </div>
 
-        <ul className="flex flex-col gap-0.5">
-          {neighbors.map((n) => (
-            <NodeRow
-              key={n.uri}
-              type={n.type}
-              label={n.label}
-              revealTag
-              onSelect={() => onSelect(n)}
-            />
-          ))}
-        </ul>
+        <NeighborList neighbors={neighbors} onSelect={onSelect} />
       </div>
     </aside>
   );

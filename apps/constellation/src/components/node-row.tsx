@@ -1,34 +1,9 @@
 import React from 'react';
 import { t } from '../i18n';
 import { cn } from '@shared/lib';
-import type { NodeType } from '../types';
 import NodeTypeDot from './node-type-dot';
-import { SpicetifyIcon } from '@ui/components';
-import { FOCUS_RING, FOCUS_RING_INSET } from './chrome-styles';
-
-export const RowAction = ({
-  icon,
-  label,
-  onClick,
-}: {
-  icon: Spicetify.Icon;
-  label: string;
-  onClick: () => void;
-}) => (
-  <button
-    type="button"
-    onClick={onClick}
-    aria-label={label}
-    title={label}
-    className={cn(
-      'flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-transparent bg-transparent text-spice-subtext transition-colors',
-      'opacity-0 hover:bg-spice-text/10 hover:text-spice-text group-hover:opacity-100 focus-visible:opacity-100',
-      FOCUS_RING,
-    )}
-  >
-    <SpicetifyIcon icon={icon} size={13} />
-  </button>
-);
+import type { NodeType } from '../types/graph';
+import { FOCUS_RING_INSET } from '../styles/chrome';
 
 export const NodeRowContent = ({
   type,

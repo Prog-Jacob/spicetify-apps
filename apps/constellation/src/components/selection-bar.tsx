@@ -1,43 +1,55 @@
 import React from 'react';
 import { t } from '../i18n';
 import { cn } from '@shared/lib';
-import { PATH_RADIUS } from '../graph/common-neighborhood';
-import { PANEL_SURFACE, ACTION_BUTTON } from './chrome-styles';
-import { ToggleChip, SpicetifyIcon, Slider } from '@ui/components';
+import { PATH_DETOUR } from '../graph/paths-between';
+import { PANEL_SURFACE, ACTION_BUTTON } from '../styles/chrome';
+import { ToggleChip, SpicetifyIcon, Slider, Divider } from '@ui/components';
 
 type Props = {
   count: number;
+  undoCount: number;
   pathMode: boolean;
   onTogglePath: () => void;
-  radius: number;
-  onRadiusChange: (value: number) => void;
+  detour: number;
+  onDetourChange: (value: number) => void;
   onRemove: () => void;
+  onUndo: () => void;
   onClear: () => void;
 };
 
-const Divider = () => <span className="h-4 w-px bg-spice-subtext/20" />;
-
 const SelectionBar = ({
   count,
+  undoCount,
   pathMode,
   onTogglePath,
-  radius,
-  onRadiusChange,
+  detour,
+  onDetourChange,
   onRemove,
+  onUndo,
   onClear,
 }: Props) => {
   const canPath = count >= 2;
   return (
     <div
       className={cn(
-        'animate-fade-in-up flex items-center gap-2 py-1.5 pe-1.5 ps-3.5',
+        'animate-fade-in-up flex max-w-full items-center gap-2 overflow-x-auto py-1.5 pe-1.5 ps-3.5',
         PANEL_SURFACE,
       )}
     >
-      <span className="text-xs font-semibold tabular-nums text-spice-text">
-        {t('selection.count', { count })}
-      </span>
-      <Divider />
+      {undoCount > 0 && (
+        <button type="button" onClick={onUndo} className={ACTION_BUTTON}>
+          <SpicetifyIcon icon="skip-back" size={11} />
+          {t('selection.undo', { count: undoCount })}
+        </button>
+      )}
+      {count > 0 && (
+        <>
+          <span className="shrink-0 text-xs font-semibold tabular-nums text-spice-text">
+            {t('selection.count', { count })}
+          </span>
+          <Divider />
+        </>
+      )}
       {canPath && (
         <ToggleChip active={pathMode} onToggle={onTogglePath} variant="outline">
           <span className="flex items-center gap-1.5">
@@ -46,33 +58,37 @@ const SelectionBar = ({
           </span>
         </ToggleChip>
       )}
-      {canPath && pathMode && (
+      {pathMode && (
         <Slider
           compact
           className="w-40"
-          label={t('selection.reach')}
-          ariaLabel={t('selection.reach')}
-          value={radius}
-          min={PATH_RADIUS.min}
-          max={PATH_RADIUS.max}
+          label={t('selection.detour')}
+          ariaLabel={t('selection.detourHint')}
+          value={detour}
+          min={PATH_DETOUR.min}
+          max={PATH_DETOUR.max}
           step={1}
-          valueLabel={radius}
-          onChange={onRadiusChange}
+          valueLabel={`+${detour}`}
+          onChange={onDetourChange}
         />
       )}
-      {canPath && <Divider />}
-      <button type="button" onClick={onRemove} className={ACTION_BUTTON}>
-        <SpicetifyIcon icon="minus" size={11} />
-        {t('selection.remove')}
-      </button>
-      <button
-        type="button"
-        onClick={onClear}
-        className={ACTION_BUTTON}
-        aria-label={t('selection.clear')}
-      >
-        <SpicetifyIcon icon="x" size={11} />
-      </button>
+      {count > 0 && (
+        <>
+          {canPath && <Divider />}
+          <button type="button" onClick={onRemove} className={ACTION_BUTTON}>
+            <SpicetifyIcon icon="minus" size={11} />
+            {t('selection.remove')}
+          </button>
+          <button
+            type="button"
+            onClick={onClear}
+            className={ACTION_BUTTON}
+            aria-label={t('selection.clear')}
+          >
+            <SpicetifyIcon icon="x" size={11} />
+          </button>
+        </>
+      )}
     </div>
   );
 };

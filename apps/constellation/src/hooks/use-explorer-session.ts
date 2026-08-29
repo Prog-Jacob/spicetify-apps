@@ -1,20 +1,15 @@
-import type { GraphNode } from '../types';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   loadSession,
   emptySession,
   persistSession,
+  type RemovedEntry,
   type ExplorerSession,
 } from '../services/session-store';
 
-/**
- * Persisted user intent: entities the user added (`seeds`, replayed onto each fresh crawl) and
- * positions they pinned (`pins`, reapplied by the view). `seedsReady` resolves once for the replay.
- */
 export const useExplorerSession = () => {
   const [session, setSession] = useState<ExplorerSession>(emptySession);
   const sessionRef = useRef(session);
-  sessionRef.current = session;
 
   const seedsReady = useRef<Promise<ExplorerSession>>();
   if (!seedsReady.current) seedsReady.current = loadSession();
@@ -44,31 +39,34 @@ export const useExplorerSession = () => {
       mutate((s) => (s.seeds.includes(uri) ? s : { ...s, seeds: [...s.seeds, uri] })),
     [mutate],
   );
-  const removeNode = useCallback(
-    (node: GraphNode) =>
-      mutate((s) => ({
-        ...s,
-        seeds: s.seeds.filter((u) => u !== node.uri),
-        removed: s.removed.some((e) => e.uri === node.uri)
-          ? s.removed
-          : [...s.removed, { uri: node.uri, type: node.type, label: node.label }],
-      })),
+
+  // Batched: pruning a multi-node selection is one state write and one persist, not N.
+  const removeNodes = useCallback(
+    (entries: RemovedEntry[]) =>
+      mutate((s) => {
+        const known = new Set(s.removed.map((entry) => entry.node.uri));
+        const added = entries.filter((entry) => !known.has(entry.node.uri));
+        return added.length ? { ...s, removed: [...s.removed, ...added] } : s;
+      }),
     [mutate],
   );
+
   const restoreNode = useCallback(
     (uri: string) =>
       mutate((s) =>
-        s.removed.some((e) => e.uri === uri)
-          ? { ...s, removed: s.removed.filter((e) => e.uri !== uri) }
+        s.removed.some((entry) => entry.node.uri === uri)
+          ? { ...s, removed: s.removed.filter((entry) => entry.node.uri !== uri) }
           : s,
       ),
     [mutate],
   );
+
   const pinNode = useCallback(
     (uri: string, x: number, y: number) =>
       mutate((s) => ({ ...s, pins: { ...s.pins, [uri]: { x, y } } })),
     [mutate],
   );
+
   const unpinNode = useCallback(
     (uri: string) =>
       mutate((s) => {
@@ -79,17 +77,19 @@ export const useExplorerSession = () => {
       }),
     [mutate],
   );
+
   const releaseAllPins = useCallback(
     () => mutate((s) => (Object.keys(s.pins).length ? { ...s, pins: {} } : s)),
     [mutate],
   );
 
   return {
+    seeds: session.seeds,
     pins: session.pins,
     removed: session.removed,
     seedsReady: seedsReady.current,
     addSeed,
-    removeNode,
+    removeNodes,
     restoreNode,
     pinNode,
     unpinNode,

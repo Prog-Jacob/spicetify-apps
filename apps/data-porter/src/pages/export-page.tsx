@@ -9,7 +9,7 @@ import { ALL_DATA_TYPES as DATA_TYPES } from '../data-types';
 import type { DataType, ExportResult } from '../types/export';
 import { exportPublicProfile } from '../services/profile-export';
 import { EXPORT_FILENAME_PREFIX, EXPORT_STATUS } from '../constants';
-import { cn, downloadJson, notifyError, ValidationError } from '@shared/lib';
+import { cn, downloadJson, notifyDone, notifyError, ValidationError } from '@shared/lib';
 import {
   Input,
   ErrorCard,
@@ -210,7 +210,7 @@ const ExportPage = ({ onGoToImport }: ExportPageProps) => {
           onDownload={() => {
             const fileName = `${EXPORT_FILENAME_PREFIX}-${result.userName ?? 'unknown'}-${new Date().toISOString().slice(0, 10)}.json`;
             downloadJson(result.data, fileName);
-            Spicetify.showNotification(
+            notifyDone(
               <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <SpicetifyIcon icon="check-alt-fill" size={14} />
                 {t('export.downloaded')}

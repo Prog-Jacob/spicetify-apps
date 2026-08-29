@@ -1,8 +1,8 @@
 import React from 'react';
 import { t } from '../i18n';
 import { cn } from '@shared/lib';
-import { IconButton } from '@ui/components';
-import { PANEL_SURFACE } from './chrome-styles';
+import { PANEL_SURFACE } from '../styles/chrome';
+import { Divider, IconButton } from '@ui/components';
 
 type Props = {
   onZoomIn: () => void;
@@ -11,10 +11,10 @@ type Props = {
 };
 
 const GraphNavControls = ({ onZoomIn, onZoomOut, onFit }: Props) => (
-  <div className={cn('flex flex-col gap-0.5 rounded-xl p-1', PANEL_SURFACE)}>
+  <div className={cn('flex items-center gap-0.5 rounded-xl p-1', PANEL_SURFACE)}>
     <IconButton icon="plus2px" label={t('nav.zoomIn')} onClick={onZoomIn} />
     <IconButton icon="minus" label={t('nav.zoomOut')} onClick={onZoomOut} />
-    <div className="mx-1.5 my-0.5 h-px bg-spice-subtext/12" />
+    <Divider className="mx-0.5 my-1.5 h-auto self-stretch bg-spice-subtext/12" />
     <IconButton icon="fullscreen" label={t('nav.fit')} onClick={onFit} />
   </div>
 );

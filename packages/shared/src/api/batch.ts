@@ -60,9 +60,10 @@ export async function paginate<T>(
     signal?.throwIfAborted();
     const page = validatePage<T>(await fetch({ limit: PAGE_SIZE, offset }), context);
     items.push(...page.items);
-    onProgress?.({ current: items.length, total: page.totalLength, label });
-    if (page.items.length === 0 || offset + page.items.length >= page.totalLength) break;
+    onProgress?.({ current: items.length, total: Math.max(page.totalLength, items.length), label });
     offset += page.items.length;
+    if (page.items.length < PAGE_SIZE) break;
+    if (page.totalLength > 0 && offset >= page.totalLength) break;
   }
 
   return items;
