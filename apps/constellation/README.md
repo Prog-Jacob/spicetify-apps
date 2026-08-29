@@ -56,7 +56,7 @@ Open **Controls &rarr; View** to reshape the graph without rebuilding it:
 - **Collaborations** surfaces artist-to-artist links.
 - **Connected only** hides orphan nodes.
 - **Added since** filters to entities you saved after a chosen date.
-- **Expand all** pulls connections across the visible graph, with cancellable progress; **Release pins** frees everything you've pinned.
+- **Expand visible** pulls connections across the visible graph, with cancellable progress; **Refresh library** re-crawls without reloading Spotify; **Release pins** frees everything you've pinned.
 
 ---
 
@@ -78,7 +78,7 @@ Open **Controls &rarr; View** to reshape the graph without rebuilding it:
 
 - **Add** any profile, artist, album, or playlist by pasting its Spotify link or URI.
 - Friends and followed profiles, along with their public playlists, are crawled in automatically.
-- **Remove** anything you don't want, and **Restore** it later from the removed list.
+- **Remove** anything you don't want, and **Restore** it later from the removed list, edges and all.
 
 ---
 
