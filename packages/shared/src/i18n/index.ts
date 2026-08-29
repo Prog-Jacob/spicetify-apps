@@ -8,6 +8,7 @@ export type {
   TranslationDict,
 } from './types';
 export { loadAllTranslations } from './load-translations';
+export { createAppTranslator } from './create-app-translator';
 
 const getLocale = (): string => {
   try {
@@ -51,8 +52,7 @@ const resolvePlural = (
  * import { t as sharedT } from '@ui/i18n';
  * import { createTranslator, loadAllTranslations } from '@shared/i18n';
  *
- * export const t = createTranslator({ en });
- * export const loadTranslations = () => loadAllTranslations(sharedT, t);
+ * export const { t, loadTranslations } = createAppTranslator(en, ui);
  *
  * t('export.title');
  * t('export.count', { selected: 3, total: 5 });

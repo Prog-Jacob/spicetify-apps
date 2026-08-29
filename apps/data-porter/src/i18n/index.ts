@@ -1,11 +1,7 @@
 import en from './en';
-import { t as sharedT, en as sharedEn } from '@ui/i18n';
-import { createTranslator, loadAllTranslations } from '@shared/i18n';
+import * as ui from '@ui/i18n';
+import { createAppTranslator } from '@shared/i18n';
 
-const combinedEnTranslations = { ...sharedEn, ...en };
+export const { t, loadTranslations } = createAppTranslator(en, ui);
 
-export const t = createTranslator({ en: combinedEnTranslations });
-
-export type MessageKey = keyof typeof combinedEnTranslations & string;
-
-export const loadTranslations = () => loadAllTranslations(sharedT, t, __BUNDLED_LOCALES__);
+export type MessageKey = keyof typeof en | keyof typeof ui.en;
