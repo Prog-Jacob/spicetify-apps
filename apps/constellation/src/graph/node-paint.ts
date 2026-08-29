@@ -1,3 +1,4 @@
+import type { GraphPalette } from './theme';
 import type { RenderNode } from './render-data';
 import { effectiveRadius, AVATAR_MIN_SCREEN_RADIUS, LABEL_MIN_SCREEN_RADIUS } from './node-style';
 
@@ -39,6 +40,7 @@ const paintAvatar = (
   ctx: CanvasRenderingContext2D,
   r: number,
   color: string,
+  monogramColor: string,
   img?: HTMLImageElement,
 ) => {
   const x = node.x ?? 0;
@@ -59,7 +61,7 @@ const paintAvatar = (
     ctx.fillStyle = unitSheen(ctx);
     ctx.fillRect(-1, -1, 2, 2);
     ctx.restore();
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+    ctx.fillStyle = monogramColor;
     ctx.font = `600 ${r}px sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -71,7 +73,13 @@ const paintAvatar = (
 let labelFont = '';
 let labelFontScale = NaN;
 
-const paintLabel = (node: RenderNode, ctx: CanvasRenderingContext2D, scale: number, r: number) => {
+const paintLabel = (
+  node: RenderNode,
+  ctx: CanvasRenderingContext2D,
+  scale: number,
+  r: number,
+  palette: GraphPalette,
+) => {
   if (scale !== labelFontScale) {
     labelFontScale = scale;
     labelFont = `600 ${LABEL_SCREEN_PX / scale}px sans-serif`;
@@ -82,13 +90,13 @@ const paintLabel = (node: RenderNode, ctx: CanvasRenderingContext2D, scale: numb
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
   ctx.lineWidth = 3 / scale;
-  ctx.strokeStyle = 'rgba(0, 0, 0, 0.7)';
-  ctx.strokeText(node.label, x, y);
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
-  ctx.fillText(node.label, x, y);
+  ctx.strokeStyle = palette.surface;
+  ctx.strokeText(node.shortLabel, x, y);
+  ctx.fillStyle = palette.text;
+  ctx.fillText(node.shortLabel, x, y);
 };
 
-export type NodeEmphasis = 'active' | 'dim' | 'none';
+type NodeEmphasis = 'active' | 'dim' | 'none';
 
 export const emphasisFor = (
   uri: string,
@@ -99,56 +107,79 @@ export const emphasisFor = (
 
 export type PaintOptions = {
   color: string;
+  palette: GraphPalette;
   images: Map<string, string>;
   sizeByDegree: boolean;
   emphasis: NodeEmphasis;
   expandable: boolean;
+  expanding: boolean;
   pinned: boolean;
   marked: boolean;
+  dimAlpha: number;
 };
 
-const MARK_RING = 'rgba(96, 208, 255, 0.95)';
+/**
+ * Hovering sweeps focus across the graph, so a hard dim strobes everything the pointer grazes.
+ * A deliberate selection is a held state and can afford to be much stronger than a transient hover.
+ */
+export const DIM_ALPHA = { hover: 0.4, held: 0.16 };
 
-const paintPinBadge = (ctx: CanvasRenderingContext2D, x: number, y: number, r: number) => {
+const paintPinBadge = (
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  r: number,
+  palette: GraphPalette,
+) => {
   const bx = x - r * 0.72;
   const by = y - r * 0.72;
   const br = r * 0.28;
-  // Mirror of the expand badge to the top-left, so a pinned expandable node shows both.
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+  ctx.fillStyle = palette.surface;
   ctx.beginPath();
   ctx.arc(bx, by, br + r * 0.05, 0, TWO_PI);
   ctx.fill();
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+  ctx.fillStyle = palette.text;
   ctx.beginPath();
   ctx.arc(bx, by, br, 0, TWO_PI);
   ctx.fill();
-  ctx.fillStyle = 'rgba(30, 215, 96, 0.95)';
+  ctx.fillStyle = palette.accent;
   ctx.beginPath();
   ctx.arc(bx, by, br * 0.5, 0, TWO_PI);
   ctx.fill();
 };
 
-const paintExpandBadge = (ctx: CanvasRenderingContext2D, x: number, y: number, r: number) => {
+const paintExpandBadge = (
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  r: number,
+  palette: GraphPalette,
+  expanding: boolean,
+) => {
   const bx = x + r * 0.72;
   const by = y - r * 0.72;
   const br = r * 0.3;
-  // Dark seat first so the badge reads cleanly over the node rim.
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+  ctx.fillStyle = palette.surface;
   ctx.beginPath();
   ctx.arc(bx, by, br + r * 0.05, 0, TWO_PI);
   ctx.fill();
-  ctx.fillStyle = 'rgba(30, 215, 96, 0.95)';
+  ctx.fillStyle = palette.accent;
   ctx.beginPath();
   ctx.arc(bx, by, br, 0, TWO_PI);
   ctx.fill();
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.95)';
+  ctx.strokeStyle = palette.text;
   ctx.lineWidth = br * 0.28;
   const s = br * 0.5;
   ctx.beginPath();
-  ctx.moveTo(bx - s, by);
-  ctx.lineTo(bx + s, by);
-  ctx.moveTo(bx, by - s);
-  ctx.lineTo(bx, by + s);
+  if (expanding) {
+    ctx.moveTo(bx - s, by);
+    ctx.lineTo(bx + s, by);
+  } else {
+    ctx.moveTo(bx - s, by);
+    ctx.lineTo(bx + s, by);
+    ctx.moveTo(bx, by - s);
+    ctx.lineTo(bx, by + s);
+  }
   ctx.stroke();
 };
 
@@ -156,15 +187,16 @@ export const paintNode = (
   node: RenderNode,
   ctx: CanvasRenderingContext2D,
   scale: number,
-  { color, images, sizeByDegree, emphasis, expandable, pinned, marked }: PaintOptions,
+  opts: PaintOptions,
 ) => {
+  const { color, palette, images, sizeByDegree, emphasis, expandable, pinned, marked } = opts;
   const r = effectiveRadius(node.radius, node.degree, sizeByDegree);
   const screenR = r * scale;
   const x = node.x ?? 0;
   const y = node.y ?? 0;
 
   ctx.save();
-  if (emphasis === 'dim' && !marked) ctx.globalAlpha = 0.16;
+  if (emphasis === 'dim' && !marked) ctx.globalAlpha = opts.dimAlpha;
   if (emphasis === 'active') {
     ctx.shadowColor = color;
     ctx.shadowBlur = 12;
@@ -179,7 +211,7 @@ export const paintNode = (
     ctx.arc(x, y, r, 0, TWO_PI);
     ctx.fill();
   } else {
-    paintAvatar(node, ctx, r, color, img);
+    paintAvatar(node, ctx, r, color, palette.text, img);
     ctx.lineWidth = 2 / scale;
     ctx.strokeStyle = color;
     ctx.beginPath();
@@ -190,7 +222,7 @@ export const paintNode = (
 
   if (emphasis === 'active') {
     ctx.lineWidth = 2.5 / scale;
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+    ctx.strokeStyle = palette.ring;
     ctx.beginPath();
     ctx.arc(x, y, r + 3 / scale, 0, TWO_PI);
     ctx.stroke();
@@ -199,19 +231,22 @@ export const paintNode = (
   if (marked) {
     ctx.globalAlpha = 1;
     ctx.lineWidth = 2.5 / scale;
-    ctx.strokeStyle = MARK_RING;
+    ctx.strokeStyle = palette.mark;
     ctx.beginPath();
     ctx.arc(x, y, r + 4 / scale, 0, TWO_PI);
     ctx.stroke();
   }
 
-  if (expandable && emphasis === 'active' && screenR >= AVATAR_MIN_SCREEN_RADIUS) {
-    paintExpandBadge(ctx, x, y, r);
-  }
+  if (
+    (emphasis === 'active' || opts.expanding) &&
+    expandable &&
+    screenR >= AVATAR_MIN_SCREEN_RADIUS
+  )
+    paintExpandBadge(ctx, x, y, r, palette, opts.expanding);
 
-  if (pinned && screenR >= AVATAR_MIN_SCREEN_RADIUS) paintPinBadge(ctx, x, y, r);
+  if (pinned && screenR >= AVATAR_MIN_SCREEN_RADIUS) paintPinBadge(ctx, x, y, r, palette);
 
   if (screenR >= LABEL_MIN_SCREEN_RADIUS || emphasis === 'active' || marked)
-    paintLabel(node, ctx, scale, r);
+    paintLabel(node, ctx, scale, r, palette);
   ctx.restore();
 };

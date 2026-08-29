@@ -1,4 +1,4 @@
-import type { NodeType } from '../types';
+import type { NodeType } from '../types/graph';
 
 export const NODE_REL_SIZE = 4;
 export const AVATAR_MIN_SCREEN_RADIUS = 6;
@@ -23,7 +23,7 @@ export const nodeRadius = (type: NodeType): number =>
 // Log-compressed and capped so mega-hubs don't dwarf the rest.
 const DEGREE_SCALE_K = 0.35;
 const DEGREE_SCALE_MAX = 3;
-export const degreeScale = (degree: number): number =>
+const degreeScale = (degree: number): number =>
   Math.min(1 + Math.log2(1 + degree) * DEGREE_SCALE_K, DEGREE_SCALE_MAX);
 
 export const effectiveRadius = (radius: number, degree: number, sizeByDegree: boolean): number =>
@@ -34,6 +34,10 @@ const GOLDEN_ANGLE = 137.508;
 export const clusterColor = (community: number): string =>
   `hsl(${(community * GOLDEN_ANGLE) % 360}, 60%, 58%)`;
 
+const DRAG_SLOP_PX = 4;
+export const isDragSlop = (dx: number, dy: number, zoom: number): boolean =>
+  Math.hypot(dx, dy) * zoom < DRAG_SLOP_PX;
+
 export const monogram = (label: string): string => {
   const first = label
     .trim()
@@ -41,3 +45,7 @@ export const monogram = (label: string): string => {
     .charAt(0);
   return (first || '?').toUpperCase();
 };
+
+const LABEL_MAX_CHARS = 22;
+export const shortLabel = (label: string): string =>
+  label.length > LABEL_MAX_CHARS ? `${label.slice(0, LABEL_MAX_CHARS - 1).trimEnd()}…` : label;

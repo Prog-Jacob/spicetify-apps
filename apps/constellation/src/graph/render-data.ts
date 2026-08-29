@@ -1,13 +1,14 @@
 import type { LinkObject } from 'force-graph';
 import type { MusicGraph } from './music-graph';
-import { monogram, nodeRadius } from './node-style';
-import type { GraphNode, EdgeType } from '../types';
+import type { GraphNode, EdgeType } from '../types/graph';
+import { monogram, shortLabel, nodeRadius } from './node-style';
 
 export type RenderNode = GraphNode & {
   id: string;
   radius: number;
   degree: number;
   monogram: string;
+  shortLabel: string;
   x?: number;
   y?: number;
   fx?: number;
@@ -16,8 +17,13 @@ export type RenderNode = GraphNode & {
 
 export type RenderLink = LinkObject<RenderNode> & { type: EdgeType };
 
-export const projectNodes = (graph: MusicGraph, cache: Map<string, RenderNode>): RenderNode[] =>
-  graph.nodes().map((node) => {
+export const projectNodes = (graph: MusicGraph, cache: Map<string, RenderNode>): RenderNode[] => {
+  const nodes = graph.nodes();
+  if (cache.size) {
+    const live = new Set(nodes.map((node) => node.uri));
+    for (const uri of cache.keys()) if (!live.has(uri)) cache.delete(uri);
+  }
+  return nodes.map((node) => {
     const degree = graph.degree(node.uri);
     const existing = cache.get(node.uri);
     if (existing) {
@@ -26,6 +32,7 @@ export const projectNodes = (graph: MusicGraph, cache: Map<string, RenderNode>):
       if (existing.label !== node.label) {
         existing.label = node.label;
         existing.monogram = monogram(node.label);
+        existing.shortLabel = shortLabel(node.label);
       }
       return existing;
     }
@@ -34,8 +41,10 @@ export const projectNodes = (graph: MusicGraph, cache: Map<string, RenderNode>):
       id: node.uri,
       radius: nodeRadius(node.type),
       monogram: monogram(node.label),
+      shortLabel: shortLabel(node.label),
       degree,
     };
     cache.set(node.uri, created);
     return created;
   });
+};

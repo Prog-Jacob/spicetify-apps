@@ -1,6 +1,6 @@
 import { EDGE_TYPE } from '../constants';
-import type { EdgeType } from '../types';
 import type ForceGraph from 'force-graph';
+import type { EdgeType } from '../types/graph';
 import { forceX, forceY, forceCollide } from 'd3-force-3d';
 import type { RenderNode, RenderLink } from './render-data';
 
