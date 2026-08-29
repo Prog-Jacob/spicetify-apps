@@ -6,7 +6,7 @@ export type LibraryTrackItem = {
   name: string;
   album: { uri: string; name: string; images?: SpotifyImage[] };
   artists: { uri: string; name: string }[];
-  addedAt?: number;
+  addedAt?: string;
 };
 
 export type LibraryContentItem = {
@@ -16,7 +16,7 @@ export type LibraryContentItem = {
   artists?: { uri: string; name: string }[];
   images?: SpotifyImage[];
   publisher?: string;
-  addedAt?: number;
+  addedAt?: string;
 };
 
 export type LibraryPage<T> = {
@@ -32,7 +32,7 @@ export type PlaylistItemDetail = {
   artists?: { name: string }[];
   album?: { name: string };
   show?: { name: string };
-  addedAt?: number;
+  addedAt?: string;
 };
 
 export type PlaylistDetail = {

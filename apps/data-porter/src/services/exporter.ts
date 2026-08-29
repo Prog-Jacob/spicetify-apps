@@ -10,6 +10,7 @@ import {
 } from '@shared/api';
 import {
   sleep,
+  toEpochMs,
   SPOTIFY_URI,
   notifyError,
   toDateString,
@@ -46,7 +47,8 @@ export const emptyLibrary = (): ExportedLibrary => ({
 });
 
 function toExportedPlaylistItem(item: PlaylistItemDetail): ExportedPlaylistItem {
-  const addedDate = item.addedAt ? toDateString(item.addedAt) : '';
+  const added = toEpochMs(item.addedAt);
+  const addedDate = added ? toDateString(added) : '';
   const base = { track: null, episode: null, localTrack: null, addedDate };
 
   if (item.uri.startsWith(SPOTIFY_URI.EPISODE))

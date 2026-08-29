@@ -58,9 +58,9 @@ export async function exportPublicProfile(
   onProgress({ current: 0, total: 0, label: t('progress.fetchingArtists') });
 
   const following = await getFollowing(userId);
-  const artists = following
-    .filter((p) => p.uri.startsWith(SPOTIFY_URI.ARTIST))
-    .map((p) => ({ name: p.name ?? p.uri, uri: p.uri }));
+  const artists = following.flatMap(({ uri, name }) =>
+    uri?.startsWith(SPOTIFY_URI.ARTIST) ? [{ name: name ?? uri, uri }] : [],
+  );
 
   if (!playlists.length && !artists.length) {
     warnings.push(t('warn.noPublicData'));
