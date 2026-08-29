@@ -2,9 +2,10 @@ import { t } from '../i18n';
 import { cn } from '@shared/lib';
 import React, { useState } from 'react';
 import { useGraphPalette } from '../graph/theme';
-import { PANEL_SURFACE, FOCUS_RING } from './chrome-styles';
-import { TextComponent, ButtonSecondary } from '@ui/components';
-import { usePersistentState } from '../hooks/use-persistent-state';
+import { FOCUS_RING } from '@ui/styles/surfaces';
+import { PANEL_SURFACE } from '../styles/chrome';
+import { usePersistentState } from '@shared/hooks';
+import { Divider, TextComponent, ButtonSecondary } from '@ui/components';
 
 const Row = ({ label }: { label: string }) => (
   <li className="flex items-start gap-2.5">
@@ -41,7 +42,10 @@ const GraphGuide = () => {
     <div className="relative flex flex-col items-start">
       {open && (
         <div
-          className={`animate-fade-in-up absolute bottom-full start-0 z-20 mb-2 w-72 p-4 ${PANEL_SURFACE}`}
+          className={cn(
+            'animate-fade-in-up absolute bottom-full start-0 z-20 mb-2 w-72 p-4',
+            PANEL_SURFACE,
+          )}
         >
           <TextComponent variant="viola" weight="bold" semanticColor="textBase">
             {t('guide.title')}
@@ -50,10 +54,12 @@ const GraphGuide = () => {
             <Row label={t('guide.click')} />
             <Row label={t('guide.drag')} />
             <Row label={t('guide.mark')} />
+            <Row label={t('guide.open')} />
             <Row label={t('guide.controls')} />
             <Row label={t('guide.zoom')} />
+            <Row label={t('guide.keyboard')} />
           </ul>
-          <div className="mt-3 h-px bg-spice-subtext/10" />
+          <Divider orientation="horizontal" className="mt-3 bg-spice-subtext/10" />
           <div className="mt-3 flex flex-col gap-1.5">
             <Swatch color={palette.link} label={t('guide.legendLibrary')} />
             <Swatch color={palette.color.artist} label={t('guide.legendCollab')} />
@@ -75,7 +81,7 @@ const GraphGuide = () => {
           FOCUS_RING,
         )}
       >
-        {t('guide.help')}
+        {open ? t('guide.hide') : t('guide.help')}
       </button>
     </div>
   );

@@ -1,6 +1,6 @@
 import React from 'react';
 import { cn } from '@shared/lib';
-import type { NodeType } from '../types';
+import type { NodeType } from '../types/graph';
 import { useGraphPalette } from '../graph/theme';
 
 type Props = { type: NodeType; dim?: boolean; className?: string };

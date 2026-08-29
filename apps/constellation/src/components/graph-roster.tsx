@@ -1,12 +1,13 @@
 import { t } from '../i18n';
 import { cn } from '@shared/lib';
-import React, { useMemo } from 'react';
+import NodeRow from './node-row';
 import { TypeChip } from './type-filter';
-import { SECTION_LABEL } from './chrome-styles';
-import NodeRow, { RowAction } from './node-row';
+import { IconButton } from '@ui/components';
+import React, { memo, useMemo } from 'react';
+import { SECTION_LABEL } from '../styles/chrome';
 import { searchNodes } from '../graph/node-query';
-import type { NodeType, GraphNode } from '../types';
 import { NODE_LEGEND_ORDER } from '../graph/node-style';
+import type { NodeType, GraphNode } from '../types/graph';
 
 const CAP = 120;
 
@@ -69,10 +70,12 @@ const GraphRoster = ({
               label={node.label}
               onSelect={() => onSelect(node)}
               trailing={
-                <RowAction
+                <IconButton
                   icon="minus"
                   label={t('inspector.remove')}
                   onClick={() => onRemove(node)}
+                  size={13}
+                  className="h-6 w-6 opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
                 />
               }
             />
@@ -88,4 +91,4 @@ const GraphRoster = ({
   );
 };
 
-export default GraphRoster;
+export default memo(GraphRoster);

@@ -1,8 +1,8 @@
 import React from 'react';
 import { t } from '../i18n';
-import type { NodeType } from '../types';
 import NodeTypeDot from './node-type-dot';
 import { ToggleChip } from '@ui/components';
+import type { NodeType } from '../types/graph';
 import { NODE_LEGEND_ORDER } from '../graph/node-style';
 
 type Props = {
