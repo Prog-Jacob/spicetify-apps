@@ -1,7 +1,9 @@
 import React from 'react';
+import Input from './input';
 import { t } from '../i18n';
 import { cn } from '@shared/lib';
-import { Input, SpicetifyIcon } from '@ui/components';
+import SpicetifyIcon from './icon';
+import { FOCUS_RING } from '../styles/surfaces';
 
 type Props = Omit<React.ComponentProps<typeof Input>, 'value' | 'onChange'> & {
   value: string;
@@ -27,8 +29,11 @@ const SearchField = ({ value, onChange, onClear, placeholder, className, ...rest
       <button
         type="button"
         onClick={onClear ?? (() => onChange(''))}
-        aria-label={t('controls.clearSearch')}
-        className="absolute inset-y-0 end-2 flex items-center text-spice-subtext transition-colors hover:text-spice-text focus-visible:text-spice-text focus-visible:outline-none"
+        aria-label={t('filter.clear')}
+        className={cn(
+          'absolute inset-y-0 end-2 flex items-center rounded-md px-1 text-spice-subtext transition-colors hover:text-spice-text',
+          FOCUS_RING,
+        )}
       >
         <SpicetifyIcon icon="x" size={14} />
       </button>

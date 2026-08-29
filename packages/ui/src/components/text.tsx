@@ -1,4 +1,4 @@
-import { resolveNativeComponent } from './resolve-native';
+import { resolveNativeComponent } from '../lib/resolve-native-component';
 import React, { forwardRef, type CSSProperties, type ComponentProps } from 'react';
 
 const toVar = (sc: string) => `var(--${sc.replace(/([A-Z])/g, '-$1').toLowerCase()})`;

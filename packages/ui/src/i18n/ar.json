@@ -10,5 +10,6 @@
   "progress.counter": "{current} / {total}",
   "update.copyCommand": "نسخ أمر التثبيت",
   "update.viewRelease": "عرض الإصدار",
-  "update.dismiss": "إغلاق"
+  "update.dismiss": "إغلاق",
+  "filter.clear": "مسح البحث"
 }

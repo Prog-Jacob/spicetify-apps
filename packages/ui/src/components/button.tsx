@@ -1,5 +1,5 @@
 import { cn } from '@shared/lib';
-import { resolveNativeComponent } from './resolve-native';
+import { resolveNativeComponent } from '../lib/resolve-native-component';
 import React, { forwardRef, type ComponentProps, type ComponentType } from 'react';
 
 type ButtonProps = ComponentProps<'button'> & {

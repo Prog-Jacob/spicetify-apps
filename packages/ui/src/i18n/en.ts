@@ -5,6 +5,7 @@ const en = {
   cancel: 'Cancel',
   'filter.placeholder': 'Filter by name…',
   'filter.showing': '{filtered} of {total}',
+  'filter.clear': 'Clear search',
   'update.available': 'A new version of {appName} is available',
   'update.copied': 'Copied!',
   'update.update': 'Update',

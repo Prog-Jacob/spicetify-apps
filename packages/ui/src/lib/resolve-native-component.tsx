@@ -1,5 +1,9 @@
 import React, { forwardRef, type ComponentType } from 'react';
 
+/**
+ * Prefers Spotify's own component, falling back to ours. Resolution happens per render, not at
+ * module load, because `Spicetify.ReactComponent` is populated after the bundle is evaluated.
+ */
 export const resolveNativeComponent = <P extends object>(
   name: keyof typeof Spicetify.ReactComponent,
   Fallback: ComponentType<P>,
