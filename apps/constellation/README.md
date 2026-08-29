@@ -41,6 +41,7 @@ connected they are.
 - **Drag** a node to pin it in place; **hover** to highlight its neighbours.
 - **Scroll** or the +/&minus; buttons to zoom, drag the background to pan, and fit the whole graph to view.
 - **Search nodes** by name to jump straight to any entity.
+- **Liked Songs** arrives as a playlist like any other: double-click to pull your saved tracks in.
 
 <img src="preview/graph.webp" width="100%" alt="Inspecting a node and focusing its neighborhood" />
 
@@ -54,7 +55,7 @@ Open **Controls &rarr; View** to reshape the graph without rebuilding it:
 - **Size by connections** scales nodes by how linked they are.
 - **Color by cluster** tints the communities detected in the graph.
 - **Collaborations** surfaces artist-to-artist links.
-- **Connected only** hides orphan nodes.
+- **Hide dead ends** drops items reachable only one way, leaving the interconnected core.
 - **Added since** filters to entities you saved after a chosen date.
 - **Expand visible** pulls connections across the visible graph, with cancellable progress; **Refresh library** re-crawls without reloading Spotify; **Release pins** frees everything you've pinned.
 
@@ -68,7 +69,9 @@ Open **Controls &rarr; View** to reshape the graph without rebuilding it:
 
 ### Paths between nodes
 
-**Shift-click** several nodes to select them, then toggle **Paths between** to spotlight the nodes that sit between your picks. A **Reach** slider widens or tightens how far from each pick still counts.
+**Shift-click** two or more nodes, then toggle **Paths between** to keep only what sits on a route from one pick to another.
+
+It is exact rather than approximate: a node survives only if you could actually travel through it without doubling back, so a playlist dangling off one of your picks is never mistaken for a link between them. The **Detour** slider allows routes longer than the direct one, measured in extra hops.
 
 ---
 
@@ -78,7 +81,7 @@ Open **Controls &rarr; View** to reshape the graph without rebuilding it:
 
 - **Add** any profile, artist, album, or playlist by pasting its Spotify link or URI.
 - Friends and followed profiles, along with their public playlists, are crawled in automatically.
-- **Remove** anything you don't want, and **Restore** it later from the removed list, edges and all.
+- **Remove** anything you don't want. Whatever was only reachable through it goes with it, and **Restore** brings the whole branch back, edges and all.
 
 ---
 
@@ -90,6 +93,7 @@ Open **Controls &rarr; View** to reshape the graph without rebuilding it:
 
 ### More
 
+- **Your last graph is restored instantly** when you return; **Refresh library** re-crawls when you want fresh data.
 - **Pins, physics, and view settings persist** between sessions.
 - **English and Arabic**, auto-detected from Spotify's language setting.
 - **Automatic update check** on launch.

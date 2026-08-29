@@ -68,7 +68,7 @@ Types are in `packages/shared/src/types/spicetify.d.ts` and `platform-api.ts`. C
 
 Custom translator using ICU plural rules (`Intl.PluralRules`). Each app and `packages/ui` define translations in `src/i18n/en.ts` (default) + optional `<locale>.json` files. Arabic (`ar`) is the only bundled locale (embedded at build time via `__BUNDLED_LOCALES__`); other locales are fetched at runtime from GitHub.
 
-Key function: `createTranslator({ en })` → returns `t(key, params?)` with `.load()` for async locale loading.
+Apps call `createAppTranslator(en, ui)` (`packages/shared/src/i18n/`), which merges the app's messages over `packages/ui`'s and returns `{ t, loadTranslations }`. App keys shadow UI keys of the same name. The engine underneath is `createTranslator({ en })` → `t(key, params?)` with `.load()` for async locale loading.
 
 ## Styling
 
