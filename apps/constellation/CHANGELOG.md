@@ -1,5 +1,28 @@
 # @spicetify-apps/constellation
 
+## 1.1.0
+
+### Minor Changes
+
+- chore(preview): refresh the constellation demo and halve its weight
+- docs: correct the lens, paths, and removal copy after the rework
+- docs(constellation): refresh the readme for the reworked explorer
+- test(constellation): split the graph suite into co-located files
+- feat(constellation): add the Arabic locale
+- fix(constellation): move the zoom controls and help out of each other's way
+- fix(constellation): make the dead-end lens do something and share one visible pass
+- fix(constellation): surface a failed social fetch instead of losing friends
+- feat(constellation): remove orphans with their cause and restore them together
+- fix(constellation): keep a fresh cache instead of recrawling on every visit
+- feat(constellation): add Liked Songs as an expandable playlist
+- feat(constellation): trace real paths between marked items
+- refactor(constellation): split the workspace and dock out of the app shell
+- refactor(constellation): own the force-graph instance in a GraphCanvas class
+- refactor(constellation): give types and chrome styles their own folders
+- fix(shared): flush persisted state on unmount and wait for CosmosAsync
+- refactor(ui): promote shared primitives out of constellation
+- refactor(shared): fold per-app i18n wiring into createAppTranslator
+
 ## 1.0.0
 
 ### Major Changes
