@@ -1,4 +1,4 @@
-import type { GraphEdge } from '../types';
+import type { GraphEdge } from '../types/graph';
 import type { MusicGraph } from './music-graph';
 import { NODE_TYPE, EDGE_TYPE } from '../constants';
 

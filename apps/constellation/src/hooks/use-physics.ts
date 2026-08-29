@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { usePersistentState, type Codec } from './use-persistent-state';
+import { usePersistentState, type Codec } from '@shared/hooks';
 import { PHYSICS, PHYSICS_DEFAULTS, type PhysicsParams } from '../graph/force-config';
 
 const clamp = (key: keyof PhysicsParams, value: number): number => {
@@ -20,20 +20,20 @@ const physicsCodec: Codec<PhysicsParams> = {
 };
 
 export const usePhysics = () => {
-  const [physics, setPhysics] = usePersistentState('physics', PHYSICS_DEFAULTS, physicsCodec);
+  const [params, setParams] = usePersistentState('physics', PHYSICS_DEFAULTS, physicsCodec);
   const [frozen, setFrozen] = useState(false);
 
   const setParam = useCallback(
     (key: keyof PhysicsParams, value: number) =>
-      setPhysics((prev) => ({ ...prev, [key]: clamp(key, value) })),
-    [setPhysics],
+      setParams((prev) => ({ ...prev, [key]: clamp(key, value) })),
+    [setParams],
   );
-  const reset = useCallback(() => setPhysics(PHYSICS_DEFAULTS), [setPhysics]);
+  const reset = useCallback(() => setParams(PHYSICS_DEFAULTS), [setParams]);
   const toggleFrozen = useCallback(() => setFrozen((f) => !f), [setFrozen]);
 
   const isDefault = (Object.keys(PHYSICS_DEFAULTS) as (keyof PhysicsParams)[]).every(
-    (key) => physics[key] === PHYSICS_DEFAULTS[key],
+    (key) => params[key] === PHYSICS_DEFAULTS[key],
   );
 
-  return { physics, setParam, reset, isDefault, frozen, toggleFrozen };
+  return { params, setParam, reset, isDefault, frozen, toggleFrozen };
 };
