@@ -7,11 +7,10 @@ const en = {
   'app.error': 'Could not load your library.',
   'app.errorSub': 'Spotify stopped responding while your library was being read. Try again.',
   'graph.likedSongs': 'Liked Songs',
+  'graph.you': 'You',
   'app.friendsFailed': 'Could not read who you follow, so your friends are missing from the graph.',
+  'app.playlistsFailed': 'Could not read your playlists, so they are missing from the graph.',
   'app.retry': 'Try again',
-  'app.refresh': 'Refresh library',
-  'app.emptyTitle': 'Your library looks empty',
-  'app.empty': 'Save some songs, artists, or playlists in Spotify, then reopen Constellation.',
 
   'type.track': 'Track',
   'type.artist': 'Artist',
@@ -67,6 +66,8 @@ const en = {
   'selection.detourHint':
     'Extra hops allowed beyond the shortest route between the selected items.',
   'selection.remove': 'Remove',
+  'selection.removeOptions': 'Choose what else to remove',
+  'selection.alsoRemove': 'Also remove connected',
   'selection.undo': 'Undo remove ({count})',
   'selection.clear': 'Clear selection',
 
