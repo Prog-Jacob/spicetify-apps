@@ -9,6 +9,7 @@ type Props = {
   onChange: (value: number) => void;
   label?: React.ReactNode;
   valueLabel?: React.ReactNode;
+  valueText?: string;
   compact?: boolean;
   ariaLabel?: string;
   className?: string;
@@ -44,6 +45,7 @@ const Slider = ({
   onChange,
   label,
   valueLabel,
+  valueText,
   compact = false,
   ariaLabel,
   className,
@@ -59,6 +61,7 @@ const Slider = ({
       value={value}
       onChange={(e) => onChange(Number(e.target.value))}
       aria-label={ariaLabel ?? (typeof label === 'string' ? label : undefined)}
+      aria-valuetext={valueText ?? (typeof valueLabel === 'string' ? valueLabel : undefined)}
       style={{ backgroundImage: fillTo(ratio) }}
       className={cn(
         TRACK,

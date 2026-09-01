@@ -21,12 +21,20 @@ export const toDateTimeString = (ms: number): string => {
   return `${dateString} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`;
 };
 
+const safeDecode = (raw: string): string => {
+  try {
+    return decodeURIComponent(raw);
+  } catch {
+    return raw;
+  }
+};
+
 export function parseUserId(input: string): string {
   const trimmed = input.trim();
 
   // https://open.spotify.com/user/abc123?si=...
   const urlMatch = trimmed.match(/^https?:\/\/open\.spotify\.com\/user\/([^/?#]+)/);
-  if (urlMatch) return decodeURIComponent(urlMatch[1]);
+  if (urlMatch) return safeDecode(urlMatch[1]);
 
   // spotify:user:abc123
   const uriMatch = trimmed.match(/^spotify:user:(.+)$/);
