@@ -1,5 +1,13 @@
 # @spicetify-apps/data-porter
 
+## 3.2.0
+
+### Minor Changes
+
+- refactor(data-porter): tighten the import parser and profile export
+- fix(shared): type addedAt and profile uris the way the Platform returns them
+- refactor(shared): fold per-app i18n wiring into createAppTranslator
+
 ## 3.1.1
 
 ### Patch Changes
