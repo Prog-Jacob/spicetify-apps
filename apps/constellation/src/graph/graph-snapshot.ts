@@ -9,10 +9,13 @@ export type GraphSnapshot = {
   links: GraphEdge[];
 };
 
-export const toSnapshot = (graph: MusicGraph): GraphSnapshot => ({
+// `keep` scopes the snapshot to a subset (export drops hidden nodes; the cache keeps everything).
+export const toSnapshot = (graph: MusicGraph, keep?: ReadonlySet<string>): GraphSnapshot => ({
   version: SNAPSHOT_VERSION,
-  nodes: graph.nodes(),
-  links: graph.links(),
+  nodes: keep ? graph.nodes().filter((node) => keep.has(node.uri)) : graph.nodes(),
+  links: keep
+    ? graph.links().filter((link) => keep.has(link.source) && keep.has(link.target))
+    : graph.links(),
 });
 
 export const fromSnapshot = (snapshot: GraphSnapshot): MusicGraph => {

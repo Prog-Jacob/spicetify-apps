@@ -1,6 +1,6 @@
 import { bfs } from './traverse';
 import type { MusicGraph } from './music-graph';
-import type { GraphNode, GraphEdge } from '../types/graph';
+import type { NodeType, GraphNode, GraphEdge } from '../types/graph';
 
 const DEFAULT_LIMIT = 8;
 
@@ -44,17 +44,49 @@ export const adjacencyOf = (links: GraphEdge[]): Map<string, string[]> => {
   return byUri;
 };
 
-export const reachableFrom = (graph: MusicGraph, roots: string[]): Set<string> => {
-  const anchors = roots.filter((uri) => graph.node(uri));
+/** `blocked` nodes are walls: excluded from the result and never traversed through. */
+export const reachableFrom = (
+  graph: MusicGraph,
+  roots: string[],
+  blocked?: ReadonlySet<string>,
+): Set<string> => {
+  const anchors = roots.filter((uri) => graph.node(uri) && !blocked?.has(uri));
+  const neighborsOf = blocked?.size
+    ? (at: string) => [...graph.neighborUris(at)].filter((uri) => !blocked.has(uri))
+    : (at: string) => graph.neighborUris(at);
   const reached = new Set<string>();
-  for (const { uri } of bfs(anchors, (at) => graph.neighborUris(at))) reached.add(uri);
+  for (const { uri } of bfs(anchors, neighborsOf)) reached.add(uri);
   return reached;
 };
 
-export const addedAtBounds = (graph: MusicGraph): TimeBounds | null => {
+/** Neighbours one hop out from `uris`, excluding `uris` themselves. */
+function* outerNeighbors(graph: MusicGraph, uris: string[]): Generator<Readonly<GraphNode>> {
+  const chosen = new Set(uris);
+  for (const uri of uris)
+    for (const node of graph.neighbors(uri)) if (!chosen.has(node.uri)) yield node;
+}
+
+/** The node types present one hop out from `uris`, what a removal can gate on. */
+export const neighborTypes = (graph: MusicGraph, uris: string[]): Set<NodeType> => {
+  const types = new Set<NodeType>();
+  for (const node of outerNeighbors(graph, uris)) types.add(node.type);
+  return types;
+};
+
+export const firstLevelOfTypes = (
+  graph: MusicGraph,
+  uris: string[],
+  types: ReadonlySet<NodeType>,
+): string[] => {
+  const kept = new Set<string>();
+  for (const node of outerNeighbors(graph, uris)) if (types.has(node.type)) kept.add(node.uri);
+  return [...kept];
+};
+
+export const addedAtBounds = (nodes: Iterable<Readonly<GraphNode>>): TimeBounds | null => {
   let min = Infinity;
   let max = -Infinity;
-  for (const node of graph.nodes()) {
+  for (const node of nodes) {
     if (!node.addedAt) continue;
     if (node.addedAt < min) min = node.addedAt;
     if (node.addedAt > max) max = node.addedAt;

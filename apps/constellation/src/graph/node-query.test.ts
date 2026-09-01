@@ -7,6 +7,8 @@ import {
   adjacencyOf,
   reachableFrom,
   addedAtBounds,
+  neighborTypes,
+  firstLevelOfTypes,
   countVisibleNeighbors,
 } from './node-query';
 
@@ -54,16 +56,45 @@ test('reachableFrom is what survives a prune: anchored subtrees live, orphans do
   );
 });
 
-test('addedAtBounds spans the saved dates, and is null without a range to show', () => {
+test('a hidden node is a wall: blocked from the result and never traversed through', () => {
   const g = new MusicGraph();
-  g.addNode({ ...node('a'), addedAt: 100 });
-  g.addNode({ ...node('b'), addedAt: 300 });
-  g.addNode(node('undated'));
-  assert.deepEqual(addedAtBounds(g), { min: 100, max: 300 });
+  ['me', 'friend', 'their-playlist'].forEach((u) => g.addNode(node(u)));
+  g.addEdge('me', 'friend', 'follows');
+  g.addEdge('friend', 'their-playlist', 'owns');
 
-  const flat = new MusicGraph();
-  flat.addNode({ ...node('a'), addedAt: 100 });
-  assert.equal(addedAtBounds(flat), null, 'one date is not a range');
+  // Hiding the friend hides their subtree too, since it only reached `me` through them.
+  assert.deepEqual([...reachableFrom(g, ['me'], new Set(['friend']))].sort(), ['me']);
+  // Hiding `me` and anchoring on the friend keeps the friend's world, nothing of yours.
+  assert.deepEqual([...reachableFrom(g, ['me', 'friend'], new Set(['me']))].sort(), [
+    'friend',
+    'their-playlist',
+  ]);
+});
+
+test('the removal gate reads first-level neighbour types and keeps the chosen ones', () => {
+  const g = new MusicGraph();
+  g.addNode({ uri: 'me', type: 'user', label: 'me' });
+  g.addNode({ uri: 'friend', type: 'user', label: 'friend' });
+  g.addNode({ uri: 'mine', type: 'playlist', label: 'mine' });
+  g.addNode({ uri: 'deep', type: 'track', label: 'deep' });
+  g.addEdge('me', 'friend', 'follows');
+  g.addEdge('me', 'mine', 'owns');
+  g.addEdge('mine', 'deep', 'contains'); // second hop, not a gate option
+
+  assert.deepEqual([...neighborTypes(g, ['me'])].sort(), ['playlist', 'user']);
+  assert.deepEqual(firstLevelOfTypes(g, ['me'], new Set(['user'])), ['friend']);
+});
+
+test('addedAtBounds spans the saved dates, and is null without a range to show', () => {
+  assert.deepEqual(
+    addedAtBounds([
+      { ...node('a'), addedAt: 100 },
+      { ...node('b'), addedAt: 300 },
+      node('undated'),
+    ]),
+    { min: 100, max: 300 },
+  );
+  assert.equal(addedAtBounds([{ ...node('a'), addedAt: 100 }]), null, 'one date is not a range');
 });
 
 test('searchNodes ranks prefix hits first, is case-insensitive, and caps results', () => {

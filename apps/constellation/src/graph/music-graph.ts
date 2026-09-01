@@ -11,11 +11,7 @@ const addTo = <T>(index: Map<string, Set<T>>, key: string, value: T): void => {
   else index.set(key, new Set([value]));
 };
 
-/**
- * The domain model: a typed multigraph of Spotify entities, deduped by URI, with an
- * adjacency index for O(degree) neighbor lookups. Pure topology and identity: it holds
- * no rendering state, so it stays independent of the view and safe to persist.
- */
+/** Typed multigraph of entities, deduped by URI, with an adjacency index. Holds no view state, so it's safe to persist. */
 export class MusicGraph {
   private readonly nodeByUri = new Map<string, GraphNode>();
   private readonly edgeByKey = new Map<string, GraphEdge>();
@@ -24,6 +20,11 @@ export class MusicGraph {
 
   addNode(node: GraphNode): void {
     if (!this.nodeByUri.has(node.uri)) this.nodeByUri.set(node.uri, node);
+  }
+
+  relabel(uri: string, label: string): void {
+    const node = this.nodeByUri.get(uri);
+    if (node) this.nodeByUri.set(uri, { ...node, label });
   }
 
   addEdge(source: string, target: string, type: EdgeType): void {
@@ -51,24 +52,15 @@ export class MusicGraph {
     this.adjacency.delete(uri);
   }
 
-  node(uri: string): GraphNode | undefined {
+  node(uri: string): Readonly<GraphNode> | undefined {
     return this.nodeByUri.get(uri);
-  }
-
-  incidentEdges(uri: string): GraphEdge[] {
-    const edges: GraphEdge[] = [];
-    for (const key of this.edgeKeysByNode.get(uri) ?? []) {
-      const edge = this.edgeByKey.get(key);
-      if (edge) edges.push(edge);
-    }
-    return edges;
   }
 
   neighborUris(uri: string): Iterable<string> {
     return this.adjacency.get(uri) ?? EMPTY;
   }
 
-  neighbors(uri: string): GraphNode[] {
+  neighbors(uri: string): Readonly<GraphNode>[] {
     const out: GraphNode[] = [];
     for (const other of this.adjacency.get(uri) ?? []) {
       const node = this.nodeByUri.get(other);
@@ -81,7 +73,7 @@ export class MusicGraph {
     return this.adjacency.get(uri)?.size ?? 0;
   }
 
-  nodes(): GraphNode[] {
+  nodes(): Readonly<GraphNode>[] {
     return [...this.nodeByUri.values()];
   }
 
@@ -97,3 +89,13 @@ export class MusicGraph {
     return this.edgeByKey.size;
   }
 }
+
+// The live view analyses run on, so hidden nodes never reach community or block-cut detection.
+export const subgraph = (graph: MusicGraph, keep: ReadonlySet<string>): MusicGraph => {
+  const sub = new MusicGraph();
+  for (const node of graph.nodes()) if (keep.has(node.uri)) sub.addNode(node);
+  for (const edge of graph.links())
+    if (keep.has(edge.source) && keep.has(edge.target))
+      sub.addEdge(edge.source, edge.target, edge.type);
+  return sub;
+};

@@ -1,10 +1,6 @@
 export type Visit = { uri: string; depth: number; from: string | null };
 
-/**
- * Breadth-first over any adjacency, yielding each node once with the step that found it.
- * Yielding rather than collecting is what lets a caller stop at a goal, or keep only the
- * depth, or only the predecessor, without three walks that drift apart.
- */
+/** BFS over any adjacency; yields each node once with depth + predecessor, so a caller can stop early. */
 export function* bfs(
   roots: Iterable<string>,
   neighborsOf: (uri: string) => Iterable<string>,
