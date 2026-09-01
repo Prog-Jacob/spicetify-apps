@@ -1,7 +1,6 @@
 import { t, loadTranslations } from './i18n';
 import GraphWorkspace from './graph-workspace';
 import React, { useState, useEffect } from 'react';
-import { isEmptyLibrary } from './services/library-crawler';
 import { UpdateBanner, ErrorBoundary } from '@ui/components';
 import { useGraphExplorer } from './hooks/use-graph-explorer';
 import GraphPlaceholder from './components/graph-placeholder';
@@ -31,14 +30,6 @@ const ConstellationApp = () => {
               ? t('app.loadingProfiles', { done: crawlPhase.done ?? 0, total: crawlPhase.total })
               : t('app.loadingSub')
           }
-        />
-      );
-    if (isEmptyLibrary(library))
-      return (
-        <GraphPlaceholder
-          title={t('app.emptyTitle')}
-          subtitle={t('app.empty')}
-          action={{ label: t('app.refresh'), onClick: reload }}
         />
       );
     return <GraphWorkspace explorer={explorer} library={library} />;

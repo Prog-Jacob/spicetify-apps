@@ -3,12 +3,12 @@ import { ingestArtists } from './ingest';
 import { addLikedSongs } from './liked-songs';
 import { MusicGraph } from '../graph/music-graph';
 import { rememberFirstImage } from './node-images';
+import { NODE_TYPE, EDGE_TYPE } from '../constants';
 import { notifyError, toEpochMs } from '@shared/lib';
 import { attachUserPlaylists } from './user-playlists';
 import type { LibraryContentItem } from '@shared/types';
 import { paginate, fetchRootlistPlaylists } from '@shared/api';
 import { listSocialGraph, type ProfileRef } from './social-graph';
-import { NODE_TYPE, EDGE_TYPE, LIKED_SONGS_URI } from '../constants';
 
 export type LibraryGraph = {
   graph: MusicGraph;
@@ -22,10 +22,6 @@ const FRIEND_PLAYLIST_CONCURRENCY = 5;
 
 export type CrawlPhase = { stage: 'library' | 'profiles'; done?: number; total?: number };
 type CrawlProgress = (phase: CrawlPhase) => void;
-
-/** You, whoever you follow, and the Liked Songs container are seeded whatever your library holds. */
-export const isEmptyLibrary = ({ graph }: LibraryGraph): boolean =>
-  graph.nodes().every((n) => n.type === NODE_TYPE.USER || n.uri === LIKED_SONGS_URI);
 
 // Tier A only: proven, rate-limit-free Platform APIs, plus the edges saved objects carry.
 export async function buildLibraryGraph(
@@ -43,7 +39,10 @@ export async function buildLibraryGraph(
         context: 'LibraryAPI.getContents',
         signal,
       }),
-      fetchRootlistPlaylists(signal),
+      fetchRootlistPlaylists(signal).catch((e: unknown) => {
+        notifyError(e, t('app.playlistsFailed'));
+        return [];
+      }),
     ]),
     listSocialGraph().catch((e: unknown) => {
       notifyError(e, t('app.friendsFailed'));
@@ -55,7 +54,7 @@ export async function buildLibraryGraph(
   graph.addNode({
     uri: userUri,
     type: NODE_TYPE.USER,
-    label: user.displayName ?? user.name ?? 'You',
+    label: user.displayName ?? user.name ?? t('graph.you'),
   });
   if (user.imageUrl) images.set(userUri, user.imageUrl);
 
