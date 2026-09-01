@@ -13,12 +13,14 @@ async function fetchUserPlaylists(
 ): Promise<LibraryContentItem[]> {
   const items: LibraryContentItem[] = [];
 
-  for (let offset = 0; offset < total; offset += PAGE_SIZE) {
+  for (let offset = 0; ;) {
     signal?.throwIfAborted();
     onProgress({ current: offset, total, label: t('progress.fetchingPlaylistList') });
 
     const page = await getPublicPlaylists(userId, { offset, limit: PAGE_SIZE });
     items.push(...page.map((p) => ({ uri: p.uri, name: p.name, type: 'playlist' as const })));
+    offset += page.length;
+    if (page.length < PAGE_SIZE) break;
   }
 
   return items;
