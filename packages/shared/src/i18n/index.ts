@@ -36,6 +36,7 @@ const resolvePlural = (
   nf: Intl.NumberFormat,
 ): string => {
   const template = entry[pluralRules.select(count)] ?? entry.other;
+  if (template === undefined) return nf.format(count);
   return template.replace(/#/g, nf.format(count));
 };
 
