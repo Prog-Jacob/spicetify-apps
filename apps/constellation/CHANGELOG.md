@@ -1,5 +1,13 @@
 # @spicetify-apps/constellation
 
+## 1.2.0
+
+### Minor Changes
+
+- chore(constellation): polish labels, lifecycle guards, and dead state
+- feat(constellation): type-gated remove menu with undo and exports
+- feat(constellation): model removal as a reachable hidden-set
+
 ## 1.1.0
 
 ### Minor Changes
