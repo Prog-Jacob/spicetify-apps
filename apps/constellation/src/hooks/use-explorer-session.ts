@@ -1,15 +1,17 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import {
+  union,
   loadSession,
   emptySession,
+  mergeSessions,
   persistSession,
-  type RemovedEntry,
   type ExplorerSession,
 } from '../services/session-store';
 
 export const useExplorerSession = () => {
   const [session, setSession] = useState<ExplorerSession>(emptySession);
   const sessionRef = useRef(session);
+  const dirty = useRef(false);
 
   const seedsReady = useRef<Promise<ExplorerSession>>();
   if (!seedsReady.current) seedsReady.current = loadSession();
@@ -18,8 +20,10 @@ export const useExplorerSession = () => {
     let alive = true;
     void seedsReady.current?.then((loaded) => {
       if (!alive) return;
-      sessionRef.current = loaded;
-      setSession(loaded);
+      const next = dirty.current ? mergeSessions(loaded, sessionRef.current) : loaded;
+      sessionRef.current = next;
+      setSession(next);
+      if (dirty.current) void persistSession(next);
     });
     return () => {
       alive = false;
@@ -29,6 +33,7 @@ export const useExplorerSession = () => {
   const mutate = useCallback((fn: (s: ExplorerSession) => ExplorerSession) => {
     const next = fn(sessionRef.current);
     if (next === sessionRef.current) return;
+    dirty.current = true;
     sessionRef.current = next;
     setSession(next);
     void persistSession(next);
@@ -40,24 +45,26 @@ export const useExplorerSession = () => {
     [mutate],
   );
 
-  // Batched: pruning a multi-node selection is one state write and one persist, not N.
-  const removeNodes = useCallback(
-    (entries: RemovedEntry[]) =>
+  // Batched: hiding a multi-node selection (plus any subtrees its gate keeps) is one write, not N.
+  const hide = useCallback(
+    (uris: string[], keptAnchors: string[] = []) =>
       mutate((s) => {
-        const known = new Set(s.removed.map((entry) => entry.node.uri));
-        const added = entries.filter((entry) => !known.has(entry.node.uri));
-        return added.length ? { ...s, removed: [...s.removed, ...added] } : s;
+        const hidden = union(s.hidden, uris);
+        const anchors = union(s.anchors, keptAnchors);
+        return hidden.length === s.hidden.length && anchors.length === s.anchors.length
+          ? s
+          : { ...s, hidden, anchors };
       }),
     [mutate],
   );
 
-  const restoreNode = useCallback(
-    (uri: string) =>
-      mutate((s) =>
-        s.removed.some((entry) => entry.node.uri === uri)
-          ? { ...s, removed: s.removed.filter((entry) => entry.node.uri !== uri) }
-          : s,
-      ),
+  const unhide = useCallback(
+    (uris: string[]) =>
+      mutate((s) => {
+        const drop = new Set(uris);
+        const hidden = s.hidden.filter((uri) => !drop.has(uri));
+        return hidden.length === s.hidden.length ? s : { ...s, hidden };
+      }),
     [mutate],
   );
 
@@ -85,12 +92,13 @@ export const useExplorerSession = () => {
 
   return {
     seeds: session.seeds,
+    anchors: session.anchors,
+    hidden: session.hidden,
     pins: session.pins,
-    removed: session.removed,
     seedsReady: seedsReady.current,
     addSeed,
-    removeNodes,
-    restoreNode,
+    hide,
+    unhide,
     pinNode,
     unpinNode,
     releaseAllPins,

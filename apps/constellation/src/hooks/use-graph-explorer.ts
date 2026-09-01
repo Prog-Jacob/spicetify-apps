@@ -1,20 +1,20 @@
 import { t } from '../i18n';
 import { notifyError } from '@shared/lib';
-import type { GraphNode } from '../types/graph';
 import { useExpandAll } from './use-expand-all';
 import { useAbortController } from '@shared/hooks';
-import { reachableFrom } from '../graph/node-query';
-import { useState, useEffect, useCallback } from 'react';
+import { firstLevelOfTypes } from '../graph/node-query';
+import type { NodeType, GraphNode } from '../types/graph';
 import { addExternalEntity } from '../services/add-entity';
 import { useExplorerSession } from './use-explorer-session';
 import { expandNode, canExpand } from '../services/expand-node';
-import { flatten, type RemovedEntry } from '../services/session-store';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { loadCachedLibrary, saveCachedLibrary, flushCachedLibrary } from '../services/graph-cache';
 import { buildLibraryGraph, type CrawlPhase, type LibraryGraph } from '../services/library-crawler';
 
 /**
- * Expansion mutates the MusicGraph in place, so `revision` bumps to re-project the view.
- * A recent cache is restored as-is; only a stale one, or an explicit reload, triggers a crawl.
+ * Expansion mutates the graph in place, so `revision` bumps to re-project. Removal only hides:
+ * nodes stay in the graph and the lens derives what is visible by reachability. Fresh cache
+ * restores as-is; only stale cache or an explicit reload re-crawls.
  */
 export const useGraphExplorer = () => {
   const [library, setLibrary] = useState<LibraryGraph | null>(null);
@@ -25,9 +25,13 @@ export const useGraphExplorer = () => {
   const [adding, setAdding] = useState(false);
   const [crawlPhase, setCrawlPhase] = useState<CrawlPhase | null>(null);
   const aborter = useAbortController();
+  const libraryRef = useRef(library);
+  useEffect(() => {
+    libraryRef.current = library;
+  }, [library]);
 
   const session = useExplorerSession();
-  const { seedsReady, addSeed, removeNodes, restoreNode } = session;
+  const { seedsReady, addSeed, hide, unhide } = session;
 
   const commit = useCallback((lib: LibraryGraph) => {
     setRevision((r) => r + 1);
@@ -45,14 +49,20 @@ export const useGraphExplorer = () => {
       if (reloadToken === 0) {
         const cached = await loadCachedLibrary();
         signal.throwIfAborted();
-        if (cached) setLibrary(cached.library);
-        if (cached?.fresh) return;
+        if (cached) {
+          const me = await Spicetify.Platform.UserAPI.getUser().catch(() => null);
+          signal.throwIfAborted();
+          if (!me?.uri || me.uri === cached.library.rootUri) {
+            setLibrary(cached.library);
+            if (cached.fresh) return;
+          }
+        }
       }
 
       const lib = await buildLibraryGraph(signal, (phase) => {
         if (!signal.aborted) setCrawlPhase(phase);
       });
-      const { seeds, removed } = await seedsReady;
+      const { seeds } = await seedsReady;
       signal.throwIfAborted();
       await Promise.all(
         seeds.map((uri) =>
@@ -60,9 +70,6 @@ export const useGraphExplorer = () => {
         ),
       );
       signal.throwIfAborted();
-      for (const entry of removed) lib.graph.removeNode(entry.node.uri);
-      const kept = reachableFrom(lib.graph, [lib.rootUri, ...seeds]);
-      for (const node of lib.graph.nodes()) if (!kept.has(node.uri)) lib.graph.removeNode(node.uri);
       setLibrary(lib);
       setCrawlPhase(null);
       saveCachedLibrary(lib);
@@ -92,7 +99,7 @@ export const useGraphExplorer = () => {
       setExpandingUri(node.uri);
       try {
         await expandNode(library.graph, node);
-        if (!library.graph.node(node.uri)) return;
+        if (libraryRef.current !== library || !library.graph.node(node.uri)) return;
         library.expanded.add(node.uri);
         commit(library);
       } catch (e) {
@@ -111,7 +118,7 @@ export const useGraphExplorer = () => {
       try {
         const node = await addExternalEntity(library.graph, library.images, input);
         addSeed(node.uri);
-        commit(library);
+        if (libraryRef.current === library) commit(library);
         return node;
       } catch (e) {
         notifyError(e, t('add.failed'));
@@ -124,46 +131,22 @@ export const useGraphExplorer = () => {
   );
 
   const removeEntities = useCallback(
-    (uris: string[]): RemovedEntry[] => {
+    (uris: string[], keep?: ReadonlySet<NodeType>): string[] => {
       if (!library) return [];
-      const { graph, expanded, rootUri } = library;
-
-      const cut = (uri: string): RemovedEntry | null => {
-        const node = graph.node(uri);
-        if (!node) return null;
-        const entry = { node, edges: graph.incidentEdges(uri), expanded: expanded.has(uri) };
-        graph.removeNode(uri);
-        expanded.delete(uri);
-        return { ...entry, cascade: [] };
-      };
-
-      const chosen = uris.map(cut).filter((entry): entry is RemovedEntry => entry !== null);
-      if (!chosen.length) return [];
-
-      const kept = reachableFrom(graph, [rootUri, ...session.seeds]);
-      const orphans = graph.nodes().flatMap((node) => (kept.has(node.uri) ? [] : [node.uri]));
-      chosen[0].cascade = orphans.map(cut).filter((entry): entry is RemovedEntry => entry !== null);
-
-      removeNodes(chosen);
-      commit(library);
-      return chosen;
+      const present = uris.filter((uri) => library.graph.node(uri));
+      if (!present.length) return [];
+      const keptAnchors = keep?.size ? firstLevelOfTypes(library.graph, present, keep) : [];
+      hide(present, keptAnchors);
+      return present;
     },
-    [library, session.seeds, removeNodes, commit],
+    [library, hide],
   );
 
   const restoreEntities = useCallback(
-    (entries: RemovedEntry[]) => {
-      if (!library || !entries.length) return;
-      const all = flatten(entries);
-      for (const entry of all) library.graph.addNode(entry.node);
-      for (const entry of all) {
-        for (const edge of entry.edges) library.graph.addEdge(edge.source, edge.target, edge.type);
-        if (entry.expanded) library.expanded.add(entry.node.uri);
-      }
-      for (const entry of entries) restoreNode(entry.node.uri);
-      commit(library);
+    (uris: string[]) => {
+      if (library && uris.length) unhide(uris);
     },
-    [library, restoreNode, commit],
+    [library, unhide],
   );
 
   return {
@@ -181,7 +164,9 @@ export const useGraphExplorer = () => {
     adding,
     removeEntities,
     restoreEntities,
-    removed: session.removed,
+    hidden: session.hidden,
+    seeds: session.seeds,
+    anchors: session.anchors,
     pins: session.pins,
     pinNode: session.pinNode,
     unpinNode: session.unpinNode,

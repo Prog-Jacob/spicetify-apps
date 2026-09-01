@@ -8,10 +8,8 @@ export const addLikedSongs = (graph: MusicGraph, ownerUri: string): void => {
 };
 
 /**
- * Its name is the one label in the graph that is UI copy rather than Spotify data, so it is
- * re-applied on every load instead of trusted from a snapshot written in another locale.
+ * Liked Songs' label is UI copy, not Spotify data: re-apply per load so a snapshot saved in
+ * another locale doesn't stick.
  */
-export const nameLikedSongs = (graph: MusicGraph): void => {
-  const node = graph.node(LIKED_SONGS_URI);
-  if (node) node.label = t('graph.likedSongs');
-};
+export const nameLikedSongs = (graph: MusicGraph): void =>
+  graph.relabel(LIKED_SONGS_URI, t('graph.likedSongs'));

@@ -1,66 +1,61 @@
-import { toEpochMs } from '@shared/lib';
 import { get, set, createStore } from 'idb-keyval';
-import type { NodeType, GraphNode, GraphEdge } from '../types/graph';
+
+export type Point = { x: number; y: number };
+export type PinnedPositions = Record<string, Point>;
 
 /**
- * User intent that must outlive a re-crawl: added entities (`seeds`), pinned positions (`pins`),
- * and entities the user pruned (`removed`, replayed as deletions onto each fresh crawl). Kept
- * separate from graph-cache, which is a disposable paint; this is the source of truth.
+ * What you personally hid (`hidden`) and what anchors the graph besides your own node (`seeds`:
+ * externally added entities, plus subtrees kept when their owner was removed). Everything else is
+ * derived by reachability, so removal stores no snapshot and restoring is just un-hiding a uri.
  */
-export type PinnedPositions = Record<string, { x: number; y: number }>;
-
-/**
- * One thing you chose to remove, plus whatever was only reachable through it. The `cascade` is
- * consequence rather than intent: it is listed under its cause so restoring the cause brings it
- * back, and it never appears in the removed list as something you picked.
- */
-export type RemovedEntry = {
-  node: GraphNode;
-  edges: GraphEdge[];
-  expanded: boolean;
-  cascade: RemovedEntry[];
+export type ExplorerSession = {
+  seeds: string[];
+  anchors: string[];
+  hidden: string[];
+  pins: PinnedPositions;
 };
-export type ExplorerSession = { seeds: string[]; pins: PinnedPositions; removed: RemovedEntry[] };
 
 const KEY = 'session';
 const store = createStore('constellation-session', 'session');
 
-export const flatten = (entries: RemovedEntry[]): RemovedEntry[] =>
-  entries.flatMap((entry) => [entry, ...flatten(entry.cascade)]);
+export const emptySession = (): ExplorerSession => ({
+  seeds: [],
+  anchors: [],
+  hidden: [],
+  pins: {},
+});
 
-export const emptySession = (): ExplorerSession => ({ seeds: [], pins: {}, removed: [] });
+export const union = (a: string[], b: string[]): string[] => [...new Set([...a, ...b])];
 
-// v1 stored a flat { uri, type, label }; keep those entries restorable, minus their lost edges.
-type LegacyRemovedEntry = { uri: string; type: NodeType; label: string };
+/** Loaded (stored) session as the base, with the current in-memory edits layered on top. */
+export const mergeSessions = (
+  base: ExplorerSession,
+  current: ExplorerSession,
+): ExplorerSession => ({
+  seeds: union(base.seeds, current.seeds),
+  anchors: union(base.anchors, current.anchors),
+  hidden: union(base.hidden, current.hidden),
+  pins: { ...base.pins, ...current.pins },
+});
 
-const toEntry = (raw: unknown): RemovedEntry | null => {
-  const entry = raw as (Partial<RemovedEntry> & Partial<LegacyRemovedEntry>) | null;
-  const node =
-    entry?.node ??
-    (typeof entry?.uri === 'string' && entry.type && typeof entry.label === 'string'
-      ? { uri: entry.uri, type: entry.type, label: entry.label }
-      : null);
-  if (!node?.uri) return null;
-  return {
-    node: { ...node, addedAt: toEpochMs(node.addedAt) },
-    edges: Array.isArray(entry?.edges) ? entry.edges : [],
-    expanded: entry?.expanded === true,
-    cascade: (Array.isArray(entry?.cascade) ? entry.cascade : [])
-      .map(toEntry)
-      .filter((child): child is RemovedEntry => child !== null),
-  };
-};
+const strings = (value: unknown): string[] =>
+  (Array.isArray(value) ? value : []).filter((v): v is string => typeof v === 'string');
+
+// v1/v2 stored `removed` as {uri}/{node:{uri}} objects; only the uri carries into the hidden set.
+type LegacyRemoved = string | { uri?: string; node?: { uri?: string } } | null;
+const uriOf = (entry: LegacyRemoved): string | undefined =>
+  typeof entry === 'string' ? entry : (entry?.node?.uri ?? entry?.uri);
 
 export const normalizeSession = (raw: unknown): ExplorerSession => {
-  const saved = (raw ?? {}) as Partial<ExplorerSession>;
+  const saved = (raw ?? {}) as Partial<ExplorerSession> & { removed?: unknown };
   return {
-    seeds: (Array.isArray(saved.seeds) ? saved.seeds : []).filter(
-      (uri): uri is string => typeof uri === 'string',
-    ),
+    seeds: strings(saved.seeds),
+    anchors: strings(saved.anchors),
+    hidden:
+      saved.hidden !== undefined
+        ? strings(saved.hidden)
+        : strings((Array.isArray(saved.removed) ? saved.removed : []).map(uriOf)),
     pins: saved.pins && typeof saved.pins === 'object' ? saved.pins : {},
-    removed: (Array.isArray(saved.removed) ? saved.removed : [])
-      .map(toEntry)
-      .filter((entry): entry is RemovedEntry => entry !== null),
   };
 };
 

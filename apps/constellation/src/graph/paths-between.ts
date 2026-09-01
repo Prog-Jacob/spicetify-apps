@@ -10,10 +10,7 @@ const distancesFrom = (graph: MusicGraph, start: string): Map<string, number> =>
   return dist;
 };
 
-/**
- * The block-cut tree decides whether a node is on a route at all. In a well-connected library
- * that is true of nearly everything, so `detour` bounds how far off the direct line it may sit.
- */
+/** Block-cut tree says whether a node is on any route; `detour` caps how far off the direct line it may sit. */
 export const pathsBetween = (
   graph: MusicGraph,
   tree: BlockCutTree,
