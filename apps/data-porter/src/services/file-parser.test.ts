@@ -5,24 +5,16 @@ import { parseImportText } from './file-parser';
 
 const lib = { tracks: [], albums: [], artists: [], shows: [] };
 
-test('rejects non-JSON', () => {
-  assert.throws(() => parseImportText('not json', 'f.json'), /not valid JSON/);
-});
-
-test('rejects JSON that is not an object', () => {
-  assert.throws(() => parseImportText('[1,2]', 'f.json'), /JSON object/);
-  assert.throws(() => parseImportText('"str"', 'f.json'), /JSON object/);
-});
-
-test('rejects unrecognized shapes', () => {
-  assert.throws(() => parseImportText('{"foo":1}', 'f.json'), /not a recognized format/);
-});
-
-test('rejects invalid playlists array', () => {
-  assert.throws(
-    () => parseImportText(JSON.stringify({ playlists: [{ noName: true }] }), 'f.json'),
-    /invalid playlists/,
-  );
+test('rejects malformed, unrecognized, and invalid shapes', () => {
+  const cases: [string, RegExp][] = [
+    ['not json', /not valid JSON/],
+    ['[1,2]', /JSON object/],
+    ['"str"', /JSON object/],
+    ['{"foo":1}', /not a recognized format/],
+    [JSON.stringify({ playlists: [{ noName: true }] }), /invalid playlists/],
+    [JSON.stringify({ tracks: [], albums: [], artists: [] }), /invalid library/], // no `shows`
+  ];
+  for (const [text, re] of cases) assert.throws(() => parseImportText(text, 'f.json'), re);
 });
 
 test('drops null/garbage entries inside playlist items', () => {
@@ -33,56 +25,55 @@ test('drops null/garbage entries inside playlist items', () => {
   assert.deepEqual(parsed.data.playlists?.[0].items, [{ track: null }]);
 });
 
-test('parses a Data Porter export wrapper', () => {
-  const parsed = parseImportText(
-    JSON.stringify({
-      playlists: [{ name: 'Mix', items: [] }],
-      library: {
-        ...lib,
-        tracks: [{ name: 'Song', artist: 'Artist', album: 'Album', uri: 'spotify:track:x' }],
+test('normalizes library field aliases and tags the source format', () => {
+  const cases: {
+    json: Record<string, unknown>;
+    fileName: string;
+    format: string;
+    track: Record<string, string>;
+    album?: Record<string, string>;
+  }[] = [
+    {
+      json: {
+        playlists: [{ name: 'Mix', items: [] }],
+        library: {
+          ...lib,
+          tracks: [{ name: 'Song', artist: 'Artist', album: 'Album', uri: 'spotify:track:x' }],
+        },
       },
-    }),
-    'f.json',
-  );
-  assert.equal(parsed.sourceFormat, SOURCE_FORMAT.OUR_EXPORT);
-  assert.equal(parsed.data.playlists?.length, 1);
-  assert.deepEqual(parsed.data.library?.tracks[0], {
-    name: 'Song',
-    artist: 'Artist',
-    album: 'Album',
-    uri: 'spotify:track:x',
-  });
-});
-
-test('parses Spotify official YourLibrary.json shape with field aliases', () => {
-  const parsed = parseImportText(
-    JSON.stringify({
-      ...lib,
-      tracks: [{ artist: 'Artist', album: 'Album', track: 'Song', uri: 'spotify:track:x' }],
-      albums: [{ artist: 'Artist', album: 'Album', uri: 'spotify:album:y' }],
-    }),
-    'YourLibrary.json',
-  );
-  assert.equal(parsed.sourceFormat, SOURCE_FORMAT.SPOTIFY_OFFICIAL);
-  // the official export stores the track title under `track`
-  assert.equal(parsed.data.library?.tracks[0].name, 'Song');
-  assert.equal(parsed.data.library?.albums[0].album, 'Album');
-});
-
-test('normalizes playlist-item style aliases (trackName/trackUri)', () => {
-  const parsed = parseImportText(
-    JSON.stringify({
-      library: {
+      fileName: 'f.json',
+      format: SOURCE_FORMAT.OUR_EXPORT,
+      track: { name: 'Song', artist: 'Artist', album: 'Album', uri: 'spotify:track:x' },
+    },
+    {
+      // Spotify's official export stores the title under `track` and aliases album under `name`.
+      json: {
         ...lib,
-        tracks: [{ trackName: 'Song', artistName: 'Artist', albumName: 'Album', trackUri: 'u' }],
+        tracks: [{ artist: 'Artist', album: 'Album', track: 'Song', uri: 'spotify:track:x' }],
+        albums: [{ artist: 'Artist', name: 'Album', uri: 'spotify:album:y' }],
       },
-    }),
-    'f.json',
-  );
-  assert.deepEqual(parsed.data.library?.tracks[0], {
-    name: 'Song',
-    artist: 'Artist',
-    album: 'Album',
-    uri: 'u',
-  });
+      fileName: 'YourLibrary.json',
+      format: SOURCE_FORMAT.SPOTIFY_OFFICIAL,
+      track: { name: 'Song', artist: 'Artist', album: 'Album', uri: 'spotify:track:x' },
+      album: { artist: 'Artist', album: 'Album', uri: 'spotify:album:y' },
+    },
+    {
+      json: {
+        library: {
+          ...lib,
+          tracks: [{ trackName: 'Song', artistName: 'Artist', albumName: 'Album', trackUri: 'u' }],
+        },
+      },
+      fileName: 'f.json',
+      format: SOURCE_FORMAT.OUR_EXPORT,
+      track: { name: 'Song', artist: 'Artist', album: 'Album', uri: 'u' },
+    },
+  ];
+
+  for (const { json, fileName, format, track, album } of cases) {
+    const parsed = parseImportText(JSON.stringify(json), fileName);
+    assert.equal(parsed.sourceFormat, format, fileName);
+    assert.deepEqual(parsed.data.library?.tracks[0], track);
+    if (album) assert.deepEqual(parsed.data.library?.albums[0], album);
+  }
 });

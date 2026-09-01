@@ -30,22 +30,28 @@ function normalizeLibrary(raw: ExportedLibrary | Record<string, unknown>): Expor
     (Array.isArray(raw[k]) ? raw[k] : []) as ExportedLibrary[K];
 
   return {
-    tracks: arr('tracks').map((o) => ({
-      name: field(o, 'name', 'trackName', 'track'),
-      artist: field(o, 'artist', 'artistName'),
-      album: field(o, 'album', 'albumName'),
-      uri: field(o, 'uri', 'trackUri'),
-    })),
-    albums: arr('albums').map((o) => ({
-      artist: field(o, 'artist', 'artistName'),
-      album: field(o, 'album', 'albumName', 'name'),
-      uri: field(o, 'uri', 'albumUri'),
-    })),
+    tracks: arr('tracks')
+      .filter((o) => o != null)
+      .map((o) => ({
+        name: field(o, 'name', 'trackName', 'track'),
+        artist: field(o, 'artist', 'artistName'),
+        album: field(o, 'album', 'albumName'),
+        uri: field(o, 'uri', 'trackUri'),
+      })),
+    albums: arr('albums')
+      .filter((o) => o != null)
+      .map((o) => ({
+        artist: field(o, 'artist', 'artistName'),
+        album: field(o, 'album', 'albumName', 'name'),
+        uri: field(o, 'uri', 'albumUri'),
+      })),
     shows: arr('shows'),
-    episodes: arr('episodes').map((o) => ({
-      name: field(o, 'name', 'episodeName'),
-      uri: field(o, 'uri', 'episodeUri'),
-    })),
+    episodes: arr('episodes')
+      .filter((o) => o != null)
+      .map((o) => ({
+        name: field(o, 'name', 'episodeName'),
+        uri: field(o, 'uri', 'episodeUri'),
+      })),
     bannedTracks: arr('bannedTracks'),
     artists: arr('artists'),
     bannedArtists: arr('bannedArtists'),
