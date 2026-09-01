@@ -13,6 +13,7 @@ export const loadImage = (url: string, onReady: () => void): void => {
   const img = new Image();
   img.crossOrigin = 'anonymous';
   img.onload = onReady;
+  img.onerror = () => imageCache.delete(url);
   img.src = url;
   imageCache.set(url, img);
   if (imageCache.size > IMAGE_CACHE_MAX) {
@@ -118,10 +119,6 @@ export type PaintOptions = {
   dimAlpha: number;
 };
 
-/**
- * Hovering sweeps focus across the graph, so a hard dim strobes everything the pointer grazes.
- * A deliberate selection is a held state and can afford to be much stronger than a transient hover.
- */
 export const DIM_ALPHA = { hover: 0.4, held: 0.16 };
 
 const paintPinBadge = (

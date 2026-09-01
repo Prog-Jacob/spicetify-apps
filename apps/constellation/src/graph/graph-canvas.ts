@@ -52,9 +52,8 @@ const isIncident = (link: RenderLink, focus: string | null): boolean =>
   focus !== null && (endNode(link.source)?.uri === focus || endNode(link.target)?.uri === focus);
 
 /**
- * Owns the force-graph instance and the pointer state that drives it. None of that state is
- * React's: it changes on hover and drag, at frame rate, and only ever causes a canvas repaint.
- * Props arrive through `latest` so the instance survives a callback changing identity.
+ * Owns force-graph + pointer state (hover/drag) outside React: it mutates at frame rate and only
+ * repaints. Props arrive via the `latest` ref so the instance survives callback identity changes.
  */
 export class GraphCanvas {
   private readonly fg: ForceGraph<RenderNode, RenderLink>;
@@ -68,6 +67,7 @@ export class GraphCanvas {
   private lastClick = { uri: '', at: 0 };
   private dragOffset = { x: 0, y: 0 };
   private fitted = false;
+  private destroyed = false;
 
   constructor(
     el: HTMLDivElement,
@@ -176,7 +176,7 @@ export class GraphCanvas {
   private radiusOf = (node: RenderNode): number =>
     effectiveRadius(node.radius, node.degree, this.live.sizeByDegree);
 
-  /** Repaints without touching the simulation. force-graph has no direct redraw hook. */
+  /** force-graph has no redraw hook; re-setting nodeColor repaints without touching the sim. */
   redraw(): void {
     this.fg.nodeColor(this.fg.nodeColor());
   }
@@ -223,11 +223,13 @@ export class GraphCanvas {
   }
 
   resume(): void {
+    if (this.destroyed) return;
     this.fg.resumeAnimation();
   }
 
   /** False when the node has no projected position yet, so the caller can retry after a frame. */
   centerOn(uri: string): boolean {
+    if (this.destroyed) return false;
     const node = this.renderNodes.get(uri);
     if (node?.x === undefined || node.y === undefined) return false;
     const ms = this.duration(FOCUS_MS);
@@ -256,6 +258,7 @@ export class GraphCanvas {
   }
 
   destroy(): void {
+    this.destroyed = true;
     this.observer.disconnect();
     this.fg._destructor();
   }

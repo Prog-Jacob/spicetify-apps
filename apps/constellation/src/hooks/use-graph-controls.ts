@@ -32,10 +32,6 @@ export const useGraphControls = () => {
     (type: NodeType) => setVisibleTypes((prev) => toggleInSet(prev, type)),
     [setVisibleTypes],
   );
-  const showAllTypes = useCallback(
-    () => setVisibleTypes(new Set(ALL_NODE_TYPES)),
-    [setVisibleTypes],
-  );
   const allTypesVisible = visibleTypes.size === ALL_NODE_TYPES.length;
   const isTypeVisible = useCallback(
     (node: GraphNode) => visibleTypes.has(node.type),
@@ -60,7 +56,6 @@ export const useGraphControls = () => {
   return {
     visibleTypes,
     toggleType,
-    showAllTypes,
     resetFilters,
     filtersActive,
     allTypesVisible,

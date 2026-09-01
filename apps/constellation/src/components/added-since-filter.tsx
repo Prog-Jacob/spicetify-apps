@@ -30,6 +30,7 @@ const AddedSinceFilter = ({ min, max, since, onChange }: Props) => (
       value={since}
       onChange={onChange}
       ariaLabel={t('time.label')}
+      valueText={since <= min ? t('time.all') : t('time.since', { date: toDateString(since) })}
     />
     <div className="flex justify-between text-[10px] tabular-nums text-spice-subtext/60">
       <span>{toDateString(min)}</span>

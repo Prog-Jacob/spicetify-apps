@@ -39,13 +39,18 @@ export const isDragSlop = (dx: number, dy: number, zoom: number): boolean =>
   Math.hypot(dx, dy) * zoom < DRAG_SLOP_PX;
 
 export const monogram = (label: string): string => {
-  const first = label
-    .trim()
-    .replace(/^[^\p{L}\p{N}]+/u, '')
-    .charAt(0);
+  const stripped = label.trim().replace(/^[^\p{L}\p{N}]+/u, '');
+  const [first] = stripped;
   return (first || '?').toUpperCase();
 };
 
 const LABEL_MAX_CHARS = 22;
-export const shortLabel = (label: string): string =>
-  label.length > LABEL_MAX_CHARS ? `${label.slice(0, LABEL_MAX_CHARS - 1).trimEnd()}…` : label;
+export const shortLabel = (label: string): string => {
+  const chars = [...label]; // count by code point so truncation never splits a surrogate pair
+  return chars.length > LABEL_MAX_CHARS
+    ? `${chars
+        .slice(0, LABEL_MAX_CHARS - 1)
+        .join('')
+        .trimEnd()}…`
+    : label;
+};

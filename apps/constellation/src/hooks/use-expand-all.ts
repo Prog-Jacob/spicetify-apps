@@ -12,9 +12,8 @@ export const expandableNodes = (library: LibraryGraph, nodes: GraphNode[]): Grap
   nodes.filter((n) => canExpand(n) && !library.expanded.has(n.uri));
 
 /**
- * Sweeps the nodes expandable *right now*, not the ones expansion reveals, so it terminates.
- * A sweep whose library was replaced mid-flight stops immediately: its graph is no longer on
- * screen, and committing it would write a discarded snapshot over the fresh one.
+ * Expands only what's expandable *now*, not what expansion reveals, so it terminates. Aborts if the
+ * library is swapped mid-sweep: committing a discarded graph would clobber the fresh cache.
  */
 export const useExpandAll = (
   library: LibraryGraph | null,

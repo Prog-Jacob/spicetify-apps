@@ -83,10 +83,7 @@ const addUser = async (
   return { uri, type: NODE_TYPE.USER, label };
 };
 
-/**
- * Merges an external entity (pasted link or URI) into the graph rooted at that entity, then
- * pulls its immediate subgraph via the same expanders double-click uses. Returns the root node.
- */
+/** Adds a pasted entity as a root, then expands its immediate subgraph the way double-click does. */
 export const addExternalEntity = async (
   graph: MusicGraph,
   images: Map<string, string>,
