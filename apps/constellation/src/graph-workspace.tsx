@@ -5,10 +5,11 @@ import GraphDock from './components/graph-dock';
 import { usePhysics } from './hooks/use-physics';
 import { useReducedMotion } from '@shared/hooks';
 import GraphGuide from './components/graph-guide';
-import { toSnapshot } from './graph/graph-snapshot';
+import { neighborTypes } from './graph/node-query';
 import SelectionBar from './components/selection-bar';
 import { useGraphLenses } from './hooks/use-graph-lenses';
-import type { RemovedEntry } from './services/session-store';
+import { useGraphActions } from './hooks/use-graph-actions';
+import React, { useRef, useMemo, useCallback } from 'react';
 import { useGraphControls } from './hooks/use-graph-controls';
 import GraphPlaceholder from './components/graph-placeholder';
 import type { LibraryGraph } from './services/library-crawler';
@@ -17,26 +18,28 @@ import { useGraphSelection } from './hooks/use-graph-selection';
 import type { GraphExplorer } from './hooks/use-graph-explorer';
 import GraphExportToolbar from './components/graph-export-toolbar';
 import GraphView, { type GraphViewHandle } from './graph/graph-view';
-import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { downloadJson, downloadBlob, notifyError, notifyDone } from '@shared/lib';
-
-const UNDO_WINDOW_MS = 12_000;
 
 type Props = { explorer: GraphExplorer; library: LibraryGraph };
 
 const GraphWorkspace = ({ explorer, library }: Props) => {
   const { revision, expand, expandingUri, pins, pinNode, unpinNode } = explorer;
-  const { removeEntities, restoreEntities } = explorer;
 
   const controls = useGraphControls();
   const physics = usePhysics();
   const reducedMotion = useReducedMotion();
   const selection = useGraphSelection(library.graph, revision);
   const { selected, select, focusUri, focus, clearFocus } = selection;
-  const lenses = useGraphLenses(library, revision, controls, selection);
+  const lenses = useGraphLenses(
+    library,
+    revision,
+    controls,
+    selection,
+    explorer.hidden,
+    explorer.seeds,
+    explorer.anchors,
+  );
 
   const viewRef = useRef<GraphViewHandle>(null);
-  const [undoable, setUndoable] = useState<RemovedEntry[]>([]);
 
   const center = useCallback((uri: string) => viewRef.current?.focusNode(uri), []);
 
@@ -56,48 +59,8 @@ const GraphWorkspace = ({ explorer, library }: Props) => {
     [focus, center],
   );
 
-  const remove = useCallback(
-    (uris: string[]) => {
-      const entries = removeEntities(uris);
-      if (!entries.length) return;
-      setUndoable((prev) => [...prev, ...entries]);
-      notifyDone(t('manage.removedToast', { count: entries.length }));
-    },
-    [removeEntities],
-  );
-
-  const removeOne = useCallback((node: GraphNode) => remove([node.uri]), [remove]);
-  const restoreOne = useCallback(
-    (entry: RemovedEntry) => restoreEntities([entry]),
-    [restoreEntities],
-  );
-
-  useEffect(() => {
-    if (!undoable.length) return;
-    const timer = setTimeout(() => setUndoable([]), UNDO_WINDOW_MS);
-    return () => clearTimeout(timer);
-  }, [undoable]);
-
-  const undoRemove = useCallback(() => {
-    restoreEntities(undoable);
-    setUndoable([]);
-  }, [restoreEntities, undoable]);
-
-  const exportData = useCallback(() => {
-    downloadJson(toSnapshot(library.graph), 'constellation.json');
-    notifyDone(t('actions.exportSaved'));
-  }, [library]);
-
-  const exportImage = useCallback(async () => {
-    try {
-      const blob = await viewRef.current?.capturePng();
-      if (!blob) throw new Error(t('actions.imageEmpty'));
-      downloadBlob(blob, 'constellation.png');
-      notifyDone(t('actions.exportSaved'));
-    } catch (e) {
-      notifyError(e, t('actions.imageFailed'));
-    }
-  }, []);
+  const { undoable, remove, removeOne, restoreOne, undoRemove, exportData, exportImage } =
+    useGraphActions(explorer, library, lenses.liveNodes, viewRef);
 
   const filtersActive = controls.filtersActive || focusUri !== null || selection.pathMode;
 
@@ -108,6 +71,10 @@ const GraphWorkspace = ({ explorer, library }: Props) => {
   }, [controls, clearFocus, selection]);
 
   const visibleCount = lenses.visibleNodes.length;
+  const removeTypes = useMemo(
+    () => [...neighborTypes(library.graph, selection.anchors)],
+    [library.graph, selection.anchors],
+  );
 
   return (
     <>
@@ -196,8 +163,9 @@ const GraphWorkspace = ({ explorer, library }: Props) => {
               onTogglePath={selection.togglePathMode}
               detour={selection.pathDetour}
               onDetourChange={selection.setPathDetour}
-              onRemove={() => {
-                remove(selection.anchors);
+              removeTypes={removeTypes}
+              onRemove={(keep) => {
+                remove(selection.anchors, keep);
                 selection.clearMarks();
               }}
               onUndo={undoRemove}

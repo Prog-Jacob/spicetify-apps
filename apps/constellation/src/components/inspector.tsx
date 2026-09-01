@@ -1,9 +1,10 @@
 import { t } from '../i18n';
 import { cn } from '@shared/lib';
 import NodeRow from './node-row';
-import NodeTypeDot from './node-type-dot';
 import { NODE_TYPE } from '../constants';
+import NodeTypeDot from './node-type-dot';
 import { monogram } from '../graph/node-style';
+import RemoveTypeMenu from './remove-type-menu';
 import { FOCUS_RING } from '@ui/styles/surfaces';
 import { useGraphPalette } from '../graph/theme';
 import { PANEL_SURFACE } from '../styles/chrome';
@@ -45,7 +46,7 @@ type Props = {
   onToggleMark: () => void;
   onClearFocus: () => void;
   onUnpin: () => void;
-  onRemove: (node: GraphNode) => void;
+  onRemove: (node: GraphNode, keep?: Set<NodeType>) => void;
   onClose: () => void;
 };
 
@@ -156,7 +157,8 @@ const Inspector = ({
   }, []);
 
   useEffect(() => {
-    panelRef.current?.focus({ preventScroll: true });
+    if (!panelRef.current?.contains(document.activeElement))
+      panelRef.current?.focus({ preventScroll: true });
   }, [node.uri]);
 
   return (
@@ -259,7 +261,11 @@ const Inspector = ({
             onClick={onToggleMark}
           />
           {pinned && <ActionButton icon="locked" label={t('inspector.unpin')} onClick={onUnpin} />}
-          <ActionButton icon="minus" label={t('inspector.remove')} onClick={() => onRemove(node)} />
+          <RemoveTypeMenu
+            variant="row"
+            types={breakdown.map(([type]) => type)}
+            onRemove={(keep) => onRemove(node, keep)}
+          />
         </div>
 
         <div className="flex flex-col gap-2 border-t border-spice-subtext/10 pt-3">

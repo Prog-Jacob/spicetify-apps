@@ -1,6 +1,8 @@
 import React from 'react';
 import { t } from '../i18n';
 import { cn } from '@shared/lib';
+import type { NodeType } from '../types/graph';
+import RemoveTypeMenu from './remove-type-menu';
 import { PATH_DETOUR } from '../graph/paths-between';
 import { PANEL_SURFACE, ACTION_BUTTON } from '../styles/chrome';
 import { ToggleChip, SpicetifyIcon, Slider, Divider } from '@ui/components';
@@ -12,7 +14,8 @@ type Props = {
   onTogglePath: () => void;
   detour: number;
   onDetourChange: (value: number) => void;
-  onRemove: () => void;
+  removeTypes: NodeType[];
+  onRemove: (keep: Set<NodeType>) => void;
   onUndo: () => void;
   onClear: () => void;
 };
@@ -24,6 +27,7 @@ const SelectionBar = ({
   onTogglePath,
   detour,
   onDetourChange,
+  removeTypes,
   onRemove,
   onUndo,
   onClear,
@@ -75,10 +79,7 @@ const SelectionBar = ({
       {count > 0 && (
         <>
           {canPath && <Divider />}
-          <button type="button" onClick={onRemove} className={ACTION_BUTTON}>
-            <SpicetifyIcon icon="minus" size={11} />
-            {t('selection.remove')}
-          </button>
+          <RemoveTypeMenu variant="bar" types={removeTypes} onRemove={onRemove} />
           <button
             type="button"
             onClick={onClear}
