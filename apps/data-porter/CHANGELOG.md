@@ -1,5 +1,13 @@
 # @spicetify-apps/data-porter
 
+## 3.3.0
+
+### Minor Changes
+
+- docs: catch the READMEs and CLAUDE.md up with the fixes and friend picker
+- feat(data-porter): pick a friend for another-user export
+- fix(data-porter): make cancelled imports safe and keep liked-songs order
+
 ## 3.2.0
 
 ### Minor Changes
