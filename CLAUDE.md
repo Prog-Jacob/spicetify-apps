@@ -61,7 +61,7 @@ Types are in `packages/shared/src/types/spicetify.d.ts` and `platform-api.ts`. C
 
 ## API Layer (`packages/shared/src/api/`)
 
-- `cosmos.ts` — typed wrapper around `Spicetify.CosmosAsync` with error validation
+- `cosmos.ts` — typed wrapper around `Spicetify.CosmosAsync` with error validation; https GETs skip Spicetify's broken version gate (Spotify's API hosts via `Platform.Transport`, others via Spicetify's CORS proxy)
 - `batch.ts` — `paginate()` for reading paginated library endpoints, `batchedWrite()` for chunked bulk writes. Both support `AbortSignal` and progress callbacks.
 
 ## i18n

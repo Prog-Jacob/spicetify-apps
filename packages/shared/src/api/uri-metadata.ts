@@ -5,8 +5,8 @@ export type UriMeta = { name?: string; imageUrl?: string };
 // oEmbed is public and uniform across entity types; the Web API
 // (api.spotify.com) is aggressively rate-limited for client tokens (429s
 // even on single-id batches), so it is not usable from inside the client.
-// Fetched via cosmos rather than window.fetch: CosmosAsync is exempt from
-// the renderer's CORS policy.
+// Fetched via cosmos rather than window.fetch: the renderer's CORS policy
+// blocks open.spotify.com, so it goes through Spicetify's CORS proxy.
 const OEMBED_URL = 'https://open.spotify.com/oembed?url=';
 const CONCURRENCY = 8;
 

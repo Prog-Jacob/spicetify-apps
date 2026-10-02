@@ -56,6 +56,13 @@ export interface PlatformHistory {
   location: { pathname: string };
 }
 
+export interface PlatformTransport {
+  request(
+    url: string,
+    opts: { method: 'GET'; responseType: 'json'; authorize: true },
+  ): Promise<{ ok: boolean; status: number; body: unknown }>;
+}
+
 export interface PlatformInitialProductState {
   country?: string;
   product?: string;

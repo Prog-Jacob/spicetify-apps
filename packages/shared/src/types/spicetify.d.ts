@@ -826,6 +826,7 @@ declare namespace Spicetify {
     PlaylistPermissionsAPI: import('./platform-api').PlatformPlaylistPermissionsAPI;
     ClipboardAPI: import('./platform-api').PlatformClipboardAPI;
     History: import('./platform-api').PlatformHistory;
+    Transport?: import('./platform-api').PlatformTransport;
     initialProductState: import('./platform-api').PlatformInitialProductState;
     [key: string]: unknown;
   };
