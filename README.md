@@ -70,7 +70,7 @@ pnpm dev
 
 | Command                   | What it does                           |
 | ------------------------- | -------------------------------------- |
-| `pnpm dev`                | Watch-build all apps + live reload     |
+| `pnpm dev`                | Watch-build + reload (CSS built once)  |
 | `pnpm build`              | Production build (all apps)            |
 | `pnpm build:app <name>`   | Build a single app                     |
 | `pnpm typecheck`          | Typecheck all packages                 |

@@ -77,11 +77,11 @@ It is exact rather than approximate: a node survives only if you could actually 
 
 ### Build your graph
 
-**Controls &rarr; Nodes** grows the graph beyond your own library:
+**Controls &rarr; Items** grows the graph beyond your own library:
 
 - **Add** any profile, artist, album, or playlist by pasting its Spotify link or URI.
 - Friends and followed profiles, along with their public playlists, are crawled in automatically.
-- **Remove** anything you don't want. Whatever was only reachable through it goes with it, and **Restore** brings the whole branch back, edges and all.
+- **Remove** anything you don't want. Whatever was only reachable through it goes with it, unless you untick its type under **Also remove connected**. **Undo** reverts a removal right away, and **Restore** brings the whole branch back later, edges and all. Your own node always stays.
 
 ---
 
@@ -93,7 +93,7 @@ It is exact rather than approximate: a node survives only if you could actually 
 
 ### More
 
-- **Your last graph is restored instantly** when you return; **Refresh library** re-crawls when you want fresh data.
+- **Your last graph is restored instantly** when you return. After six hours it re-crawls in the background and re-applies your expansions; **Refresh library** starts fresh whenever you want.
 - **Pins, physics, and view settings persist** between sessions.
 - **English and Arabic**, auto-detected from Spotify's language setting.
 - **Automatic update check** on launch.

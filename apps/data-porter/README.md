@@ -45,7 +45,7 @@ Pick what you want to include, then download it all as a single JSON file.
 | Search History   |  &mdash;   | Up to 50 recent searches                                         |
 | Profile          |  &mdash;   | Display name, username, country, subscription tier               |
 
-You can also export **another user's** public playlists and followed artists. Just paste their profile URL or user ID.
+You can also export **another user's** public playlists and followed artists. Pick one of your friends, or paste their profile URL or user ID.
 
 ---
 
@@ -65,6 +65,8 @@ Before exporting or importing, click any data type's item count to open a previe
 Drop in a JSON file to restore your data. Works with **Data Porter exports** and **Spotify's official data exports** (YourLibrary.json, Playlist1.json).
 
 You'll see a preview of what's inside before anything gets written. Click into any data type to inspect its contents before committing to the import.
+
+Imported playlists are always created private, and Liked Songs from Data Porter exports keep their original order. You can cancel at any time: the summary shows what was already added, and that stays in your library.
 
 <img src="preview/import.webp" width="100%" alt="Import preview" />
 
