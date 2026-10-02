@@ -8,7 +8,9 @@ export const loadAllTranslations = (
   appT: Translator,
   bundled: BundledLocales = {},
 ) => {
-  const fetchSharedMessages = fetchLocale(SHARED_I18N_PATH, bundled.shared);
+  const fetchShared = fetchLocale(SHARED_I18N_PATH, bundled.shared);
+  let shared: ReturnType<typeof fetchShared> | undefined; // one request serves both translators
+  const fetchSharedMessages = (locale: string) => (shared ??= fetchShared(locale));
 
   return Promise.all([
     appT.load(async (locale) => {
