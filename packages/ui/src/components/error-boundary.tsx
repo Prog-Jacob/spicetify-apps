@@ -4,6 +4,8 @@ import ErrorCard from './error-card';
 type ErrorBoundaryProps = {
   scope: string;
   title: string;
+  /** Replaces the state that crashed before Try Again re-renders it. */
+  onReset?: () => void;
   children: React.ReactNode;
 };
 
@@ -27,7 +29,10 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
       <ErrorCard
         title={this.props.title}
         warnings={[error instanceof Error ? error.message : String(error)]}
-        onRetry={() => this.setState({ hasError: false, error: null })}
+        onRetry={() => {
+          this.props.onReset?.();
+          this.setState({ hasError: false, error: null });
+        }}
       />
     );
   }

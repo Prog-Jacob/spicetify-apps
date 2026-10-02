@@ -18,8 +18,13 @@ export class MusicGraph {
   private readonly adjacency = new Map<string, Set<string>>();
   private readonly edgeKeysByNode = new Map<string, Set<string>>();
 
+  // Spotify data can omit a name, and every label consumer needs a string.
   addNode(node: GraphNode): void {
-    if (!this.nodeByUri.has(node.uri)) this.nodeByUri.set(node.uri, node);
+    if (this.nodeByUri.has(node.uri)) return;
+    this.nodeByUri.set(
+      node.uri,
+      typeof node.label === 'string' ? node : { ...node, label: node.uri },
+    );
   }
 
   relabel(uri: string, label: string): void {

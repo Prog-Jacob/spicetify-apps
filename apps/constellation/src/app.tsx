@@ -8,7 +8,7 @@ import { useUpdateCheck, useSpicetifyReady } from '@shared/hooks';
 
 const ConstellationApp = () => {
   const explorer = useGraphExplorer();
-  const { library, failed, crawlPhase, reload } = explorer;
+  const { library, failed, crawlPhase, reload, recover } = explorer;
   const update = useUpdateCheck();
 
   const body = () => {
@@ -36,7 +36,7 @@ const ConstellationApp = () => {
   };
 
   return (
-    <ErrorBoundary scope={__APP_NAME__} title={t('app.error')}>
+    <ErrorBoundary scope={__APP_NAME__} title={t('app.error')} onReset={recover}>
       <div className="absolute inset-0 flex flex-col overflow-hidden">
         {update && (
           <UpdateBanner

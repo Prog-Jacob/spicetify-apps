@@ -15,6 +15,19 @@ test('nodes dedupe by URI, first write wins', () => {
   assert.equal(g.nodes()[0].label, 'a');
 });
 
+test('a node without a string label is labelled by its URI, including from a snapshot', () => {
+  const g = new MusicGraph();
+  g.addNode({ uri: 'p', type: 'playlist', label: undefined as unknown as string });
+  assert.equal(g.node('p')?.label, 'p');
+
+  const restored = fromSnapshot({
+    version: 2,
+    nodes: [{ ...node('q'), label: null as never }],
+    links: [],
+  });
+  assert.equal(restored.node('q')?.label, 'q');
+});
+
 test('edges dedupe in either direction; self or dangling edges are refused', () => {
   const g = new MusicGraph();
   ['a', 'b'].forEach((u) => g.addNode(node(u)));

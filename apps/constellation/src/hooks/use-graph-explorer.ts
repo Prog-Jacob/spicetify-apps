@@ -92,6 +92,11 @@ export const useGraphExplorer = () => {
   }, []);
 
   const reload = useCallback(() => setReloadToken((n) => n + 1), []);
+  // The library crashed the render, so it must not be re-shown while the crawl runs.
+  const recover = useCallback(() => {
+    setLibrary(null);
+    reload();
+  }, [reload]);
 
   const expand = useCallback(
     async (node: GraphNode) => {
@@ -155,6 +160,7 @@ export const useGraphExplorer = () => {
     crawlPhase,
     revision,
     reload,
+    recover,
     expand,
     expandingUri,
     expandAll,
