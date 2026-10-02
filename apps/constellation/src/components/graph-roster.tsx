@@ -17,6 +17,7 @@ const GraphRoster = ({
   muted,
   query,
   onToggleType,
+  rootUri,
   onRemove,
   onSelect,
 }: {
@@ -25,6 +26,7 @@ const GraphRoster = ({
   muted: Set<NodeType>;
   query: string;
   onToggleType: (type: NodeType) => void;
+  rootUri: string;
   onRemove: (node: GraphNode) => void;
   onSelect: (node: GraphNode) => void;
 }) => {
@@ -70,13 +72,15 @@ const GraphRoster = ({
               label={node.label}
               onSelect={() => onSelect(node)}
               trailing={
-                <IconButton
-                  icon="minus"
-                  label={t('inspector.remove')}
-                  onClick={() => onRemove(node)}
-                  size={13}
-                  className="h-6 w-6 opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
-                />
+                node.uri !== rootUri && (
+                  <IconButton
+                    icon="minus"
+                    label={t('inspector.remove')}
+                    onClick={() => onRemove(node)}
+                    size={13}
+                    className="h-6 w-6 opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+                  />
+                )
               }
             />
           ))

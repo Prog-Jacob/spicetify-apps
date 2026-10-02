@@ -46,7 +46,7 @@ type Props = {
   onToggleMark: () => void;
   onClearFocus: () => void;
   onUnpin: () => void;
-  onRemove: (node: GraphNode, keep?: Set<NodeType>) => void;
+  onRemove?: (node: GraphNode, keep?: Set<NodeType>) => void;
   onClose: () => void;
 };
 
@@ -261,11 +261,13 @@ const Inspector = ({
             onClick={onToggleMark}
           />
           {pinned && <ActionButton icon="locked" label={t('inspector.unpin')} onClick={onUnpin} />}
-          <RemoveTypeMenu
-            variant="row"
-            types={breakdown.map(([type]) => type)}
-            onRemove={(keep) => onRemove(node, keep)}
-          />
+          {onRemove && (
+            <RemoveTypeMenu
+              variant="row"
+              types={breakdown.map(([type]) => type)}
+              onRemove={(keep) => onRemove(node, keep)}
+            />
+          )}
         </div>
 
         <div className="flex flex-col gap-2 border-t border-spice-subtext/10 pt-3">

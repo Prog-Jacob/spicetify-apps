@@ -67,6 +67,7 @@ const GraphDock = ({
         nodes={
           <NodesTab
             nodes={lenses.liveNodes}
+            rootUri={library.rootUri}
             removed={removed}
             adding={explorer.adding}
             onAdd={explorer.addEntity}

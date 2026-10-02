@@ -48,6 +48,7 @@ const RemovedList = ({
 
 type Props = {
   nodes: GraphNode[];
+  rootUri: string;
   removed: GraphNode[];
   adding: boolean;
   onAdd: (input: string) => Promise<GraphNode | null>;
@@ -59,6 +60,7 @@ type Props = {
 
 const NodesTab = ({
   nodes,
+  rootUri,
   removed,
   adding,
   onAdd,
@@ -101,6 +103,7 @@ const NodesTab = ({
         muted={muted}
         query={query}
         onToggleType={toggleType}
+        rootUri={rootUri}
         onRemove={onRemove}
         onSelect={onSelect}
       />

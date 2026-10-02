@@ -28,7 +28,7 @@ const GraphWorkspace = ({ explorer, library }: Props) => {
   const physics = usePhysics();
   const reducedMotion = useReducedMotion();
   const selection = useGraphSelection(library.graph, revision);
-  const { selected, select, focusUri, focus, clearFocus } = selection;
+  const { select, focusUri, focus, clearFocus } = selection;
   const lenses = useGraphLenses(
     library,
     revision,
@@ -38,6 +38,9 @@ const GraphWorkspace = ({ explorer, library }: Props) => {
     explorer.seeds,
     explorer.anchors,
   );
+  // a removed node stays selected, so Undo brings its inspector back
+  const selected =
+    selection.selected && lenses.liveSet?.has(selection.selected.uri) ? selection.selected : null;
 
   const viewRef = useRef<GraphViewHandle>(null);
 
@@ -192,7 +195,7 @@ const GraphWorkspace = ({ explorer, library }: Props) => {
           onToggleMark={() => selection.toggleMark(selected.uri)}
           onClearFocus={clearFocus}
           onUnpin={() => unpinNode(selected.uri)}
-          onRemove={removeOne}
+          onRemove={selected.uri === library.rootUri ? undefined : removeOne}
           onClose={() => select(null)}
         />
       )}

@@ -138,13 +138,17 @@ export const useGraphExplorer = () => {
   const removeEntities = useCallback(
     (uris: string[], keep?: ReadonlySet<NodeType>): string[] => {
       if (!library) return [];
-      const present = uris.filter((uri) => library.graph.node(uri));
+      // Your own node roots the graph; re-hiding a node would double its undo entry.
+      const hidden = new Set(session.hidden);
+      const present = uris.filter(
+        (uri) => uri !== library.rootUri && !hidden.has(uri) && library.graph.node(uri),
+      );
       if (!present.length) return [];
       const keptAnchors = keep?.size ? firstLevelOfTypes(library.graph, present, keep) : [];
       hide(present, keptAnchors);
       return present;
     },
-    [library, hide],
+    [library, hide, session.hidden],
   );
 
   const restoreEntities = useCallback(

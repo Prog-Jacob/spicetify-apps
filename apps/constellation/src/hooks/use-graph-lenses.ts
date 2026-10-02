@@ -136,6 +136,7 @@ export const useGraphLenses = (
   const visibleUris = useMemo(() => new Set(visibleNodes.map((n) => n.uri)), [visibleNodes]);
 
   return {
+    liveSet,
     liveNodes,
     visibleNodes,
     visibleUris,
