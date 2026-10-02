@@ -19,7 +19,8 @@ async function importPlaylist(
   log: ImportLogEntry[],
   onProgress: (p: ProgressInfo) => void,
   signal: AbortSignal,
-): Promise<string | undefined> {
+  onCreated: (uri: string) => void,
+): Promise<void> {
   if (resolution === CONFLICT_RESOLUTION.SKIP) {
     log.push({
       label: t('log.playlistSkipped', { name: playlist.name }),
@@ -44,6 +45,7 @@ async function importPlaylist(
       });
       return;
     }
+    onCreated(targetUri);
   }
 
   if (playlist.description) {
@@ -108,26 +110,25 @@ async function importPlaylist(
     }
   }
 
-  if (trackUris.length > 0) {
+  const logKey =
+    resolution === CONFLICT_RESOLUTION.MERGE ? 'log.playlistMerged' : 'log.playlistCreated';
+  let added = 0;
+  try {
     await batchedWrite(
       trackUris,
-      (batch) => Spicetify.Platform.PlaylistAPI.add(targetUri, batch, { after: 'end' }),
+      async (batch) => {
+        await Spicetify.Platform.PlaylistAPI.add(targetUri, batch, { after: 'end' });
+        added += batch.length;
+      },
       {
         label: t('progress.importingPlaylist', { name: playlist.name }),
         signal,
         onProgress,
       },
     );
+  } finally {
+    log.push({ label: t(logKey, { name: playlist.name, count: added }), status: LOG_STATUS.OK });
   }
-
-  const logKey =
-    resolution === CONFLICT_RESOLUTION.MERGE ? 'log.playlistMerged' : 'log.playlistCreated';
-  log.push({
-    label: t(logKey, { name: playlist.name, count: trackUris.length }),
-    status: LOG_STATUS.OK,
-  });
-
-  return resolution !== CONFLICT_RESOLUTION.MERGE ? targetUri : undefined;
 }
 
 export async function importData(
@@ -137,6 +138,7 @@ export async function importData(
   existingPlaylistUris: Map<string, string>,
   onProgress: (p: ProgressInfo) => void,
   signal: AbortSignal,
+  newestFirst = false,
 ): Promise<ImportResult> {
   const warnings: string[] = [];
   const log: ImportLogEntry[] = [];
@@ -150,7 +152,7 @@ export async function importData(
     try {
       await fn();
     } catch (e) {
-      signal?.throwIfAborted();
+      if (signal.aborted) return;
       const detail = e instanceof Error ? e.message : String(e);
       const msg = t('log.failed', { label });
       log.push({ label, status: LOG_STATUS.ERROR, detail });
@@ -201,17 +203,23 @@ export async function importData(
     if (!selected.has(type) || !items?.length) continue;
     const uris = items.map((i) => i.uri).filter(Boolean);
     if (!uris.length) continue;
-    await tryWrite(noun, async () => {
-      await batchedWrite(uris, (batch) => Spicetify.Platform.LibraryAPI.add({ uris: batch }), {
-        label: progressLabel,
-        signal,
-        onProgress,
-      });
-      log.push({ label: t('log.saved', { count: uris.length, noun }), status: LOG_STATUS.OK });
-    });
+    // Batches are timestamped as they land, so oldest first keeps "Recently added" in order.
+    if (newestFirst && type === DATA_TYPE.LIKED_SONGS) uris.reverse();
+    let saved = 0;
+    await tryWrite(noun, () =>
+      batchedWrite(
+        uris,
+        async (batch) => {
+          await Spicetify.Platform.LibraryAPI.add({ uris: batch });
+          saved += batch.length;
+        },
+        { label: progressLabel, signal, onProgress },
+      ),
+    );
+    if (saved) log.push({ label: t('log.saved', { count: saved, noun }), status: LOG_STATUS.OK });
   }
 
-  if (selected.has(DATA_TYPE.BANNED_CONTENT)) {
+  if (selected.has(DATA_TYPE.BANNED_CONTENT) && !signal.aborted) {
     const noun = t('dataType.bannedContent');
     const bannedTracks = data.library?.bannedTracks;
     const bannedArtists = data.library?.bannedArtists;
@@ -225,19 +233,18 @@ export async function importData(
     ];
     for (const [items, set] of banSets) {
       if (!items?.length) continue;
-      await tryWrite(noun, async () => {
-        const uris = items.map((i) => i.uri);
-        await batchedWrite(
-          uris,
-          (batch) => Spicetify.Platform.CollectionPlatformAPI.add(set, batch),
-          {
-            label: t('progress.banningContent'),
-            signal,
-            onProgress,
+      let saved = 0;
+      await tryWrite(noun, () =>
+        batchedWrite(
+          items.map((i) => i.uri),
+          async (batch) => {
+            await Spicetify.Platform.CollectionPlatformAPI.add(set, batch);
+            saved += batch.length;
           },
-        );
-        log.push({ label: t('log.saved', { count: uris.length, noun }), status: LOG_STATUS.OK });
-      });
+          { label: t('progress.banningContent'), signal, onProgress },
+        ),
+      );
+      if (saved) log.push({ label: t('log.saved', { count: saved, noun }), status: LOG_STATUS.OK });
     }
   }
 
@@ -245,7 +252,7 @@ export async function importData(
 
   if (selected.has(DATA_TYPE.PLAYLISTS) && data.playlists?.length) {
     for (let i = 0; i < data.playlists.length; i++) {
-      signal?.throwIfAborted();
+      if (signal.aborted) break;
 
       const playlist = data.playlists[i];
       onProgress({
@@ -255,17 +262,17 @@ export async function importData(
       });
 
       try {
-        const uri = await importPlaylist(
+        await importPlaylist(
           playlist,
           conflictResolutions.get(i),
           existingPlaylistUris.get(playlist.name),
           log,
           onProgress,
           signal,
+          (uri) => privatePlaylists.push({ uri, name: playlist.name }),
         );
-        if (uri) privatePlaylists.push({ uri, name: playlist.name });
       } catch (e) {
-        signal?.throwIfAborted();
+        if (signal.aborted) break;
         const detail = e instanceof Error ? e.message : String(e);
         const msg = t('log.failed', { label: playlist.name });
         log.push({ label: playlist.name, status: LOG_STATUS.ERROR, detail });
@@ -289,5 +296,9 @@ export async function importData(
     }
   }
 
-  return { log, warnings };
+  if (signal.aborted)
+    warnings.push(
+      t(log.some((e) => e.status === LOG_STATUS.OK) ? 'warn.cancelled' : 'warn.cancelledEmpty'),
+    );
+  return { log, warnings, cancelled: signal.aborted };
 }

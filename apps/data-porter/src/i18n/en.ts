@@ -61,6 +61,7 @@ const en = {
   // Summaries
   'summary.complete': 'Complete',
   'summary.partial': 'Partially Complete',
+  'summary.cancelled': 'Import Cancelled',
   'summary.newExport': 'New Export',
   'summary.importAgain': 'Import Again',
   'summary.goToExport': 'Go to Export',
@@ -95,6 +96,7 @@ const en = {
 
   // Progress labels
   'progress.starting': 'Starting',
+  'progress.cancelling': 'Cancelling',
   'progress.scanningLibrary': 'Scanning library',
   'progress.fetchingPlaylists': 'Fetching playlists',
   'progress.fetchingLikedSongs': 'Fetching liked songs',
@@ -135,6 +137,8 @@ const en = {
   'warn.playlistsFailed': '{count} playlists failed to load: {names}',
   'warn.noPublicData': 'This user has no public playlists or followed artists to export.',
   'warn.fetchFailed': 'Failed to fetch {label}',
+  'warn.cancelled': 'Import cancelled. Everything listed above was already added and stays.',
+  'warn.cancelledEmpty': 'Import cancelled before anything was added.',
   'error.invalidProfile': 'Invalid Spotify profile URL or user ID.',
   'error.notValidJson': '"{fileName}" is not valid JSON',
   'error.notJsonObject': '"{fileName}" must be a JSON object',

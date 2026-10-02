@@ -81,7 +81,9 @@ const ImportSummary = ({ result, onImportAgain, onGoToExport }: ImportSummaryPro
   return (
     <ResultCard
       variant={isPartial ? 'warning' : 'success'}
-      title={isPartial ? t('summary.partial') : t('summary.complete')}
+      title={t(
+        result.cancelled ? 'summary.cancelled' : isPartial ? 'summary.partial' : 'summary.complete',
+      )}
       actions={
         <>
           <ButtonPrimary onClick={onImportAgain} buttonSize="md">

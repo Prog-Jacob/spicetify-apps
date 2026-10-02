@@ -21,6 +21,7 @@ export type ImportLogEntry = {
 export type ImportResult = {
   log: ImportLogEntry[];
   warnings: string[];
+  cancelled?: boolean;
 };
 
 export type PlaylistReviewItem = {

@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
 import { t, type MessageKey } from '../i18n';
 import type { DataType } from '../types/export';
+import React, { useState, useRef } from 'react';
 import { importData } from '../services/importer';
 import type { ProgressInfo } from '@shared/types';
 import { getAvailableCounts } from '../data-types';
@@ -56,6 +56,7 @@ const ImportPage = () => {
   const [existingUris, setExistingUris] = useState<Map<string, string>>(new Map());
   const [previewing, setPreviewing] = useState<DataType | null>(null);
   const aborter = useAbortController();
+  const importing = useRef(false);
   const [result, setResult] = useState<ImportResult | null>(null);
   const [progress, setProgress] = useState<ProgressInfo | null>(null);
 
@@ -71,25 +72,31 @@ const ImportPage = () => {
     setResult(null);
     setProgress({ current: 0, total: 0, label: t('progress.starting') });
 
+    importing.current = true;
     try {
       const importResult = await importData(
         parsed.data,
         selected,
         resolvedConflicts,
         existingMap,
-        setProgress,
+        (p) => {
+          if (!controller.signal.aborted) setProgress(p);
+        },
         controller.signal,
+        parsed.sourceFormat === SOURCE_FORMAT.OUR_EXPORT,
       );
       setResult(importResult);
       const allFailed =
-        importResult.log.length > 0 && importResult.log.every((e) => e.status === LOG_STATUS.ERROR);
+        !importResult.cancelled &&
+        importResult.log.length > 0 &&
+        importResult.log.every((e) => e.status === LOG_STATUS.ERROR);
       setStep(allFailed ? IMPORT_STEP.ERROR : IMPORT_STEP.DONE);
     } catch (e) {
-      if (controller.signal.aborted) return;
       console.error(`[${__APP_NAME__}] Import failed:`, e);
       setResult({ log: [], warnings: [e instanceof Error ? e.message : String(e)] });
       setStep(IMPORT_STEP.ERROR);
     } finally {
+      importing.current = false;
       setProgress(null);
     }
   };
@@ -263,6 +270,11 @@ const ImportPage = () => {
           progress={progress}
           onCancel={() => {
             aborter.abort();
+            // a running import stops on its summary of what was already written
+            if (importing.current) {
+              setProgress((p) => p && { ...p, label: t('progress.cancelling') });
+              return;
+            }
             setStep(parsed ? IMPORT_STEP.PREVIEW : IMPORT_STEP.UPLOAD);
             setProgress(null);
           }}
