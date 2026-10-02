@@ -7,8 +7,7 @@ import { NODE_TYPE, EDGE_TYPE } from '../constants';
 import { notifyError, toEpochMs } from '@shared/lib';
 import { attachUserPlaylists } from './user-playlists';
 import type { LibraryContentItem } from '@shared/types';
-import { paginate, fetchRootlistPlaylists } from '@shared/api';
-import { listSocialGraph, type ProfileRef } from './social-graph';
+import { paginate, fetchRootlistPlaylists, listSocialGraph, type ProfileRef } from '@shared/api';
 
 export type LibraryGraph = {
   graph: MusicGraph;

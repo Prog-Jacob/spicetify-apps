@@ -1,5 +1,5 @@
-import { SPOTIFY_URI, spotifyImageUrl } from '@shared/lib';
-import { getFollowers, getFollowing, type ProfileEntry } from '@shared/api';
+import { SPOTIFY_URI, spotifyImageUrl } from '../lib';
+import { getFollowers, getFollowing, type ProfileEntry } from './profile-view';
 
 export type ProfileRef = { uri: string; name: string; imageUrl?: string };
 
