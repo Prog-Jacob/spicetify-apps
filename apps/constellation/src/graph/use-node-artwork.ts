@@ -54,8 +54,10 @@ export const useNodeArtwork = (
     }
 
     let cancelled = false;
+    let settled = false;
     if (pending.length)
       void resolveUriMetadata(pending).then((metas) => {
+        settled = true;
         if (cancelled) return;
         for (const [uri, meta] of metas)
           if (meta.imageUrl && !imageByUri.has(uri)) show(uri, meta.imageUrl);
@@ -64,6 +66,8 @@ export const useNodeArtwork = (
 
     return () => {
       cancelled = true;
+      // cancelled mid-lookup, so the next run retries
+      if (!settled) for (const uri of pending) attempted.delete(uri);
     };
   }, [graph, images, settledRevision, imageByUri, attempted, canvas]);
 };
