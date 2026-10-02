@@ -3,6 +3,7 @@ import { t, type MessageKey } from '../i18n';
 import { exportData } from '../services/exporter';
 import type { ProgressInfo } from '@shared/types';
 import { useAbortController } from '@shared/hooks';
+import FriendPicker from '../components/friend-picker';
 import DataTypeGrid from '../components/data-type-grid';
 import ExportSummary from '../components/export-summary';
 import { ALL_DATA_TYPES as DATA_TYPES } from '../data-types';
@@ -183,6 +184,7 @@ const ExportPage = ({ onGoToImport }: ExportPageProps) => {
                 if (e.key === 'Enter' && !isFetching && userInput.trim()) startExport();
               }}
             />
+            <FriendPicker value={userInput} disabled={isFetching} onPick={setUserInput} />
           </div>
 
           {status === EXPORT_STATUS.IDLE && (

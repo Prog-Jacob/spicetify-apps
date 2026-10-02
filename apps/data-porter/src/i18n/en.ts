@@ -22,6 +22,7 @@ const en = {
   'export.spotifyProfile': 'Spotify profile',
   'export.profilePlaceholder': 'https://open.spotify.com/user/... or spotify:user:... or username',
   'export.exportUserData': 'Export User Data',
+  'export.friends': 'Your friends',
   'export.failed': 'Export Failed',
   'export.downloaded': 'File downloaded',
 
