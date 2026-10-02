@@ -6,15 +6,16 @@ import { firstLevelOfTypes } from '../graph/node-query';
 import type { NodeType, GraphNode } from '../types/graph';
 import { addExternalEntity } from '../services/add-entity';
 import { useExplorerSession } from './use-explorer-session';
-import { expandNode, canExpand } from '../services/expand-node';
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { expandNode, canExpand, reexpand } from '../services/expand-node';
 import { loadCachedLibrary, saveCachedLibrary, flushCachedLibrary } from '../services/graph-cache';
 import { buildLibraryGraph, type CrawlPhase, type LibraryGraph } from '../services/library-crawler';
 
 /**
  * Expansion mutates the graph in place, so `revision` bumps to re-project. Removal only hides:
  * nodes stay in the graph and the lens derives what is visible by reachability. Fresh cache
- * restores as-is; only stale cache or an explicit reload re-crawls.
+ * restores as-is; only stale cache or an explicit reload re-crawls, and only the stale re-crawl
+ * replays earlier expansions.
  */
 export const useGraphExplorer = () => {
   const [library, setLibrary] = useState<LibraryGraph | null>(null);
@@ -46,6 +47,7 @@ export const useGraphExplorer = () => {
     setCrawlPhase(null);
 
     const load = async () => {
+      let stale: LibraryGraph | null = null;
       if (reloadToken === 0) {
         const cached = await loadCachedLibrary();
         signal.throwIfAborted();
@@ -55,6 +57,7 @@ export const useGraphExplorer = () => {
           if (!me?.uri || me.uri === cached.library.rootUri) {
             setLibrary(cached.library);
             if (cached.fresh) return;
+            stale = cached.library;
           }
         }
       }
@@ -69,6 +72,8 @@ export const useGraphExplorer = () => {
           addExternalEntity(lib.graph, lib.images, uri, signal).catch(() => undefined),
         ),
       );
+      // read late: expanding the stale graph stays possible while the crawl runs
+      await reexpand(lib.graph, [...(stale?.expanded ?? [])], lib.expanded, signal);
       signal.throwIfAborted();
       setLibrary(lib);
       setCrawlPhase(null);

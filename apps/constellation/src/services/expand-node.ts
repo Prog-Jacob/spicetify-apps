@@ -67,3 +67,31 @@ export const expandNode = (
   node: GraphNode,
   signal?: AbortSignal,
 ): Promise<void> => expanderFor(node)?.(graph, node, signal) ?? Promise.resolve();
+
+export const EXPAND_CONCURRENCY = 3;
+
+/** Replays expansions onto a fresh crawl in rounds: one can bring back the node of the next. */
+export const reexpand = async (
+  graph: MusicGraph,
+  uris: string[],
+  expanded: Set<string>,
+  signal?: AbortSignal,
+): Promise<void> => {
+  let pending = uris;
+  for (;;) {
+    const ready = pending.filter((uri) => graph.node(uri));
+    if (!ready.length) return;
+    pending = pending.filter((uri) => !graph.node(uri));
+    for (let i = 0; i < ready.length; i += EXPAND_CONCURRENCY) {
+      signal?.throwIfAborted();
+      await Promise.all(
+        ready.slice(i, i + EXPAND_CONCURRENCY).map((uri) =>
+          expandNode(graph, graph.node(uri)!, signal).then(
+            () => expanded.add(uri),
+            () => undefined,
+          ),
+        ),
+      );
+    }
+  }
+};
