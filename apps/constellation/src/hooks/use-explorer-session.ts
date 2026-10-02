@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   union,
   loadSession,
@@ -50,10 +50,11 @@ export const useExplorerSession = () => {
     (uris: string[], keptAnchors: string[] = []) =>
       mutate((s) => {
         const hidden = union(s.hidden, uris);
-        const anchors = union(s.anchors, keptAnchors);
-        return hidden.length === s.hidden.length && anchors.length === s.anchors.length
-          ? s
-          : { ...s, hidden, anchors };
+        if (hidden.length === s.hidden.length && !keptAnchors.length) return s;
+        const anchors = { ...s.anchors };
+        if (keptAnchors.length)
+          for (const uri of uris) anchors[uri] = union(anchors[uri] ?? [], keptAnchors);
+        return { ...s, hidden, anchors };
       }),
     [mutate],
   );
@@ -63,7 +64,10 @@ export const useExplorerSession = () => {
       mutate((s) => {
         const drop = new Set(uris);
         const hidden = s.hidden.filter((uri) => !drop.has(uri));
-        return hidden.length === s.hidden.length ? s : { ...s, hidden };
+        if (hidden.length === s.hidden.length) return s;
+        const anchors = { ...s.anchors };
+        for (const uri of uris) delete anchors[uri];
+        return { ...s, hidden, anchors };
       }),
     [mutate],
   );
@@ -90,9 +94,14 @@ export const useExplorerSession = () => {
     [mutate],
   );
 
+  const anchors = useMemo(
+    () => union([], Object.values(session.anchors).flat()),
+    [session.anchors],
+  );
+
   return {
     seeds: session.seeds,
-    anchors: session.anchors,
+    anchors,
     hidden: session.hidden,
     pins: session.pins,
     seedsReady: seedsReady.current,

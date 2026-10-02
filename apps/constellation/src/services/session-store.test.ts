@@ -32,7 +32,7 @@ test('v1/v2 `removed` entries migrate to hidden uris; only the uri survives', ()
 
 test('an absent or unreadable session normalizes to an empty one', () => {
   for (const raw of [undefined, null, 'nonsense', { seeds: 'no' }])
-    assert.deepEqual(normalizeSession(raw), { seeds: [], anchors: [], hidden: [], pins: {} });
+    assert.deepEqual(normalizeSession(raw), { seeds: [], anchors: {}, hidden: [], pins: {} });
 });
 
 // Edits made before the stored session loads must layer over it, not be lost to it.
@@ -41,8 +41,21 @@ test('mergeSessions unions the sets and lets in-flight pins win', () => {
   const edits = { ...emptySession(), seeds: ['b'], hidden: ['x'], pins: { a: { x: 9, y: 9 } } };
   assert.deepEqual(mergeSessions(base, edits), {
     seeds: ['a', 'b'],
-    anchors: [],
+    anchors: {},
     hidden: ['x'],
     pins: { a: { x: 9, y: 9 } },
   });
+});
+
+test('legacy ownerless anchors are owned by every hidden uri, and dropped with nothing hidden', () => {
+  assert.deepEqual(normalizeSession({ hidden: ['x', 'y'], anchors: ['k'] }).anchors, {
+    x: ['k'],
+    y: ['k'],
+  });
+  assert.deepEqual(normalizeSession({ hidden: [], anchors: ['k'] }).anchors, {});
+  assert.deepEqual(
+    normalizeSession({ hidden: ['x'], anchors: { x: ['k', 3], y: [] } }).anchors,
+    { x: ['k'] },
+    'owned anchors keep strings only, and empty owners drop',
+  );
 });
