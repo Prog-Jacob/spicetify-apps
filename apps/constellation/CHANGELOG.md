@@ -1,5 +1,17 @@
 # @spicetify-apps/constellation
 
+## 1.3.0
+
+### Minor Changes
+
+- docs: catch the READMEs and CLAUDE.md up with the fixes and friend picker
+- refactor(shared): move the social graph loader into the api layer
+- fix(constellation): stop expand-all on unmount and retry cancelled artwork
+- feat(constellation): replay expansions after a stale re-crawl
+- fix(constellation): keep your own node, and close the inspector on removal
+- fix(constellation): key kept anchors by owner so restoring frees them
+- fix(constellation): label nameless nodes and let Try Again re-crawl
+
 ## 1.2.0
 
 ### Minor Changes
