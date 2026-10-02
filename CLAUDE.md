@@ -52,7 +52,7 @@ All code runs inside Spotify's renderer process. The `Spicetify` global provides
 
 - `Spicetify.React` / `Spicetify.ReactDOM` — shared React instance (do NOT import react as a dep)
 - `Spicetify.Platform.*` — internal Spotify APIs (PlaylistAPI, LibraryAPI, RootlistAPI, UserAPI, etc.)
-- `Spicetify.CosmosAsync.*` — HTTP-like client for Spotify's internal endpoints
+- `Spicetify.CosmosAsync.*` — HTTP-like client for Spotify's internal endpoints (for https URLs, go through `cosmos` in `@shared/api`)
 - `Spicetify.URI` — URI parser/validator for `spotify:track:`, `spotify:playlist:`, etc.
 - `Spicetify.ReactComponent.*` — stock UI components (ButtonPrimary, Menu, TooltipWrapper, etc.)
 - `Spicetify.showNotification()` — toast notifications
@@ -63,6 +63,7 @@ Types are in `packages/shared/src/types/spicetify.d.ts` and `platform-api.ts`. C
 
 - `cosmos.ts` — typed wrapper around `Spicetify.CosmosAsync` with error validation; https GETs skip Spicetify's broken version gate (Spotify's API hosts via `Platform.Transport`, others via Spicetify's CORS proxy)
 - `batch.ts` — `paginate()` for reading paginated library endpoints, `batchedWrite()` for chunked bulk writes. Both support `AbortSignal` and progress callbacks.
+- `profile-view.ts` / `social-graph.ts` — public profiles and playlists; `listSocialGraph()` returns who you follow and who follows you as user profiles
 
 ## i18n
 

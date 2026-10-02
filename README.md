@@ -113,13 +113,6 @@ The scaffolder generates the entry point, app shell, i18n setup, README, `packag
 
 To set up manually, create `apps/<name>/src/index.tsx` with a default `render()` export, a `package.json` with a `version` field, and a `tsconfig.json` extending `../../tsconfig.base.json`.
 
-### Path Aliases
-
-| Alias       | Resolves to             |
-| ----------- | ----------------------- |
-| `@shared/*` | `packages/shared/src/*` |
-| `@ui/*`     | `packages/ui/src/*`     |
-
 ### Releases
 
 Uses [changesets](https://github.com/changesets/changesets). Tags follow `<app-name>-v<version>` format.
