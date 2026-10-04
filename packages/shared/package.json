@@ -4,5 +4,10 @@
   "private": true,
   "scripts": {
     "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "idb-keyval": "^6.3.0",
+    "tailwind-merge": "^3.6.0"
   }
 }

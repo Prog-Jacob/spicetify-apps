@@ -4,8 +4,12 @@
   "private": true,
   "main": "dist/index.js",
   "scripts": {
-    "typecheck": "tsc --noEmit",
-    "download": "curl -fsSL https://raw.githubusercontent.com/Prog-Jacob/spicetify-apps/main/install.sh | bash -s constellation",
-    "symlink": "DEST=\"$(dirname $(spicetify -c))/CustomApps/constellation\" && rm -rf \"$DEST\" && ln -sfn \"$PWD/dist\" \"$DEST\" && spicetify config custom_apps constellation >/dev/null"
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "d3-force-3d": "^3.0.6",
+    "force-graph": "^1.51.4",
+    "graphology": "^0.26.0",
+    "graphology-communities-louvain": "^2.0.2"
   }
 }

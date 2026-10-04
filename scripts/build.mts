@@ -1,25 +1,13 @@
-import { join } from 'path';
-import { execSync } from 'child_process';
+import { dirname, join } from 'path';
+import { createRequire } from 'module';
+import { execFileSync } from 'child_process';
 import pkg from 'esbuild-plugin-external-global';
 import { build, context, type BuildOptions } from 'esbuild';
-import { ROOT, APPS_DIR, readPkg, readManifest } from './lib.mts';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import type { BundledLocales } from '../packages/shared/src/i18n/types.ts';
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'fs';
+import { ROOT, APPS_DIR, readPkg, readManifest, listApps, requireApp } from './lib.mts';
 
-interface Author {
-  name: string;
-  url?: string;
-}
-
-interface PackageJson {
-  version?: string;
-  repository?: string;
-  author?: Author;
-  contributors?: Author[];
-  i18n?: { bundleLocales?: string[] };
-}
-
-const rootPkg: PackageJson = readPkg();
+const rootPkg = readPkg();
 const bundleLocales = rootPkg.i18n?.bundleLocales ?? [];
 
 const { externalGlobalPlugin } = pkg;
@@ -27,15 +15,10 @@ const args = process.argv.slice(2);
 const watchMode = args.includes('--watch');
 const appFilterIdx = args.indexOf('--app');
 const bundleI18n = args.includes('--bundle-locales');
-const appFilter = appFilterIdx !== -1 ? args[appFilterIdx + 1] : null;
-
-const discoverApps = (): string[] => {
-  if (!existsSync(APPS_DIR)) return [];
-  return readdirSync(APPS_DIR, { withFileTypes: true })
-    .filter((d) => d.isDirectory())
-    .filter((d) => existsSync(join(APPS_DIR, d.name, 'src', 'index.tsx')))
-    .map((d) => d.name);
-};
+const appFilter =
+  appFilterIdx === -1
+    ? null
+    : requireApp(args[appFilterIdx + 1], 'tsx scripts/build.mts --app <app-name>');
 
 const collectBundledLocales = (appName: string): BundledLocales => {
   const app: BundledLocales['app'] = {};
@@ -54,8 +37,7 @@ const collectBundledLocales = (appName: string): BundledLocales => {
 const buildOptions = (appName: string): BuildOptions => {
   const appDir = join(APPS_DIR, appName);
   const outDir = join(appDir, 'dist');
-  const appPkg: PackageJson = readPkg(appDir);
-  const appVersion = appPkg.version ?? '0.0.0';
+  const appVersion = readPkg(appDir).version ?? '0.0.0';
   const manifestEntry = readManifest().find((e) => e.preview?.startsWith(`apps/${appName}/`));
 
   return {
@@ -70,10 +52,7 @@ const buildOptions = (appName: string): BuildOptions => {
     minify: !watchMode,
     sourcemap: watchMode ? 'inline' : false,
     plugins: [
-      externalGlobalPlugin({
-        react: 'Spicetify.React',
-        'react-dom': 'Spicetify.ReactDOM',
-      }),
+      externalGlobalPlugin({ react: 'Spicetify.React' }),
       {
         name: 'copy-assets',
         setup(build) {
@@ -112,6 +91,11 @@ const buildOptions = (appName: string): BuildOptions => {
   };
 };
 
+const tailwindDir = dirname(
+  createRequire(import.meta.url).resolve('@tailwindcss/cli/package.json'),
+);
+const tailwindBin = join(tailwindDir, readPkg(tailwindDir).bin!.tailwindcss);
+
 const compileTailwind = (appName: string): void => {
   const appDir = join(APPS_DIR, appName);
   const cssEntry = join(appDir, 'src', 'styles', 'index.css');
@@ -120,16 +104,17 @@ const compileTailwind = (appName: string): void => {
   if (!existsSync(cssEntry)) return;
 
   mkdirSync(outDir, { recursive: true });
-  execSync(
-    `npx @tailwindcss/cli -i ${cssEntry} -o ${join(outDir, 'style.css')}${watchMode ? '' : ' --minify'}`,
-    { stdio: 'inherit' },
-  );
+  const out = join(outDir, 'style.css');
+  const minify = watchMode ? [] : ['--minify'];
+  execFileSync(process.execPath, [tailwindBin, '-i', cssEntry, '-o', out, ...minify], {
+    stdio: 'inherit',
+  });
 };
 
-const apps = discoverApps().filter((name) => !appFilter || name === appFilter);
+const apps = appFilter ? [appFilter] : listApps();
 
 if (apps.length === 0) {
-  console.error(appFilter ? `App "${appFilter}" not found.` : 'No apps found in apps/.');
+  console.error('No apps found in apps/.');
   process.exit(1);
 }
 
