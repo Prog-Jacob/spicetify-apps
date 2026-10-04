@@ -2,9 +2,7 @@ import { validateResponse } from './cosmos';
 import type { ProgressInfo, LibraryPage } from '../types/platform';
 
 export const PAGE_SIZE = 200;
-export const BATCH_DELAY_MS = 500;
 export const WRITE_BATCH_SIZE = 50;
-export const PLAYLIST_BATCH_SIZE = 10;
 
 type WriteOptions = {
   label: string;
@@ -48,6 +46,7 @@ function validatePage<T>(response: unknown, context: string): LibraryPage<T> {
   return res as LibraryPage<T>;
 }
 
+/** Reads a `{ items, totalLength, offset, limit }` endpoint to the end, e.g. `LibraryAPI.getTracks`. */
 export async function paginate<T>(
   fetch: (params: { limit: number; offset: number }) => Promise<unknown>,
   options: PaginateOptions,

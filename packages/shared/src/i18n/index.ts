@@ -7,7 +7,6 @@ export type {
   BundledLocales,
   TranslationDict,
 } from './types';
-export { loadAllTranslations } from './load-translations';
 export { createAppTranslator } from './create-app-translator';
 
 const getLocale = (): string => {
@@ -41,24 +40,9 @@ const resolvePlural = (
 };
 
 /**
- * Create a typed translator from a `{ locale: dict }` map.
- * The first entry is the fallback. If the user's Spotify locale matches
- * a bundled key, that dict is used immediately. For unbundled locales,
- * call `t.load(fetcher)` before rendering — it fetches the dict at
- * runtime and falls back silently on failure. `t()` is always synchronous.
- *
- * Usage:
- * ```ts
- * import en from './en';
- * import { t as sharedT } from '@ui/i18n';
- * import { createTranslator, loadAllTranslations } from '@shared/i18n';
- *
- * export const { t, loadTranslations } = createAppTranslator(en, ui);
- *
- * t('export.title');
- * t('export.count', { selected: 3, total: 5 });
- * t('conflict.exists', { count: 2 });
- * ```
+ * A typed translator over `{ locale: dict }`, the first entry being the fallback. `t()` is
+ * synchronous; `t.load(fetcher)` swaps in an unbundled locale before first render. Apps use
+ * `createAppTranslator`, which layers their messages over `packages/ui`'s.
  */
 export const createTranslator = <T extends TranslationDict>(
   locales: Record<string, T>,
@@ -70,6 +54,7 @@ export const createTranslator = <T extends TranslationDict>(
   const fallback = Object.values(locales)[0];
   const pluralRules = new Intl.PluralRules(locale);
   const numberFormat = new Intl.NumberFormat(locale);
+  const dateFormat = new Intl.DateTimeFormat(locale, { dateStyle: 'medium' });
   let dict: T = baseLocale in locales ? { ...fallback, ...locales[baseLocale] } : fallback;
 
   const translate = (key: Key, params?: Record<string, string | number>): string => {
@@ -96,6 +81,7 @@ export const createTranslator = <T extends TranslationDict>(
   };
 
   translate.number = (n: number): string => numberFormat.format(n);
+  translate.date = (ms: number): string => dateFormat.format(ms);
 
   return translate;
 };

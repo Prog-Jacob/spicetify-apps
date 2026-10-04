@@ -1,9 +1,9 @@
-import { REPO } from './repo';
 import type { ReactNode } from 'react';
+import { errorMessage } from './errors';
 
 export const notifyError = (e: unknown, prefix?: string) => {
-  const msg = e instanceof Error ? e.message : String(e);
-  console.error(`[${REPO}] ${prefix ?? 'Error'}:`, e);
+  const msg = errorMessage(e);
+  console.error(`[${__APP_NAME__}] ${prefix ?? 'Error'}:`, e);
   Spicetify.showNotification(prefix ? `${prefix}: ${msg}` : msg, true);
 };
 

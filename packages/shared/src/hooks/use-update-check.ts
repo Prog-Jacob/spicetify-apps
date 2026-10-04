@@ -1,27 +1,15 @@
 import { REPO_API } from '../lib/repo';
 import { useState, useEffect } from 'react';
 
-type GithubRelease = {
-  tag_name: string;
-  html_url: string;
-};
+type GithubRelease = { tag_name: string; html_url: string };
 
 export type UpdateInfo = { url: string; version: string };
 
-const SEMVER_PARTS = 3;
+// Dotted numeric versions compare correctly under numeric collation: 1.10.0 > 1.9.0.
+const isNewer = (remote: string, local: string): boolean =>
+  remote.localeCompare(local, undefined, { numeric: true }) > 0;
 
-const isNewer = (remoteVersion: string, localVersion: string): boolean => {
-  const local = localVersion.split('.').map(Number);
-  const remote = remoteVersion.split('.').map(Number);
-
-  for (let i = 0; i < SEMVER_PARTS; i++) {
-    if ((remote[i] ?? 0) > (local[i] ?? 0)) return true;
-    if ((remote[i] ?? 0) < (local[i] ?? 0)) return false;
-  }
-
-  return false;
-};
-
+/** The newest `<app>-v*` GitHub release when it is ahead of this build, else null. */
 export const useUpdateCheck = (): UpdateInfo | null => {
   const [update, setUpdate] = useState<UpdateInfo | null>(null);
 
@@ -29,7 +17,8 @@ export const useUpdateCheck = (): UpdateInfo | null => {
     const tagPrefix = `${__APP_NAME__}-v`;
     const controller = new AbortController();
 
-    fetch(`${REPO_API}/releases`, { signal: controller.signal })
+    // The repo holds several apps' releases, so one page of 30 can miss this app's latest.
+    fetch(`${REPO_API}/releases?per_page=100`, { signal: controller.signal })
       .then((res) => (res.ok ? (res.json() as Promise<unknown>) : null))
       .then((data) => {
         if (!Array.isArray(data)) return;

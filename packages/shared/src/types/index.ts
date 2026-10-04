@@ -1,3 +1,4 @@
+export type * from './platform-api';
 export type {
   LibraryPage,
   SpotifyImage,
@@ -5,6 +6,7 @@ export type {
   RootlistItem,
   CollectionItem,
   PlaylistDetail,
+  RecentsContents,
   LibraryTrackItem,
   LibraryContentItem,
   PlaylistItemDetail,

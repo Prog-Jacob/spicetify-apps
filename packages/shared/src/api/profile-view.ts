@@ -1,9 +1,9 @@
 import { cosmos } from './cosmos';
+import { PAGE_SIZE } from './batch';
 
 /**
  * Client for Spotify's internal `user-profile-view` endpoint: a user's public profile, playlists,
- * and social graph. The URL shape and JSON belong here once, not re-modeled in every app that
- * reads a profile (constellation's graph, data-porter's export).
+ * and social graph.
  */
 const BASE = 'https://spclient.wg.spotify.com/user-profile-view/v3/profile';
 const MARKET = 'market=from_token';
@@ -39,3 +39,25 @@ export const getPublicPlaylists = async (
       `${userProfileUrl(userId)}/playlists?offset=${page.offset ?? 0}&limit=${page.limit}&${MARKET}`,
     )
   ).public_playlists ?? [];
+
+type ListOptions = { max?: number; signal?: AbortSignal; onProgress?: (count: number) => void };
+
+/** Every public playlist of a user, page by page, up to `max`. */
+export const listPublicPlaylists = async (
+  userId: string,
+  { max = Infinity, signal, onProgress }: ListOptions = {},
+): Promise<ProfilePlaylist[]> => {
+  const byUri = new Map<string, ProfilePlaylist>();
+  for (let offset = 0; offset < max;) {
+    signal?.throwIfAborted();
+    const limit = Math.min(PAGE_SIZE, max - offset);
+    const page = await getPublicPlaylists(userId, { offset, limit });
+    const before = byUri.size;
+    for (const playlist of page) byUri.set(playlist.uri, playlist);
+    offset += page.length;
+    onProgress?.(byUri.size);
+    // A short page ends the list; a page of only repeats means the endpoint ignored the offset.
+    if (page.length < limit || byUri.size === before) break;
+  }
+  return [...byUri.values()];
+};
