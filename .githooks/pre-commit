@@ -1,2 +1,2 @@
 #!/bin/sh
-pnpm precommit
+exec pnpm precommit

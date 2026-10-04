@@ -1,27 +1,18 @@
 import js from '@eslint/js';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
+import reactHooks from 'eslint-plugin-react-hooks';
 
 export default tseslint.config(
-  {
-    ignores: [
-      '**/node_modules/',
-      '**/dist/',
-      '.spotify/',
-      '.plan/',
-      '**/*.d.ts',
-      'scripts/app-template/',
-    ],
-  },
+  { ignores: ['**/node_modules/', '**/dist/', '**/*.d.ts'] },
   js.configs.recommended,
+  reactHooks.configs.flat.recommended,
   {
     files: ['**/*.ts', '**/*.tsx', '**/*.mts'],
+    extends: [tseslint.configs.base],
     languageOptions: {
-      parser: tseslint.parser,
       parserOptions: {
-        ecmaVersion: 2022,
-        sourceType: 'module',
-        ecmaFeatures: { jsx: true },
+        projectService: { allowDefaultProject: ['eslint.config.mts', '.changeset/*.mts'] },
       },
       globals: {
         ...globals.browser,
@@ -33,23 +24,24 @@ export default tseslint.config(
         __BUNDLED_LOCALES__: 'readonly',
       },
     },
-    plugins: {
-      '@typescript-eslint': tseslint.plugin,
-    },
     rules: {
       'no-unused-vars': 'off',
       '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
       '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-floating-promises': [
+        'error',
+        {
+          allowForKnownSafeCalls: [
+            { from: 'package', package: 'node:test', name: ['test', 'it', 'describe', 'suite'] },
+          ],
+        },
+      ],
       'no-console': ['warn', { allow: ['warn', 'error'] }],
     },
   },
   {
-    files: ['scripts/**/*.mts', 'scripts/**/*.mjs', '.changeset/**/*.mts'],
-    languageOptions: {
-      globals: globals.node,
-    },
-    rules: {
-      'no-console': 'off',
-    },
+    files: ['scripts/**/*.mts', '.changeset/**/*.mts', 'eslint.config.mts'],
+    languageOptions: { globals: globals.node },
+    rules: { 'no-console': 'off' },
   },
 );

@@ -5,6 +5,9 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: read
+
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
@@ -25,7 +28,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       - name: Typecheck & lint
-        run: pnpm typecheck && pnpm lint
+        run: pnpm typecheck && pnpm lint --max-warnings 0
 
       - name: Test
         run: pnpm test
