@@ -1,8 +1,8 @@
-import { parseUserId } from '@shared/lib';
-import { rememberImage } from './node-images';
+import { rememberImage } from './ingest';
 import { getPublicPlaylists } from '@shared/api';
 import { NODE_TYPE, EDGE_TYPE } from '../constants';
 import type { MusicGraph } from '../graph/music-graph';
+import { parseUserId, spotifyImageUrl } from '@shared/lib';
 
 export const attachUserPlaylists = async (
   graph: MusicGraph,
@@ -15,6 +15,6 @@ export const attachUserPlaylists = async (
   for (const playlist of playlists) {
     graph.addNode({ uri: playlist.uri, type: NODE_TYPE.PLAYLIST, label: playlist.name });
     graph.addEdge(userUri, playlist.uri, EDGE_TYPE.OWNS);
-    rememberImage(images, playlist.uri, playlist.image_url);
+    rememberImage(images, playlist.uri, spotifyImageUrl(playlist.image_url));
   }
 };

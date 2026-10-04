@@ -3,7 +3,7 @@ import { NodeRowContent } from './node-row';
 import { SearchField } from '@ui/components';
 import type { GraphNode } from '../types/graph';
 import { searchNodes } from '../graph/node-query';
-import React, { useId, useMemo, useState } from 'react';
+import React, { memo, useId, useMemo, useState } from 'react';
 
 type Props = {
   nodes: GraphNode[];
@@ -94,9 +94,9 @@ const NodeSearchBox = ({ nodes, onPick }: Props) => {
             <>
               <li
                 aria-hidden
-                className="px-3 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-wider text-spice-subtext/60"
+                className="px-3 pb-1 pt-2 text-[11px] font-semibold text-spice-subtext/70"
               >
-                {t('controls.resultCount', { count: results.length })}
+                {t('controls.topResults', { count: results.length })}
               </li>
               {results.map((node, i) => (
                 <li
@@ -121,4 +121,4 @@ const NodeSearchBox = ({ nodes, onPick }: Props) => {
   );
 };
 
-export default NodeSearchBox;
+export default memo(NodeSearchBox);

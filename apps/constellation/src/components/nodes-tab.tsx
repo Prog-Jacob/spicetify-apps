@@ -1,14 +1,14 @@
-import NodeRow from './node-row';
 import { t } from '../i18n';
+import NodeRow from './node-row';
 import GraphRoster from './graph-roster';
+import { SECTION_LABEL } from '@ui/styles';
 import { cn, toggleInSet } from '@shared/lib';
 import { PanelVisible } from './control-dock';
 import AddToGraphBox from './add-to-graph-box';
-import { SECTION_LABEL } from '../styles/chrome';
 import { NODE_LEGEND_ORDER } from '../graph/node-style';
 import { IconButton, SearchField } from '@ui/components';
 import type { NodeType, GraphNode } from '../types/graph';
-import React, { useMemo, useState, useCallback, useContext } from 'react';
+import React, { memo, useMemo, useState, useCallback, useContext } from 'react';
 
 const COLLATOR = new Intl.Collator(undefined, { sensitivity: 'base', numeric: true });
 const RANK = new Map(NODE_LEGEND_ORDER.map((type, i) => [type, i]));
@@ -37,7 +37,7 @@ const RemovedList = ({
               label={t('manage.restore')}
               onClick={() => onRestore(node.uri)}
               size={13}
-              className="h-6 w-6"
+              className="size-6"
             />
           }
         />
@@ -112,4 +112,4 @@ const NodesTab = ({
   );
 };
 
-export default NodesTab;
+export default memo(NodesTab);

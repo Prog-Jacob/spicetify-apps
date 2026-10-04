@@ -1,7 +1,7 @@
 import { t } from '../i18n';
 import React, { useState } from 'react';
+import { SECTION_LABEL } from '@ui/styles';
 import type { GraphNode } from '../types/graph';
-import { SECTION_LABEL } from '../styles/chrome';
 import { Input, ButtonPrimary } from '@ui/components';
 
 type Props = {

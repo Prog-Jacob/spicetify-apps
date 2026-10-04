@@ -1,26 +1,31 @@
 import { t } from '../i18n';
 import { toSnapshot } from '../graph/graph-snapshot';
-import type { GraphExplorer } from './use-graph-explorer';
+import type { MusicGraph } from '../graph/music-graph';
 import type { NodeType, GraphNode } from '../types/graph';
-import type { GraphViewHandle } from '../graph/graph-view';
-import type { LibraryGraph } from '../services/library-crawler';
+import type { GraphViewHandle } from '../components/graph-view';
 import { useState, useEffect, useCallback, type RefObject } from 'react';
 import { downloadJson, downloadBlob, notifyError, notifyDone } from '@shared/lib';
 
 const UNDO_WINDOW_MS = 12_000;
 
 /** Hide/restore behind a short undo window, plus the JSON and PNG exports. */
-export const useGraphActions = (
-  explorer: GraphExplorer,
-  library: LibraryGraph,
-  liveNodes: readonly GraphNode[],
-  viewRef: RefObject<GraphViewHandle | null>,
-) => {
-  const { removeEntities, restoreEntities } = explorer;
+export const useGraphActions = ({
+  graph,
+  liveSet,
+  viewRef,
+  removeEntities,
+  restoreEntities,
+}: {
+  graph: MusicGraph;
+  liveSet: Set<string>;
+  viewRef: RefObject<GraphViewHandle | null>;
+  removeEntities: (uris: string[], keep?: ReadonlySet<NodeType>) => string[];
+  restoreEntities: (uris: string[]) => void;
+}) => {
   const [undoable, setUndoable] = useState<string[]>([]);
 
   const remove = useCallback(
-    (uris: string[], keep?: Set<NodeType>) => {
+    (uris: string[], keep?: ReadonlySet<NodeType>) => {
       const hidden = removeEntities(uris, keep);
       if (!hidden.length) return;
       setUndoable((prev) => [...prev, ...hidden]);
@@ -30,7 +35,7 @@ export const useGraphActions = (
   );
 
   const removeOne = useCallback(
-    (node: GraphNode, keep?: Set<NodeType>) => remove([node.uri], keep),
+    (node: GraphNode, keep?: ReadonlySet<NodeType>) => remove([node.uri], keep),
     [remove],
   );
 
@@ -54,10 +59,9 @@ export const useGraphActions = (
   }, [restoreEntities, undoable]);
 
   const exportData = useCallback(() => {
-    const live = new Set(liveNodes.map((node) => node.uri));
-    downloadJson(toSnapshot(library.graph, live), 'constellation.json');
+    downloadJson(toSnapshot(graph, liveSet), 'constellation.json');
     notifyDone(t('actions.exportSaved'));
-  }, [library, liveNodes]);
+  }, [graph, liveSet]);
 
   const exportImage = useCallback(async () => {
     try {

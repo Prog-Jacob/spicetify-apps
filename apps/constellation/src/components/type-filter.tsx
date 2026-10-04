@@ -21,12 +21,7 @@ export const TypeChip = ({
   onToggle: () => void;
   count?: number;
 }) => (
-  <ToggleChip
-    active={active}
-    onToggle={onToggle}
-    variant="outline"
-    className="flex items-center gap-1.5"
-  >
+  <ToggleChip active={active} onToggle={onToggle} variant="outline">
     <NodeTypeDot type={type} dim={!active} className="h-2 w-2" />
     {t(`type.${type}`)}
     {count !== undefined && <span className="tabular-nums text-spice-subtext/70">{count}</span>}

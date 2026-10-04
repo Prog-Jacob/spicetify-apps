@@ -1,37 +1,42 @@
 import { t } from '../i18n';
 import TypeFilter from './type-filter';
+import { SECTION_LABEL } from '@ui/styles';
 import { PanelVisible } from './control-dock';
-import type { GraphNode } from '../types/graph';
-import React, { useMemo, useContext } from 'react';
 import AddedSinceFilter from './added-since-filter';
 import type { TimeBounds } from '../graph/node-query';
+import React, { memo, useMemo, useContext } from 'react';
 import { expandableNodes } from '../hooks/use-expand-all';
-import { ToggleChip, SpicetifyIcon } from '@ui/components';
-import { ACTION_BUTTON, SECTION_LABEL } from '../styles/chrome';
-import type { LibraryGraph } from '../services/library-crawler';
-import type { GraphControls } from '../hooks/use-graph-controls';
+import { ToggleChip, ActionButton } from '@ui/components';
+import type { NodeType, GraphNode } from '../types/graph';
+import type { Lenses, LensKey } from '../hooks/use-graph-controls';
 
 type Props = {
-  controls: GraphControls;
-  library: LibraryGraph;
+  visibleTypes: Set<NodeType>;
+  onToggleType: (type: NodeType) => void;
+  lenses: Lenses;
+  onToggleLens: (key: LensKey) => void;
   timeBounds: TimeBounds | null;
   since: number;
-  pinnedCount: number;
+  onSinceChange: (value: number) => void;
   visibleNodes: GraphNode[];
+  expanded: ReadonlySet<string>;
+  pinnedCount: number;
   filtersActive: boolean;
+  refreshing: boolean;
   onResetFilters: () => void;
-  onExpandAll: () => void;
+  onExpandAll: (nodes: GraphNode[]) => void;
   onReleasePins: () => void;
   onReload: () => void;
-  refreshing: boolean;
 };
 
-const LENS_KEYS = [
-  ['lens.byDegree', 'sizeByDegree', 'toggleSizeLens'],
-  ['lens.byCluster', 'colorByCluster', 'toggleClusterLens'],
-  ['edges.collaborations', 'showCollaborations', 'toggleCollaborations'],
-  ['lens.connected', 'connectedOnly', 'toggleConnectedOnly'],
-] as const;
+const LENS_LABELS = {
+  sizeByDegree: 'lens.byDegree',
+  colorByCluster: 'lens.byCluster',
+  showCollaborations: 'edges.collaborations',
+  connectedOnly: 'lens.connected',
+} as const satisfies Record<LensKey, string>;
+
+const LENS_KEYS = Object.keys(LENS_LABELS) as LensKey[];
 
 const Section = ({ label, children }: { label: string; children: React.ReactNode }) => (
   <div className="flex flex-col gap-2">
@@ -41,65 +46,64 @@ const Section = ({ label, children }: { label: string; children: React.ReactNode
 );
 
 const ViewTab = ({
-  controls,
-  library,
+  visibleTypes,
+  onToggleType,
+  lenses,
+  onToggleLens,
   timeBounds,
   since,
-  pinnedCount,
+  onSinceChange,
   visibleNodes,
+  expanded,
+  pinnedCount,
   filtersActive,
+  refreshing,
   onResetFilters,
   onExpandAll,
   onReleasePins,
   onReload,
-  refreshing,
 }: Props) => {
   const visible = useContext(PanelVisible);
   const expandable = useMemo(
-    () => (visible ? expandableNodes(library, visibleNodes).length : 0),
-    [library, visibleNodes, visible],
+    () => (visible ? expandableNodes(expanded, visibleNodes).length : 0),
+    [expanded, visibleNodes, visible],
   );
 
   return (
     <div className="flex flex-col gap-3.5">
       <div className="flex flex-wrap items-center gap-1.5">
-        <button
-          type="button"
-          onClick={onExpandAll}
+        <ActionButton
+          icon="plus-alt"
+          onClick={() => onExpandAll(visibleNodes)}
           disabled={expandable === 0}
           title={expandable === 0 ? t('actions.nothingToExpand') : undefined}
-          className={ACTION_BUTTON}
         >
-          <SpicetifyIcon icon="plus-alt" size={12} />
           {t('actions.expandVisible', { count: expandable })}
-        </button>
-        <button type="button" onClick={onReload} disabled={refreshing} className={ACTION_BUTTON}>
-          <SpicetifyIcon icon="repeat" size={11} />
+        </ActionButton>
+        <ActionButton icon="repeat" onClick={onReload} disabled={refreshing}>
           {refreshing ? t('actions.refreshing') : t('actions.refresh')}
-        </button>
+        </ActionButton>
         {pinnedCount > 0 && (
-          <button type="button" onClick={onReleasePins} className={ACTION_BUTTON}>
-            <SpicetifyIcon icon="locked" size={11} />
+          <ActionButton icon="locked" onClick={onReleasePins}>
             {t('controls.releasePins', { count: pinnedCount })}
-          </button>
+          </ActionButton>
         )}
         {filtersActive && (
-          <button type="button" onClick={onResetFilters} className={ACTION_BUTTON}>
-            <SpicetifyIcon icon="x" size={11} />
+          <ActionButton icon="x" onClick={onResetFilters}>
             {t('filters.reset')}
-          </button>
+          </ActionButton>
         )}
       </div>
 
       <Section label={t('filters.show')}>
-        <TypeFilter visibleTypes={controls.visibleTypes} onToggle={controls.toggleType} />
+        <TypeFilter visibleTypes={visibleTypes} onToggle={onToggleType} />
       </Section>
 
       <Section label={t('lens.label')}>
         <div className="flex flex-wrap gap-1.5">
-          {LENS_KEYS.map(([labelKey, flag, toggle]) => (
-            <ToggleChip key={labelKey} active={controls[flag]} onToggle={controls[toggle]}>
-              {t(labelKey)}
+          {LENS_KEYS.map((key) => (
+            <ToggleChip key={key} active={lenses[key]} onToggle={() => onToggleLens(key)}>
+              {t(LENS_LABELS[key])}
             </ToggleChip>
           ))}
         </div>
@@ -111,7 +115,7 @@ const ViewTab = ({
             min={timeBounds.min}
             max={timeBounds.max}
             since={since}
-            onChange={controls.setSince}
+            onChange={onSinceChange}
           />
         </Section>
       )}
@@ -119,4 +123,4 @@ const ViewTab = ({
   );
 };
 
-export default ViewTab;
+export default memo(ViewTab);

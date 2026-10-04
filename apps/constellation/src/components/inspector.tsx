@@ -1,19 +1,17 @@
 import { t } from '../i18n';
-import { cn } from '@shared/lib';
 import NodeRow from './node-row';
 import { NODE_TYPE } from '../constants';
 import NodeTypeDot from './node-type-dot';
 import { monogram } from '../graph/node-style';
-import RemoveTypeMenu from './remove-type-menu';
-import { FOCUS_RING } from '@ui/styles/surfaces';
-import { useGraphPalette } from '../graph/theme';
-import { PANEL_SURFACE } from '../styles/chrome';
-import { canExpand } from '../services/expand-node';
-import type { MusicGraph } from '../graph/music-graph';
+import { RemoveMenu } from './remove-type-menu';
+import { cn, openUriInClient } from '@shared/lib';
+import { FOCUS_RING, PANEL_SURFACE } from '@ui/styles';
+import type { GraphView } from '../hooks/use-graph-view';
 import type { NodeType, GraphNode } from '../types/graph';
-import { toDateString, openUriInClient } from '@shared/lib';
+import { useGraphPalette } from '../hooks/use-graph-palette';
 import React, { memo, useMemo, useRef, useEffect } from 'react';
 import {
+  Artwork,
   IconButton,
   TextComponent,
   ButtonPrimary,
@@ -30,43 +28,50 @@ const PLAYABLE = new Set<NodeType>([
   NODE_TYPE.PLAYLIST,
 ]);
 
+const ROUND = new Set<NodeType>([NODE_TYPE.USER, NODE_TYPE.ARTIST]);
+
 type Props = {
   node: GraphNode;
-  graph: MusicGraph;
-  revision: number;
-  images: Map<string, string>;
-  expanded: Set<string>;
-  expandingUri: string | null;
+  view: GraphView;
+  image?: string;
+  expandable: boolean;
+  expanding: boolean;
   focused: boolean;
   pinned: boolean;
   marked: boolean;
+  /** False for your own node, which roots the graph. */
+  removable: boolean;
   onExpand: (node: GraphNode) => void;
   onFocus: (node: GraphNode) => void;
   onSelect: (node: GraphNode) => void;
-  onToggleMark: () => void;
+  onToggleMark: (node: GraphNode) => void;
   onClearFocus: () => void;
-  onUnpin: () => void;
-  onRemove?: (node: GraphNode, keep?: Set<NodeType>) => void;
+  onUnpin: (node: GraphNode) => void;
+  onRemove: (node: GraphNode, keep: ReadonlySet<NodeType>) => void;
   onClose: () => void;
 };
 
 const NodeAvatar = ({ node, image }: { node: GraphNode; image?: string }) => {
   const palette = useGraphPalette();
-  if (image)
-    return (
-      <img src={image} alt="" className="h-12 w-12 shrink-0 rounded-lg object-cover shadow-md" />
-    );
   return (
-    <span
-      className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg text-lg font-semibold shadow-md"
-      style={{ backgroundColor: palette.color[node.type], color: palette.text }}
-    >
-      {monogram(node.label)}
-    </span>
+    <Artwork
+      src={image}
+      size={48}
+      shape={ROUND.has(node.type) ? 'circle' : 'square'}
+      className="shadow-md"
+      fallback={
+        <span
+          className="flex size-full items-center justify-center text-lg font-semibold"
+          style={{ backgroundColor: palette.color[node.type], color: palette.text }}
+        >
+          {monogram(node.label)}
+        </span>
+      }
+    />
   );
 };
 
-const ActionButton = ({
+const PanelButton = ({
   icon,
   label,
   onClick,
@@ -81,11 +86,13 @@ const ActionButton = ({
 }) => {
   const Button = primary ? ButtonPrimary : ButtonSecondary;
   return (
-    <Button buttonSize="sm" onClick={onClick} disabled={disabled}>
-      <span className="flex items-center gap-1.5">
-        <SpicetifyIcon icon={icon} size={14} />
-        {label}
-      </span>
+    <Button
+      buttonSize="sm"
+      iconLeading={() => <SpicetifyIcon icon={icon} size={14} />}
+      onClick={onClick}
+      disabled={disabled}
+    >
+      {label}
     </Button>
   );
 };
@@ -120,14 +127,14 @@ NeighborList.displayName = 'NeighborList';
 
 const Inspector = ({
   node,
-  graph,
-  revision,
-  images,
-  expanded,
-  expandingUri,
+  view,
+  image,
+  expandable,
+  expanding,
   focused,
   pinned,
   marked,
+  removable,
   onExpand,
   onFocus,
   onSelect,
@@ -137,7 +144,7 @@ const Inspector = ({
   onRemove,
   onClose,
 }: Props) => {
-  const neighbors = useMemo(() => graph.neighbors(node.uri), [graph, node, revision]);
+  const neighbors = useMemo(() => view.graph.neighbors(node.uri), [view, node]);
   const breakdown = useMemo(() => {
     const counts = new Map<NodeType, number>();
     for (const n of neighbors) counts.set(n.type, (counts.get(n.type) ?? 0) + 1);
@@ -166,13 +173,18 @@ const Inspector = ({
       ref={panelRef}
       tabIndex={-1}
       aria-label={node.label}
+      onKeyDown={(e) => {
+        if (e.key !== 'Escape') return;
+        e.stopPropagation();
+        onClose();
+      }}
       className={cn(
         'animate-fade-in-up absolute bottom-16 end-3 top-14 z-20 flex w-80 flex-col overflow-hidden',
         PANEL_SURFACE,
       )}
     >
       <header className="flex shrink-0 items-center justify-between gap-2 border-b border-spice-subtext/10 px-4 py-2.5">
-        <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-spice-subtext">
+        <span className="flex items-center gap-1.5 text-xs font-semibold text-spice-subtext">
           <NodeTypeDot type={node.type} className="h-2 w-2" />
           {t(`type.${node.type}`)}
         </span>
@@ -195,21 +207,21 @@ const Inspector = ({
             label={t('inspector.close')}
             onClick={onClose}
             size={14}
-            className="h-7 w-7"
+            className="size-7"
           />
         </div>
       </header>
 
       <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4 [mask-image:linear-gradient(to_bottom,transparent,#000_16px,#000_calc(100%-16px),transparent)]">
         <div className="flex items-start gap-3">
-          <NodeAvatar node={node} image={images.get(node.uri)} />
+          <NodeAvatar node={node} image={image} />
           <div className="flex min-w-0 flex-col gap-0.5 pt-0.5">
-            <TextComponent variant="alto" weight="bold">
+            <TextComponent as="h2" variant="alto" weight="bold">
               {node.label}
             </TextComponent>
             {node.addedAt && (
               <TextComponent variant="minuet" semanticColor="textSubdued">
-                {t('inspector.saved', { date: toDateString(node.addedAt) })}
+                {t('inspector.saved', { date: t.date(node.addedAt) })}
               </TextComponent>
             )}
           </div>
@@ -217,7 +229,7 @@ const Inspector = ({
 
         <div className="flex flex-wrap gap-1.5">
           {playable && (
-            <ActionButton
+            <PanelButton
               primary
               icon="play"
               label={t('inspector.play')}
@@ -225,7 +237,7 @@ const Inspector = ({
             />
           )}
           {node.type === NODE_TYPE.TRACK && (
-            <ActionButton
+            <PanelButton
               icon="queue"
               label={t('inspector.queue')}
               onClick={() =>
@@ -234,36 +246,37 @@ const Inspector = ({
             />
           )}
           {playable && (
-            <ActionButton
+            <PanelButton
               icon="external-link"
               label={t('inspector.open')}
               onClick={() => openUriInClient(node.uri)}
             />
           )}
-          {canExpand(node) && !expanded.has(node.uri) && (
-            <ActionButton
+          {expandable && (
+            <PanelButton
               icon="plus-alt"
-              label={expandingUri === node.uri ? t('inspector.expanding') : t('inspector.expand')}
+              label={expanding ? t('inspector.expanding') : t('inspector.expand')}
               onClick={() => onExpand(node)}
-              disabled={expandingUri === node.uri}
+              disabled={expanding}
             />
           )}
           {neighbors.length > 0 && (
-            <ActionButton
+            <PanelButton
               icon="location"
               label={t('inspector.focus')}
               onClick={() => onFocus(node)}
             />
           )}
-          <ActionButton
+          <PanelButton
             icon={marked ? 'check' : 'plus2px'}
             label={marked ? t('inspector.unmark') : t('inspector.mark')}
-            onClick={onToggleMark}
+            onClick={() => onToggleMark(node)}
           />
-          {pinned && <ActionButton icon="locked" label={t('inspector.unpin')} onClick={onUnpin} />}
-          {onRemove && (
-            <RemoveTypeMenu
-              variant="row"
+          {pinned && (
+            <PanelButton icon="locked" label={t('inspector.unpin')} onClick={() => onUnpin(node)} />
+          )}
+          {removable && (
+            <RemoveMenu
               types={breakdown.map(([type]) => type)}
               onRemove={(keep) => onRemove(node, keep)}
             />
@@ -279,7 +292,7 @@ const Inspector = ({
               {breakdown.map(([type, count]) => (
                 <span key={type} className="flex items-center gap-1.5 text-xs text-spice-subtext">
                   <NodeTypeDot type={type} className="h-2 w-2" />
-                  {count} {t(`type.${type}`)}
+                  {t(`count.${type}`, { count })}
                 </span>
               ))}
             </div>
@@ -292,4 +305,4 @@ const Inspector = ({
   );
 };
 
-export default Inspector;
+export default memo(Inspector);

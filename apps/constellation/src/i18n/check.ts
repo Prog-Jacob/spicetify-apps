@@ -1,4 +1,4 @@
 import ar from './ar.json';
-import type { ConstellationMessages } from './en';
+import type { AppMessages } from './en';
 
-export default ar satisfies ConstellationMessages;
+export default ar satisfies AppMessages;

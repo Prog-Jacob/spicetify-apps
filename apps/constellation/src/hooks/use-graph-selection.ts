@@ -1,10 +1,10 @@
 import { toggleInSet } from '@shared/lib';
 import type { GraphNode } from '../types/graph';
-import type { MusicGraph } from '../graph/music-graph';
-import { useState, useMemo, useCallback } from 'react';
+import type { GraphView } from './use-graph-view';
 import { PATH_DETOUR } from '../graph/paths-between';
+import { useState, useMemo, useCallback } from 'react';
 
-export const useGraphSelection = (graph: MusicGraph, revision: number) => {
+export const useGraphSelection = (view: GraphView) => {
   const [selectedUri, setSelectedUri] = useState<string | null>(null);
   const [focusUri, setFocusUri] = useState<string | null>(null);
   const [marked, setMarked] = useState<Set<string>>(() => new Set());
@@ -12,13 +12,13 @@ export const useGraphSelection = (graph: MusicGraph, revision: number) => {
   const [pathDetour, setPathDetour] = useState<number>(PATH_DETOUR.default);
 
   const selected = useMemo(
-    () => (selectedUri ? (graph.node(selectedUri) ?? null) : null),
-    [selectedUri, graph, revision],
+    () => (selectedUri ? (view.graph.node(selectedUri) ?? null) : null),
+    [selectedUri, view],
   );
 
   const anchors = useMemo(
-    () => [...marked].filter((uri) => graph.node(uri) !== undefined),
-    [marked, graph, revision],
+    () => [...marked].filter((uri) => view.graph.node(uri) !== undefined),
+    [marked, view],
   );
   const liveMarked = useMemo(() => new Set(anchors), [anchors]);
   const pathMode = pathRequested && anchors.length >= 2;
@@ -44,7 +44,7 @@ export const useGraphSelection = (graph: MusicGraph, revision: number) => {
   return {
     selected,
     select,
-    focusUri: focusUri && graph.node(focusUri) ? focusUri : null,
+    focusUri: focusUri && view.graph.node(focusUri) ? focusUri : null,
     focus: setFocusUri,
     clearFocus,
     marked: liveMarked,

@@ -1,14 +1,9 @@
 import { test } from 'node:test';
+import { ADDABLE } from './add-entity';
 import assert from 'node:assert/strict';
-import { parseSpotifyRef } from './add-entity';
+import { parseSpotifyRef } from '@shared/lib';
 
-test('parseSpotifyRef normalizes URIs and open.spotify links, rejecting the rest', () => {
-  assert.deepEqual(parseSpotifyRef('spotify:artist:abc'), {
-    type: 'artist',
-    id: 'abc',
-    uri: 'spotify:artist:abc',
-  });
-
+test('only addable entity links parse, normalized to URIs', () => {
   for (const [input, uri] of [
     ['  SPOTIFY:Album:xyz  ', 'spotify:album:xyz'],
     ['https://open.spotify.com/intl-de/playlist/p1?si=1', 'spotify:playlist:p1'],
@@ -18,5 +13,5 @@ test('parseSpotifyRef normalizes URIs and open.spotify links, rejecting the rest
     ['spotify:show:s1', null],
     ['not a link', null],
   ] as const)
-    assert.equal(parseSpotifyRef(input)?.uri ?? null, uri, input);
+    assert.equal(parseSpotifyRef(input, ADDABLE)?.uri ?? null, uri, input);
 });

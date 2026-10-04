@@ -4,10 +4,10 @@ import NodeRow from './node-row';
 import { TypeChip } from './type-filter';
 import { IconButton } from '@ui/components';
 import React, { memo, useMemo } from 'react';
-import { SECTION_LABEL } from '../styles/chrome';
 import { searchNodes } from '../graph/node-query';
 import { NODE_LEGEND_ORDER } from '../graph/node-style';
 import type { NodeType, GraphNode } from '../types/graph';
+import { SECTION_LABEL, REVEAL_ON_HOVER } from '@ui/styles';
 
 const CAP = 120;
 
@@ -78,7 +78,7 @@ const GraphRoster = ({
                     label={t('inspector.remove')}
                     onClick={() => onRemove(node)}
                     size={13}
-                    className="h-6 w-6 opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+                    className={cn('size-6', REVEAL_ON_HOVER)}
                   />
                 )
               }
@@ -87,7 +87,7 @@ const GraphRoster = ({
         )}
       </ul>
       {overflow > 0 && (
-        <span className="px-2.5 pt-1.5 text-[11px] text-spice-subtext/60">
+        <span className="px-2.5 pt-1.5 text-[11px] text-spice-subtext/70">
           {t('manage.more', { count: overflow })}
         </span>
       )}

@@ -1,10 +1,9 @@
 import { t } from '../i18n';
 import { cn } from '@shared/lib';
-import React, { useState } from 'react';
-import { useGraphPalette } from '../graph/theme';
-import { FOCUS_RING } from '@ui/styles/surfaces';
-import { PANEL_SURFACE } from '../styles/chrome';
 import { usePersistentState } from '@shared/hooks';
+import React, { useId, useRef, useState } from 'react';
+import { FOCUS_RING, PANEL_SURFACE } from '@ui/styles';
+import { useGraphPalette } from '../hooks/use-graph-palette';
 import { Divider, TextComponent, ButtonSecondary } from '@ui/components';
 
 const Row = ({ label }: { label: string }) => (
@@ -32,6 +31,8 @@ const GraphGuide = () => {
   const [seen, setSeen] = usePersistentState('guide-seen', false);
   const [open, setOpen] = useState(!seen);
   const palette = useGraphPalette();
+  const panelId = useId();
+  const toggleRef = useRef<HTMLButtonElement>(null);
 
   const dismiss = () => {
     setSeen(true);
@@ -39,9 +40,18 @@ const GraphGuide = () => {
   };
 
   return (
-    <div className="relative flex flex-col items-start">
+    <div
+      className="relative flex flex-col items-start"
+      onKeyDown={(e) => {
+        if (e.key !== 'Escape' || !open) return;
+        e.stopPropagation();
+        setOpen(false);
+        toggleRef.current?.focus();
+      }}
+    >
       {open && (
         <div
+          id={panelId}
           className={cn(
             'animate-fade-in-up absolute bottom-full start-0 z-20 mb-2 w-72 p-4',
             PANEL_SURFACE,
@@ -72,8 +82,10 @@ const GraphGuide = () => {
         </div>
       )}
       <button
+        ref={toggleRef}
         type="button"
         aria-expanded={open}
+        aria-controls={panelId}
         onClick={() => setOpen((v) => !v)}
         className={cn(
           'inline-flex items-center rounded-full border border-spice-subtext/25 bg-spice-card/80 px-3 py-1.5 text-xs font-medium shadow-lg backdrop-blur-md transition-colors hover:text-spice-text',

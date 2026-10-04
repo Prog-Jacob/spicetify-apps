@@ -1,7 +1,7 @@
 import React from 'react';
 import { t } from '../i18n';
 import { cn } from '@shared/lib';
-import { PANEL_SURFACE } from '../styles/chrome';
+import { PANEL_SURFACE } from '@ui/styles';
 import { Divider, IconButton } from '@ui/components';
 
 type Props = {

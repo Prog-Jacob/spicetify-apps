@@ -1,52 +1,51 @@
-import React from 'react';
 import { t } from '../i18n';
-import { ACTION_BUTTON } from '../styles/chrome';
-import type { usePhysics } from '../hooks/use-physics';
-import { ToggleChip, SpicetifyIcon, Slider } from '@ui/components';
+import React, { memo } from 'react';
 import { PHYSICS, type PhysicsParams } from '../graph/force-config';
+import { ToggleChip, SpicetifyIcon, Slider, ActionButton } from '@ui/components';
 
 const FORMAT: Record<keyof PhysicsParams, (value: number) => string> = {
-  repulsion: (v) => String(Math.round(v)),
-  linkLength: (v) => `${v.toFixed(2)}×`,
-  gravity: (v) => v.toFixed(3),
-  spacing: (v) => `${Math.round(v)} px`,
+  repulsion: (v) => t.number(Math.round(v)),
+  linkLength: (v) => t('physics.linkLengthValue', { value: v }),
+  gravity: (v) => t.number(v),
+  spacing: (v) => t('physics.spacingValue', { value: Math.round(v) }),
 };
 
 const KNOBS = Object.keys(FORMAT) as (keyof PhysicsParams)[];
 
-const PhysicsTab = ({ physics }: { physics: ReturnType<typeof usePhysics> }) => (
+type Props = {
+  params: PhysicsParams;
+  frozen: boolean;
+  isDefault: boolean;
+  onChange: (key: keyof PhysicsParams, value: number) => void;
+  onToggleFrozen: () => void;
+  onReset: () => void;
+};
+
+const PhysicsTab = ({ params, frozen, isDefault, onChange, onToggleFrozen, onReset }: Props) => (
   <div className="flex flex-col gap-3.5">
     {KNOBS.map((key) => (
       <Slider
         key={key}
         label={t(`physics.${key}`)}
-        value={physics.params[key]}
+        value={params[key]}
         min={PHYSICS[key].min}
         max={PHYSICS[key].max}
         step={PHYSICS[key].step}
-        valueLabel={FORMAT[key](physics.params[key])}
-        onChange={(value) => physics.setParam(key, value)}
+        valueLabel={FORMAT[key](params[key])}
+        onChange={(value) => onChange(key, value)}
       />
     ))}
 
     <div className="flex items-center justify-between gap-2 pt-0.5">
-      <ToggleChip active={physics.frozen} onToggle={physics.toggleFrozen} variant="outline">
-        <span className="flex items-center gap-1.5">
-          <SpicetifyIcon icon="pause" size={11} />
-          {t('physics.freeze')}
-        </span>
+      <ToggleChip active={frozen} onToggle={onToggleFrozen} variant="outline">
+        <SpicetifyIcon icon="pause" size={11} />
+        {t('physics.freeze')}
       </ToggleChip>
-      <button
-        type="button"
-        onClick={physics.reset}
-        disabled={physics.isDefault}
-        className={ACTION_BUTTON}
-      >
-        <SpicetifyIcon icon="repeat" size={11} />
+      <ActionButton icon="repeat" onClick={onReset} disabled={isDefault}>
         {t('physics.reset')}
-      </button>
+      </ActionButton>
     </div>
   </div>
 );
 
-export default PhysicsTab;
+export default memo(PhysicsTab);

@@ -3,7 +3,7 @@ import { t } from '../i18n';
 import { cn } from '@shared/lib';
 import NodeTypeDot from './node-type-dot';
 import type { NodeType } from '../types/graph';
-import { FOCUS_RING_INSET } from '../styles/chrome';
+import { FOCUS_RING_INSET, REVEAL_ON_HOVER } from '@ui/styles';
 
 export const NodeRowContent = ({
   type,
@@ -19,8 +19,8 @@ export const NodeRowContent = ({
     <span className="truncate text-sm text-spice-text">{label}</span>
     <span
       className={cn(
-        'ms-auto shrink-0 text-[10px] font-medium uppercase tracking-wider text-spice-subtext/60',
-        revealTag && 'opacity-0 transition-opacity group-hover:opacity-100',
+        'ms-auto shrink-0 text-[11px] font-medium text-spice-subtext/70',
+        revealTag && cn('transition-opacity', REVEAL_ON_HOVER),
       )}
     >
       {t(`type.${type}`)}

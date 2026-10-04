@@ -1,17 +1,17 @@
-import { useGraphPalette } from './theme';
-import type { MusicGraph } from './music-graph';
-import { useNodeArtwork } from './use-node-artwork';
+import { useLatestRef } from '@shared/hooks';
 import type { GraphEdge } from '../types/graph';
-import { GraphCanvas, type LiveProps } from './graph-canvas';
+import type { MusicGraph } from '../graph/music-graph';
+import { useNodeArtwork } from '../hooks/use-node-artwork';
+import { useGraphPalette } from '../hooks/use-graph-palette';
 import type { PinnedPositions } from '../services/session-store';
-import { projectNodes, type RenderNode, type RenderLink } from './render-data';
+import { GraphCanvas, type LiveProps } from '../graph/graph-canvas';
+import { projectNodes, type RenderNode, type RenderLink } from '../graph/render-data';
 import React, {
   useRef,
   useState,
   useEffect,
   forwardRef,
   useCallback,
-  useLayoutEffect,
   useImperativeHandle,
 } from 'react';
 
@@ -34,21 +34,15 @@ type Props = Omit<LiveProps, 'palette'> & {
   visibleUris: Set<string>;
   pins: PinnedPositions;
   'aria-label': string;
+  'aria-describedby'?: string;
 };
 
 const GraphView = forwardRef<GraphViewHandle, Props>((props, ref) => {
   const { graph, images, revision, visibleUris, extraLinks, physics, sizeByDegree, frozen } = props;
   const { pins, nodeColor, marked, selectedUri } = props;
   const palette = useGraphPalette();
-
-  /**
-   * The canvas outlives every render, so it reads props through this ref rather than capturing
-   * them. The write is a layout effect, not render-phase: a render React discards must not publish.
-   */
-  const latest = useRef<LiveProps>({ ...props, palette });
-  useLayoutEffect(() => {
-    latest.current = { ...props, palette };
-  });
+  // The canvas outlives every render, so it reads props through this ref rather than capturing them.
+  const latest = useLatestRef<LiveProps>({ ...props, palette });
 
   const containerRef = useRef<HTMLDivElement>(null);
   const renderNodes = useRef(new Map<string, RenderNode>()).current;
@@ -72,7 +66,7 @@ const GraphView = forwardRef<GraphViewHandle, Props>((props, ref) => {
       instance.destroy();
       setCanvas(null);
     };
-  }, [renderNodes, imageByUri]);
+  }, [latest, renderNodes, imageByUri]);
 
   useImperativeHandle(
     ref,
@@ -106,7 +100,7 @@ const GraphView = forwardRef<GraphViewHandle, Props>((props, ref) => {
         node.fy = undefined;
       }
     }
-  }, [renderNodes]);
+  }, [latest, renderNodes]);
 
   useEffect(() => {
     if (!canvas) return;
@@ -159,6 +153,7 @@ const GraphView = forwardRef<GraphViewHandle, Props>((props, ref) => {
       ref={containerRef}
       role="img"
       aria-label={props['aria-label']}
+      aria-describedby={props['aria-describedby']}
       className="h-full w-full overflow-hidden"
     />
   );

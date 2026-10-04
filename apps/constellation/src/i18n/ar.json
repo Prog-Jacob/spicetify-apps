@@ -14,6 +14,46 @@
   "type.album": "ألبوم",
   "type.playlist": "قائمة تشغيل",
   "type.user": "مستخدم",
+  "count.track": {
+    "zero": "لا مقاطع",
+    "one": "مقطع واحد",
+    "two": "مقطعان",
+    "few": "# مقاطع",
+    "many": "# مقطعاً",
+    "other": "# مقطع"
+  },
+  "count.artist": {
+    "zero": "لا فنانين",
+    "one": "فنان واحد",
+    "two": "فنانان",
+    "few": "# فنانين",
+    "many": "# فناناً",
+    "other": "# فنان"
+  },
+  "count.album": {
+    "zero": "لا ألبومات",
+    "one": "ألبوم واحد",
+    "two": "ألبومان",
+    "few": "# ألبومات",
+    "many": "# ألبوماً",
+    "other": "# ألبوم"
+  },
+  "count.playlist": {
+    "zero": "لا قوائم تشغيل",
+    "one": "قائمة تشغيل واحدة",
+    "two": "قائمتا تشغيل",
+    "few": "# قوائم تشغيل",
+    "many": "# قائمة تشغيل",
+    "other": "# قائمة تشغيل"
+  },
+  "count.user": {
+    "zero": "لا مستخدمين",
+    "one": "مستخدم واحد",
+    "two": "مستخدمان",
+    "few": "# مستخدمين",
+    "many": "# مستخدماً",
+    "other": "# مستخدم"
+  },
   "inspector.play": "تشغيل",
   "inspector.queue": "قائمة الانتظار",
   "inspector.open": "فتح في سبوتيفاي",
@@ -27,14 +67,21 @@
   "inspector.unpin": "إلغاء التثبيت",
   "inspector.remove": "إزالة من الشبكة",
   "inspector.close": "إغلاق",
-  "inspector.connections": "الصلات ({count})",
+  "inspector.connections": {
+    "zero": "لا صلات",
+    "one": "صلة واحدة",
+    "two": "صلتان",
+    "few": "# صلات",
+    "many": "# صلة",
+    "other": "# صلة"
+  },
   "inspector.moreConnections": {
     "zero": "لا صلات أخرى",
     "one": "صلة أخرى غير معروضة",
     "two": "صلتان أخريان غير معروضتين",
-    "few": "{count} صلات أخرى غير معروضة",
-    "many": "{count} صلة أخرى غير معروضة",
-    "other": "{count} صلة أخرى غير معروضة"
+    "few": "# صلات أخرى غير معروضة",
+    "many": "# صلة أخرى غير معروضة",
+    "other": "# صلة أخرى غير معروضة"
   },
   "controls.search": "ابحث في شبكتك…",
   "controls.noMatches": "لا نتائج مطابقة",
@@ -42,17 +89,18 @@
     "zero": "لا نتائج",
     "one": "نتيجة واحدة",
     "two": "نتيجتان",
-    "few": "أفضل {count} نتائج",
-    "many": "أفضل {count} نتيجة",
-    "other": "أفضل {count} نتيجة"
+    "few": "# نتائج",
+    "many": "# نتيجة",
+    "other": "# نتيجة"
   },
+  "controls.topResults": "أفضل {count}",
   "controls.releasePins": {
     "zero": "لا مثبّتات",
     "one": "تحرير المثبّت",
     "two": "تحرير المثبّتين",
-    "few": "تحرير {count} مثبّتات",
-    "many": "تحرير {count} مثبّتاً",
-    "other": "تحرير {count} مثبّتاً"
+    "few": "تحرير # مثبّتات",
+    "many": "تحرير # مثبّتاً",
+    "other": "تحرير # مثبّتاً"
   },
   "scale.summary": "العناصر: {nodes} · الصلات: {links}",
   "filters.show": "إظهار",
@@ -71,21 +119,31 @@
   "physics.spacing": "التباعد",
   "physics.freeze": "تجميد",
   "physics.reset": "إعادة تعيين",
+  "physics.linkLengthValue": "{value}×",
+  "physics.spacingValue": "{value} بكسل",
   "selection.count": {
     "zero": "لا تحديد",
     "one": "عنصر واحد محدد",
     "two": "عنصران محددان",
-    "few": "{count} عناصر محددة",
-    "many": "{count} عنصراً محدداً",
-    "other": "{count} عنصراً محدداً"
+    "few": "# عناصر محددة",
+    "many": "# عنصراً محدداً",
+    "other": "# عنصراً محدداً"
   },
   "selection.paths": "المسارات بينها",
   "selection.detour": "خطوات إضافية",
+  "selection.detourValue": "+{value}",
   "selection.detourHint": "عدد الخطوات المسموح بها زيادةً على أقصر طريق بين العناصر المحددة.",
   "selection.remove": "إزالة",
   "selection.removeOptions": "اختر ما تريد إزالته أيضاً",
   "selection.alsoRemove": "أزل المرتبط أيضاً",
-  "selection.undo": "تراجع عن الإزالة ({count})",
+  "selection.undo": {
+    "zero": "لا شيء للتراجع",
+    "one": "تراجع عن إزالة واحدة",
+    "two": "تراجع عن إزالتين",
+    "few": "تراجع عن # إزالات",
+    "many": "تراجع عن # إزالة",
+    "other": "تراجع عن # إزالة"
+  },
   "selection.clear": "مسح التحديد",
   "manage.search": "ابحث في شبكتك…",
   "manage.filter": "الأنواع",
@@ -95,21 +153,35 @@
     "zero": "لا عناصر أخرى",
     "one": "وعنصر آخر، ابحث للتصفية",
     "two": "وعنصران آخران، ابحث للتصفية",
-    "few": "و{count} عناصر أخرى، ابحث للتصفية",
-    "many": "و{count} عنصراً آخر، ابحث للتصفية",
-    "other": "و{count} عنصراً آخر، ابحث للتصفية"
+    "few": "و# عناصر أخرى، ابحث للتصفية",
+    "many": "و# عنصراً آخر، ابحث للتصفية",
+    "other": "و# عنصراً آخر، ابحث للتصفية"
   },
-  "manage.removed": "المُزالة ({count})",
+  "manage.removed": {
+    "zero": "لا عناصر مُزالة",
+    "one": "عنصر مُزال",
+    "two": "عنصران مُزالان",
+    "few": "# عناصر مُزالة",
+    "many": "# عنصراً مُزالاً",
+    "other": "# عنصر مُزال"
+  },
   "manage.restore": "استعادة إلى الشبكة",
   "manage.removedToast": {
     "zero": "لم تتم إزالة أي عنصر.",
     "one": "تمت إزالة عنصر من الشبكة.",
     "two": "تمت إزالة عنصرين من الشبكة.",
-    "few": "تمت إزالة {count} عناصر من الشبكة.",
-    "many": "تمت إزالة {count} عنصراً من الشبكة.",
-    "other": "تمت إزالة {count} عنصراً من الشبكة."
+    "few": "تمت إزالة # عناصر من الشبكة.",
+    "many": "تمت إزالة # عنصراً من الشبكة.",
+    "other": "تمت إزالة # عنصراً من الشبكة."
   },
-  "actions.expandVisible": "توسيع الظاهر ({count})",
+  "actions.expandVisible": {
+    "zero": "لا شيء للتوسيع",
+    "one": "توسيع العنصر الظاهر",
+    "two": "توسيع العنصرين الظاهرين",
+    "few": "توسيع # عناصر ظاهرة",
+    "many": "توسيع # عنصراً ظاهراً",
+    "other": "توسيع # عنصر ظاهر"
+  },
   "actions.nothingToExpand": "كل ما يظهر موسّع بالفعل.",
   "actions.expanding": "جارٍ التوسيع {done}/{total}…",
   "actions.cancel": "إلغاء",
@@ -146,9 +218,9 @@
     "zero": "محدد: {label}، {type}، بلا صلات.",
     "one": "محدد: {label}، {type}، صلة واحدة.",
     "two": "محدد: {label}، {type}، صلتان.",
-    "few": "محدد: {label}، {type}، {count} صلات.",
-    "many": "محدد: {label}، {type}، {count} صلة.",
-    "other": "محدد: {label}، {type}، {count} صلة."
+    "few": "محدد: {label}، {type}، # صلات.",
+    "many": "محدد: {label}، {type}، # صلة.",
+    "other": "محدد: {label}، {type}، # صلة."
   },
   "guide.title": "كيف تستكشف",
   "guide.click": "انقر على عنصر لعرض تفاصيله، وانقر نقراً مزدوجاً لتوسيع صلاته.",

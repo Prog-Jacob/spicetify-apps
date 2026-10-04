@@ -1,7 +1,7 @@
-import { useCallback } from 'react';
 import { toggleInSet } from '@shared/lib';
+import { useMemo, useCallback } from 'react';
 import { ALL_NODE_TYPES } from '../constants';
-import type { NodeType, GraphNode } from '../types/graph';
+import type { NodeType } from '../types/graph';
 import { usePersistentState, type Codec } from '@shared/hooks';
 
 const typesCodec: Codec<Set<NodeType>> = {
@@ -17,10 +17,8 @@ const typesCodec: Codec<Set<NodeType>> = {
   serialize: (set) => JSON.stringify([...set]),
 };
 
-const usePersistentToggle = (key: string): [boolean, () => void] => {
-  const [on, setOn] = usePersistentState(key, false);
-  return [on, useCallback(() => setOn((prev) => !prev), [setOn])];
-};
+export type LensKey = 'sizeByDegree' | 'colorByCluster' | 'showCollaborations' | 'connectedOnly';
+export type Lenses = Record<LensKey, boolean>;
 
 export const useGraphControls = () => {
   const [visibleTypes, setVisibleTypes] = usePersistentState(
@@ -32,45 +30,47 @@ export const useGraphControls = () => {
     (type: NodeType) => setVisibleTypes((prev) => toggleInSet(prev, type)),
     [setVisibleTypes],
   );
-  const allTypesVisible = visibleTypes.size === ALL_NODE_TYPES.length;
-  const isTypeVisible = useCallback(
-    (node: GraphNode) => visibleTypes.has(node.type),
-    [visibleTypes],
-  );
 
-  const [sizeByDegree, toggleSizeLens] = usePersistentToggle('sizeByDegree');
-  const [colorByCluster, toggleClusterLens] = usePersistentToggle('colorByCluster');
-  const [showCollaborations, toggleCollaborations] = usePersistentToggle('showCollaborations');
-  const [connectedOnly, toggleConnectedOnly] = usePersistentToggle('connectedOnly');
+  const [sizeByDegree, setSizeByDegree] = usePersistentState('sizeByDegree', false);
+  const [colorByCluster, setColorByCluster] = usePersistentState('colorByCluster', false);
+  const [showCollaborations, setShowCollaborations] = usePersistentState(
+    'showCollaborations',
+    false,
+  );
+  const [connectedOnly, setConnectedOnly] = usePersistentState('connectedOnly', false);
+  const lenses = useMemo<Lenses>(
+    () => ({ sizeByDegree, colorByCluster, showCollaborations, connectedOnly }),
+    [sizeByDegree, colorByCluster, showCollaborations, connectedOnly],
+  );
+  const toggleLens = useCallback(
+    (key: LensKey) =>
+      ({
+        sizeByDegree: setSizeByDegree,
+        colorByCluster: setColorByCluster,
+        showCollaborations: setShowCollaborations,
+        connectedOnly: setConnectedOnly,
+      })[key]((on) => !on),
+    [setSizeByDegree, setColorByCluster, setShowCollaborations, setConnectedOnly],
+  );
 
   const [since, setSince] = usePersistentState('since', 0);
 
   const resetFilters = useCallback(() => {
     setVisibleTypes(new Set(ALL_NODE_TYPES));
     setSince(0);
-    if (connectedOnly) toggleConnectedOnly();
-  }, [setVisibleTypes, setSince, connectedOnly, toggleConnectedOnly]);
+    setConnectedOnly(false);
+  }, [setVisibleTypes, setSince, setConnectedOnly]);
 
-  const filtersActive = !allTypesVisible || since > 0 || connectedOnly;
+  const filtersActive = visibleTypes.size !== ALL_NODE_TYPES.length || since > 0 || connectedOnly;
 
   return {
     visibleTypes,
     toggleType,
-    resetFilters,
-    filtersActive,
-    allTypesVisible,
-    isTypeVisible,
-    sizeByDegree,
-    toggleSizeLens,
-    colorByCluster,
-    toggleClusterLens,
-    showCollaborations,
-    toggleCollaborations,
-    connectedOnly,
-    toggleConnectedOnly,
+    lenses,
+    toggleLens,
     since,
     setSince,
+    resetFilters,
+    filtersActive,
   };
 };
-
-export type GraphControls = ReturnType<typeof useGraphControls>;

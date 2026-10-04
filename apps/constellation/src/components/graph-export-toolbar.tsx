@@ -1,7 +1,7 @@
 import React from 'react';
 import { t } from '../i18n';
 import { SpicetifyIcon, Divider } from '@ui/components';
-import { PANEL_SURFACE, FOCUS_RING_INSET } from '../styles/chrome';
+import { PANEL_SURFACE, FOCUS_RING_INSET } from '@ui/styles';
 
 type Props = {
   onExportImage: () => void;
@@ -14,9 +14,7 @@ const GraphExportToolbar = ({ onExportImage, onExportData }: Props) => (
   <div className={`flex items-center ${PANEL_SURFACE}`}>
     <span className="flex items-center gap-1.5 ps-3 pe-2 text-spice-subtext">
       <SpicetifyIcon icon="download" size={13} />
-      <span className="text-[11px] font-semibold uppercase tracking-wider">
-        {t('actions.export')}
-      </span>
+      <span className="text-[11px] font-semibold">{t('actions.export')}</span>
     </span>
     <Divider className="my-1.5 h-auto self-stretch" />
     <button type="button" className={itemClass} onClick={onExportImage}>

@@ -1,12 +1,16 @@
 import { t } from '../i18n';
 import { cn } from '@shared/lib';
-import { FOCUS_RING } from '@ui/styles/surfaces';
 import { usePersistentState } from '@shared/hooks';
-import type { MusicGraph } from '../graph/music-graph';
+import { FOCUS_RING, PANEL_SURFACE } from '@ui/styles';
 import type { SweepProgress } from '../hooks/use-expand-all';
-import React, { createContext, type ReactNode } from 'react';
-import { PANEL_SURFACE, ACTION_BUTTON } from '../styles/chrome';
-import { IconButton, SpicetifyIcon, SegmentedTabs, type Segment } from '@ui/components';
+import React, { useRef, createContext, type ReactNode } from 'react';
+import {
+  IconButton,
+  ActionButton,
+  type Segment,
+  SpicetifyIcon,
+  SegmentedTabs,
+} from '@ui/components';
 
 const TAB_IDS = ['view', 'physics', 'nodes'] as const;
 type TabId = (typeof TAB_IDS)[number];
@@ -17,7 +21,8 @@ const panelId = (id: TabId) => `dock-panel-${id}`;
 export const PanelVisible = createContext(true);
 
 type Props = {
-  graph: MusicGraph;
+  nodeCount: number;
+  linkCount: number;
   progress: SweepProgress | null;
   onCancelExpandAll: () => void;
   view: ReactNode;
@@ -27,27 +32,43 @@ type Props = {
 
 const SweepStatus = ({ progress, onCancel }: { progress: SweepProgress; onCancel: () => void }) => (
   <div className="flex items-center gap-2">
-    <span className="text-xs tabular-nums text-spice-subtext">
+    <span role="status" className="text-xs tabular-nums text-spice-subtext">
       {t('actions.expanding', { done: progress.done, total: progress.total })}
     </span>
-    <button type="button" onClick={onCancel} className={ACTION_BUTTON}>
-      <SpicetifyIcon icon="x" size={11} />
+    <ActionButton icon="x" onClick={onCancel}>
       {t('actions.cancel')}
-    </button>
+    </ActionButton>
   </div>
 );
 
-const ControlDock = ({ graph, progress, onCancelExpandAll, ...panels }: Props) => {
+const ControlDock = ({ nodeCount, linkCount, progress, onCancelExpandAll, ...panels }: Props) => {
   const [collapsed, setCollapsed] = usePersistentState('dockCollapsed', false);
   const [tab, setTab] = usePersistentState<TabId>('dockTab', 'view');
   const segments: Segment<TabId>[] = TAB_IDS.map((id) => ({ id, label: t(`dock.${id}`) }));
 
-  if (collapsed)
-    return (
-      <div className={cn('flex flex-col gap-2 self-start', progress && 'w-full')}>
+  const expandRef = useRef<HTMLButtonElement>(null);
+  const collapseRef = useRef<HTMLButtonElement>(null);
+  // the clicked toggle hides itself, so focus follows to its counterpart
+  const toggle = (next: boolean) => {
+    setCollapsed(next);
+    requestAnimationFrame(() => (next ? expandRef : collapseRef).current?.focus());
+  };
+  const sweep = progress && <SweepStatus progress={progress} onCancel={onCancelExpandAll} />;
+
+  return (
+    <>
+      <div
+        className={cn(
+          'flex flex-col gap-2 self-start',
+          progress && 'w-full',
+          !collapsed && 'hidden',
+        )}
+      >
         <button
+          ref={expandRef}
           type="button"
-          onClick={() => setCollapsed(false)}
+          aria-expanded={false}
+          onClick={() => toggle(false)}
           className={cn(
             'flex items-center gap-2 self-start px-3 py-2 text-xs font-medium text-spice-text',
             PANEL_SURFACE,
@@ -57,54 +78,55 @@ const ControlDock = ({ graph, progress, onCancelExpandAll, ...panels }: Props) =
           <SpicetifyIcon icon="list-view" size={14} />
           {t('dock.title')}
         </button>
-        {progress && (
-          <div className={cn('px-3 py-2', PANEL_SURFACE)}>
-            <SweepStatus progress={progress} onCancel={onCancelExpandAll} />
-          </div>
-        )}
-      </div>
-    );
-
-  return (
-    <div className={cn('flex min-h-0 flex-1 flex-col', PANEL_SURFACE)}>
-      <div className="flex shrink-0 items-center justify-between gap-2 px-3.5 pb-2.5 pt-3">
-        <span className="text-xs font-medium tabular-nums text-spice-subtext">
-          {t('scale.summary', { nodes: graph.size, links: graph.linkCount })}
-        </span>
-        <IconButton
-          icon="minimize"
-          label={t('panel.hide')}
-          onClick={() => setCollapsed(true)}
-          size={13}
-          className="h-7 w-7"
-        />
+        {collapsed && sweep && <div className={cn('px-3 py-2', PANEL_SURFACE)}>{sweep}</div>}
       </div>
 
-      {progress && (
-        <div className="shrink-0 px-3.5 pb-2.5">
-          <SweepStatus progress={progress} onCancel={onCancelExpandAll} />
+      <div className={cn('flex min-h-0 flex-1 flex-col', PANEL_SURFACE, collapsed && 'hidden')}>
+        <div className="flex shrink-0 items-center justify-between gap-2 px-3.5 pb-2.5 pt-3">
+          <span className="text-xs font-medium tabular-nums text-spice-subtext">
+            {t('scale.summary', { nodes: nodeCount, links: linkCount })}
+          </span>
+          <IconButton
+            ref={collapseRef}
+            icon="minimize"
+            label={t('panel.hide')}
+            aria-expanded
+            onClick={() => toggle(true)}
+            size={13}
+            className="size-7"
+          />
         </div>
-      )}
 
-      <div className="shrink-0 px-3.5 pb-3">
-        <SegmentedTabs segments={segments} active={tab} onChange={setTab} panelId={panelId} />
-      </div>
+        {!collapsed && sweep && <div className="shrink-0 px-3.5 pb-2.5">{sweep}</div>}
 
-      <div className="flex min-h-0 flex-1 flex-col">
-        {TAB_IDS.map((id) => (
-          <div
-            key={id}
-            id={panelId(id)}
-            role="tabpanel"
-            aria-labelledby={`${panelId(id)}-tab`}
-            hidden={tab !== id}
-            className="min-h-0 flex-1 overflow-y-auto px-3.5 pb-3.5"
-          >
-            <PanelVisible.Provider value={tab === id}>{panels[id]}</PanelVisible.Provider>
-          </div>
-        ))}
+        <div className="shrink-0 px-3.5 pb-3">
+          <SegmentedTabs
+            segments={segments}
+            active={tab}
+            onChange={setTab}
+            panelId={panelId}
+            label={t('dock.title')}
+          />
+        </div>
+
+        <div className="flex min-h-0 flex-1 flex-col">
+          {TAB_IDS.map((id) => (
+            <div
+              key={id}
+              id={panelId(id)}
+              role="tabpanel"
+              aria-labelledby={`${panelId(id)}-tab`}
+              hidden={tab !== id}
+              className="min-h-0 flex-1 overflow-y-auto px-3.5 pb-3.5"
+            >
+              <PanelVisible.Provider value={!collapsed && tab === id}>
+                {panels[id]}
+              </PanelVisible.Provider>
+            </div>
+          ))}
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

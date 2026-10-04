@@ -1,10 +1,15 @@
 import { t } from '../i18n';
+import { SPOTIFY_URI } from '@shared/lib';
+import { NODE_TYPE, EDGE_TYPE } from '../constants';
 import type { MusicGraph } from '../graph/music-graph';
-import { NODE_TYPE, EDGE_TYPE, LIKED_SONGS_URI } from '../constants';
 
 export const addLikedSongs = (graph: MusicGraph, ownerUri: string): void => {
-  graph.addNode({ uri: LIKED_SONGS_URI, type: NODE_TYPE.PLAYLIST, label: t('graph.likedSongs') });
-  graph.addEdge(ownerUri, LIKED_SONGS_URI, EDGE_TYPE.OWNS);
+  graph.addNode({
+    uri: SPOTIFY_URI.LIKED_SONGS,
+    type: NODE_TYPE.PLAYLIST,
+    label: t('graph.likedSongs'),
+  });
+  graph.addEdge(ownerUri, SPOTIFY_URI.LIKED_SONGS, EDGE_TYPE.OWNS);
 };
 
 /**
@@ -12,4 +17,4 @@ export const addLikedSongs = (graph: MusicGraph, ownerUri: string): void => {
  * another locale doesn't stick.
  */
 export const nameLikedSongs = (graph: MusicGraph): void =>
-  graph.relabel(LIKED_SONGS_URI, t('graph.likedSongs'));
+  graph.relabel(SPOTIFY_URI.LIKED_SONGS, t('graph.likedSongs'));

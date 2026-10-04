@@ -18,6 +18,12 @@ const en = {
   'type.playlist': 'Playlist',
   'type.user': 'User',
 
+  'count.track': { one: '# track', other: '# tracks' },
+  'count.artist': { one: '# artist', other: '# artists' },
+  'count.album': { one: '# album', other: '# albums' },
+  'count.playlist': { one: '# playlist', other: '# playlists' },
+  'count.user': { one: '# user', other: '# users' },
+
   'inspector.play': 'Play',
   'inspector.queue': 'Add to queue',
   'inspector.open': 'Open in Spotify',
@@ -31,13 +37,14 @@ const en = {
   'inspector.unpin': 'Unpin',
   'inspector.remove': 'Remove from graph',
   'inspector.close': 'Close',
-  'inspector.connections': 'Connections ({count})',
-  'inspector.moreConnections': '+{count} more not shown',
+  'inspector.connections': { one: '# connection', other: '# connections' },
+  'inspector.moreConnections': { one: '+# more not shown', other: '+# more not shown' },
 
   'controls.search': 'Search your graph…',
   'controls.noMatches': 'No matches',
-  'controls.resultCount': 'Top {count}',
-  'controls.releasePins': 'Release {count} pinned',
+  'controls.resultCount': { one: '# match', other: '# matches' },
+  'controls.topResults': 'Top {count}',
+  'controls.releasePins': { one: 'Release # pin', other: 'Release # pins' },
 
   'scale.summary': '{nodes} items · {links} connections',
   'filters.show': 'Show',
@@ -59,28 +66,34 @@ const en = {
   'physics.spacing': 'Spacing',
   'physics.freeze': 'Freeze',
   'physics.reset': 'Reset',
+  'physics.linkLengthValue': '{value}×',
+  'physics.spacingValue': '{value} px',
 
-  'selection.count': '{count} selected',
+  'selection.count': { one: '# selected', other: '# selected' },
   'selection.paths': 'Paths between',
   'selection.detour': 'Detour',
+  'selection.detourValue': '+{value}',
   'selection.detourHint':
     'Extra hops allowed beyond the shortest route between the selected items.',
   'selection.remove': 'Remove',
   'selection.removeOptions': 'Choose what else to remove',
   'selection.alsoRemove': 'Also remove connected',
-  'selection.undo': 'Undo remove ({count})',
+  'selection.undo': { one: 'Undo # removal', other: 'Undo # removals' },
   'selection.clear': 'Clear selection',
 
   'manage.search': 'Search your graph…',
   'manage.filter': 'Types',
   'manage.emptyPool': 'The graph is empty.',
   'manage.allHidden': 'All types are hidden. Turn one back on above.',
-  'manage.more': '+{count} more, search to narrow',
-  'manage.removed': 'Removed ({count})',
+  'manage.more': { one: '+# more, search to narrow', other: '+# more, search to narrow' },
+  'manage.removed': { one: '# removed', other: '# removed' },
   'manage.restore': 'Restore to graph',
-  'manage.removedToast': 'Removed {count} from the graph.',
+  'manage.removedToast': {
+    one: 'Removed # item from the graph.',
+    other: 'Removed # items from the graph.',
+  },
 
-  'actions.expandVisible': 'Expand visible ({count})',
+  'actions.expandVisible': { one: 'Expand # visible item', other: 'Expand # visible items' },
   'actions.nothingToExpand': 'Everything visible is already expanded.',
   'actions.expanding': 'Expanding {done}/{total}…',
   'actions.cancel': 'Cancel',
@@ -120,7 +133,10 @@ const en = {
   'expand.failed': 'Could not expand this item.',
 
   'a11y.canvas': 'Graph of your library: {nodes} items and {links} connections.',
-  'a11y.selected': 'Selected {label}, {type}, with {count} connections.',
+  'a11y.selected': {
+    one: 'Selected {label}, {type}, with # connection.',
+    other: 'Selected {label}, {type}, with # connections.',
+  },
 
   'guide.title': 'How to explore',
   'guide.click': 'Click an item to inspect it. Double-click to expand its connections.',
@@ -137,5 +153,5 @@ const en = {
   'guide.hide': 'Hide help',
 } as const;
 
-export type ConstellationMessages = Record<keyof typeof en, MessageValue>;
+export type AppMessages = Record<keyof typeof en, MessageValue>;
 export default en;

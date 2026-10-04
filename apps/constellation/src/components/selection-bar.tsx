@@ -1,11 +1,11 @@
 import React from 'react';
 import { t } from '../i18n';
 import { cn } from '@shared/lib';
+import { PANEL_SURFACE } from '@ui/styles';
 import type { NodeType } from '../types/graph';
-import RemoveTypeMenu from './remove-type-menu';
 import { PATH_DETOUR } from '../graph/paths-between';
-import { PANEL_SURFACE, ACTION_BUTTON } from '../styles/chrome';
-import { ToggleChip, SpicetifyIcon, Slider, Divider } from '@ui/components';
+import { RemoveSplitButton } from './remove-type-menu';
+import { Divider, ToggleChip, ActionButton, InlineSlider, SpicetifyIcon } from '@ui/components';
 
 type Props = {
   count: number;
@@ -41,10 +41,9 @@ const SelectionBar = ({
       )}
     >
       {undoCount > 0 && (
-        <button type="button" onClick={onUndo} className={ACTION_BUTTON}>
-          <SpicetifyIcon icon="skip-back" size={11} />
+        <ActionButton icon="skip-back" onClick={onUndo}>
           {t('selection.undo', { count: undoCount })}
-        </button>
+        </ActionButton>
       )}
       {count > 0 && (
         <>
@@ -56,38 +55,28 @@ const SelectionBar = ({
       )}
       {canPath && (
         <ToggleChip active={pathMode} onToggle={onTogglePath} variant="outline">
-          <span className="flex items-center gap-1.5">
-            <SpicetifyIcon icon="enhance" size={11} />
-            {t('selection.paths')}
-          </span>
+          <SpicetifyIcon icon="enhance" size={11} />
+          {t('selection.paths')}
         </ToggleChip>
       )}
       {pathMode && (
-        <Slider
-          compact
+        <InlineSlider
           className="w-40"
           label={t('selection.detour')}
-          ariaLabel={t('selection.detourHint')}
+          aria-label={t('selection.detourHint')}
           value={detour}
           min={PATH_DETOUR.min}
           max={PATH_DETOUR.max}
           step={1}
-          valueLabel={`+${detour}`}
+          valueLabel={t('selection.detourValue', { value: detour })}
           onChange={onDetourChange}
         />
       )}
       {count > 0 && (
         <>
           {canPath && <Divider />}
-          <RemoveTypeMenu variant="bar" types={removeTypes} onRemove={onRemove} />
-          <button
-            type="button"
-            onClick={onClear}
-            className={ACTION_BUTTON}
-            aria-label={t('selection.clear')}
-          >
-            <SpicetifyIcon icon="x" size={11} />
-          </button>
+          <RemoveSplitButton types={removeTypes} onRemove={onRemove} />
+          <ActionButton icon="x" onClick={onClear} aria-label={t('selection.clear')} />
         </>
       )}
     </div>

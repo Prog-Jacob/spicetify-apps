@@ -4,6 +4,10 @@ import type { MusicGraph } from '../graph/music-graph';
 import type { EdgeType, EntityRef, TrackRef } from '../types/graph';
 import type { LibraryTrackItem, PlaylistItemDetail } from '@shared/types';
 
+export const rememberImage = (images: Map<string, string>, uri: string, url?: string): void => {
+  if (url && !images.has(uri)) images.set(uri, url);
+};
+
 // Shared by the initial crawl and every expander, so entity→node/edge mapping never forks.
 export const ingestArtists = (
   graph: MusicGraph,

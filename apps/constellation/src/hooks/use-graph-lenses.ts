@@ -1,16 +1,14 @@
 import { subgraph } from '../graph/music-graph';
-import { useGraphPalette } from '../graph/theme';
+import type { GraphView } from './use-graph-view';
 import { clusterColor } from '../graph/node-style';
+import { useGraphPalette } from './use-graph-palette';
 import { pathsBetween } from '../graph/paths-between';
 import { blockCutTree } from '../graph/block-cut-tree';
 import type { RenderNode } from '../graph/render-data';
-import type { GraphControls } from './use-graph-controls';
-import type { GraphNode, GraphEdge } from '../types/graph';
-import type { GraphSelection } from './use-graph-selection';
 import { deriveCollaborations } from '../graph/collaboration';
 import { useMemo, useCallback, useDeferredValue } from 'react';
-import type { LibraryGraph } from '../services/library-crawler';
 import { detectCommunities } from '../graph/community-detection';
+import type { NodeType, GraphNode, GraphEdge } from '../types/graph';
 import {
   adjacencyOf,
   reachableFrom,
@@ -25,57 +23,68 @@ const MIN_LINKS = 2;
 
 const NO_URIS: string[] = [];
 
-export const useGraphLenses = (
-  library: LibraryGraph | null,
-  revision: number,
-  controls: GraphControls,
-  selection: GraphSelection,
-  hidden: string[],
-  seeds: string[],
-  anchorUris: string[],
-) => {
-  const { isTypeVisible, since, colorByCluster, showCollaborations, connectedOnly } = controls;
-  const { focusUri, anchors, pathMode, pathDetour } = selection;
-  const graph = library?.graph ?? null;
+type Options = {
+  view: GraphView;
+  rootUri: string;
+  hidden: string[];
+  seeds: string[];
+  /** Subtrees kept when their owner was removed. */
+  keptUris: string[];
+  visibleTypes: ReadonlySet<NodeType>;
+  since: number;
+  colorByCluster: boolean;
+  showCollaborations: boolean;
+  connectedOnly: boolean;
+  focusUri: string | null;
+  markedUris: string[];
+  pathMode: boolean;
+  pathDetour: number;
+};
 
-  const settledRevision = useDeferredValue(revision);
+/** Derivations key on the deferred `view`, so a burst of expansions recomputes once it settles. */
+export const useGraphLenses = ({
+  view,
+  rootUri,
+  hidden,
+  seeds,
+  keptUris,
+  visibleTypes,
+  since,
+  colorByCluster,
+  showCollaborations,
+  connectedOnly,
+  focusUri,
+  markedUris,
+  pathMode,
+  pathDetour,
+}: Options) => {
+  const settled = useDeferredValue(view);
   const blocked = useMemo(() => new Set(hidden), [hidden]);
   const liveSet = useMemo(
-    () =>
-      library
-        ? reachableFrom(library.graph, [library.rootUri, ...seeds, ...anchorUris], blocked)
-        : null,
-    [library, seeds, anchorUris, blocked, settledRevision],
+    () => reachableFrom(settled.graph, [rootUri, ...seeds, ...keptUris], blocked),
+    [settled, rootUri, seeds, keptUris, blocked],
   );
 
-  const liveGraph = useMemo(
-    () =>
-      library && liveSet
-        ? hidden.length
-          ? subgraph(library.graph, liveSet)
-          : library.graph
-        : null,
-    [library, liveSet, hidden, settledRevision],
+  const live = useMemo(
+    () => ({ graph: hidden.length ? subgraph(settled.graph, liveSet) : settled.graph }),
+    [settled, liveSet, hidden],
   );
 
   const focusSet = useMemo(
-    () => (focusUri && library ? neighborhoodUris(library.graph, focusUri) : null),
-    [focusUri, library, revision],
+    () => (focusUri ? neighborhoodUris(settled.graph, focusUri) : null),
+    [focusUri, settled],
   );
 
-  const blocks = useMemo(
-    () => (pathMode && liveGraph ? blockCutTree(liveGraph) : null),
-    [pathMode, liveGraph],
-  );
+  const blocks = useMemo(() => (pathMode ? blockCutTree(live.graph) : null), [pathMode, live]);
 
   const pathSet = useMemo(
-    () => (blocks && liveGraph ? pathsBetween(liveGraph, blocks, anchors, pathDetour) : null),
-    [blocks, anchors, pathDetour, liveGraph],
+    () => (blocks ? pathsBetween(live.graph, blocks, markedUris, pathDetour) : null),
+    [blocks, markedUris, pathDetour, live],
   );
 
   const liveNodes = useMemo(
-    () => (graph && liveSet ? graph.nodes().filter((node) => liveSet.has(node.uri)) : []),
-    [graph, liveSet, settledRevision],
+    () => settled.graph.nodes().filter((node) => liveSet.has(node.uri)),
+    [settled, liveSet],
   );
 
   const timeBounds = useMemo(() => addedAtBounds(liveNodes), [liveNodes]);
@@ -83,23 +92,19 @@ export const useGraphLenses = (
   const effectiveSince = timeBounds && since > timeBounds.max ? timeBounds.min : since;
   const filterSince = useDeferredValue(effectiveSince);
 
-  const passesFilters = useCallback(
+  const isShown = useCallback(
     (node: GraphNode) =>
-      isTypeVisible(node) &&
+      liveSet.has(node.uri) &&
+      visibleTypes.has(node.type) &&
       (!focusSet || focusSet.has(node.uri)) &&
       (!pathSet || pathSet.has(node.uri)) &&
       (!node.addedAt || node.addedAt >= filterSince),
-    [isTypeVisible, focusSet, pathSet, filterSince],
-  );
-
-  const isShown = useCallback(
-    (node: GraphNode) => !!liveSet?.has(node.uri) && passesFilters(node),
-    [liveSet, passesFilters],
+    [liveSet, visibleTypes, focusSet, pathSet, filterSince],
   );
 
   const extraLinks = useMemo(
-    () => (showCollaborations && liveGraph ? deriveCollaborations(liveGraph) : NO_LINKS),
-    [showCollaborations, liveGraph],
+    () => (showCollaborations ? deriveCollaborations(live.graph) : NO_LINKS),
+    [showCollaborations, live],
   );
 
   const extraNeighbors = useMemo(() => adjacencyOf(extraLinks), [extraLinks]);
@@ -107,21 +112,21 @@ export const useGraphLenses = (
   const nodeVisible = useCallback(
     (node: GraphNode) => {
       if (!isShown(node)) return false;
-      if (pathSet || !connectedOnly || !graph) return true;
+      if (pathSet || !connectedOnly) return true;
       const extra = extraNeighbors.get(node.uri) ?? NO_URIS;
-      return countVisibleNeighbors(graph, node.uri, extra, isShown, MIN_LINKS) >= MIN_LINKS;
+      return countVisibleNeighbors(settled.graph, node.uri, extra, isShown, MIN_LINKS) >= MIN_LINKS;
     },
-    [isShown, connectedOnly, graph, pathSet, extraNeighbors],
+    [isShown, connectedOnly, settled, pathSet, extraNeighbors],
   );
 
   const clusterColorByUri = useMemo(() => {
-    if (!colorByCluster || !liveGraph) return null;
+    if (!colorByCluster) return null;
     const colors = new Map<string, string>();
-    for (const [uri, community] of detectCommunities(liveGraph)) {
+    for (const [uri, community] of detectCommunities(live.graph)) {
       colors.set(uri, clusterColor(community));
     }
     return colors;
-  }, [colorByCluster, liveGraph]);
+  }, [colorByCluster, live]);
 
   const palette = useGraphPalette();
   const nodeColor = useCallback(
@@ -130,8 +135,8 @@ export const useGraphLenses = (
   );
 
   const visibleNodes = useMemo(
-    () => (graph ? graph.nodes().filter(nodeVisible) : []),
-    [graph, settledRevision, nodeVisible],
+    () => settled.graph.nodes().filter(nodeVisible),
+    [settled, nodeVisible],
   );
   const visibleUris = useMemo(() => new Set(visibleNodes.map((n) => n.uri)), [visibleNodes]);
 
@@ -146,5 +151,3 @@ export const useGraphLenses = (
     effectiveSince,
   };
 };
-
-export type GraphLenses = ReturnType<typeof useGraphLenses>;

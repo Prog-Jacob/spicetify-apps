@@ -1,48 +1,65 @@
 import { t } from './i18n';
+import { EmptyState } from '@ui/components';
+import ViewTab from './components/view-tab';
+import NodesTab from './components/nodes-tab';
 import Inspector from './components/inspector';
 import type { GraphNode } from './types/graph';
-import GraphDock from './components/graph-dock';
 import { usePhysics } from './hooks/use-physics';
 import { useReducedMotion } from '@shared/hooks';
 import GraphGuide from './components/graph-guide';
+import PhysicsTab from './components/physics-tab';
 import { neighborTypes } from './graph/node-query';
+import { canExpand } from './services/expand-node';
+import ControlDock from './components/control-dock';
+import { useGraphView } from './hooks/use-graph-view';
 import SelectionBar from './components/selection-bar';
+import NodeSearchBox from './components/node-search-box';
 import { useGraphLenses } from './hooks/use-graph-lenses';
 import { useGraphActions } from './hooks/use-graph-actions';
-import React, { useRef, useMemo, useCallback } from 'react';
 import { useGraphControls } from './hooks/use-graph-controls';
-import GraphPlaceholder from './components/graph-placeholder';
 import type { LibraryGraph } from './services/library-crawler';
 import GraphNavControls from './components/graph-nav-controls';
 import { useGraphSelection } from './hooks/use-graph-selection';
 import type { GraphExplorer } from './hooks/use-graph-explorer';
+import React, { useId, useRef, useMemo, useCallback } from 'react';
 import GraphExportToolbar from './components/graph-export-toolbar';
-import GraphView, { type GraphViewHandle } from './graph/graph-view';
+import GraphView, { type GraphViewHandle } from './components/graph-view';
 
 type Props = { explorer: GraphExplorer; library: LibraryGraph };
 
 const GraphWorkspace = ({ explorer, library }: Props) => {
-  const { revision, expand, expandingUri, pins, pinNode, unpinNode } = explorer;
+  const { revision, expand, expandingUri, expandAll, pins, pinNode, unpinNode, hidden } = explorer;
+  const { graph, rootUri, images, expanded } = library;
 
   const controls = useGraphControls();
+  const { lenses: lensFlags, resetFilters } = controls;
   const physics = usePhysics();
   const reducedMotion = useReducedMotion();
-  const selection = useGraphSelection(library.graph, revision);
-  const { select, focusUri, focus, clearFocus } = selection;
-  const lenses = useGraphLenses(
-    library,
-    revision,
-    controls,
-    selection,
-    explorer.hidden,
-    explorer.seeds,
-    explorer.anchors,
-  );
+  const view = useGraphView(graph, revision);
+  const selection = useGraphSelection(view);
+  const { select, focusUri, focus, clearFocus, toggleMark, pathMode, togglePathMode } = selection;
+  const lenses = useGraphLenses({
+    view,
+    rootUri,
+    hidden,
+    seeds: explorer.seeds,
+    keptUris: explorer.anchors,
+    visibleTypes: controls.visibleTypes,
+    since: controls.since,
+    colorByCluster: lensFlags.colorByCluster,
+    showCollaborations: lensFlags.showCollaborations,
+    connectedOnly: lensFlags.connectedOnly,
+    focusUri,
+    markedUris: selection.anchors,
+    pathMode,
+    pathDetour: selection.pathDetour,
+  });
   // a removed node stays selected, so Undo brings its inspector back
   const selected =
-    selection.selected && lenses.liveSet?.has(selection.selected.uri) ? selection.selected : null;
+    selection.selected && lenses.liveSet.has(selection.selected.uri) ? selection.selected : null;
 
   const viewRef = useRef<GraphViewHandle>(null);
+  const hintId = useId();
 
   const center = useCallback((uri: string) => viewRef.current?.focusNode(uri), []);
 
@@ -62,21 +79,35 @@ const GraphWorkspace = ({ explorer, library }: Props) => {
     [focus, center],
   );
 
-  const { undoable, remove, removeOne, restoreOne, undoRemove, exportData, exportImage } =
-    useGraphActions(explorer, library, lenses.liveNodes, viewRef);
+  const toggleNodeMark = useCallback((node: GraphNode) => toggleMark(node.uri), [toggleMark]);
+  const unpin = useCallback((node: GraphNode) => unpinNode(node.uri), [unpinNode]);
+  const closeInspector = useCallback(() => select(null), [select]);
 
-  const filtersActive = controls.filtersActive || focusUri !== null || selection.pathMode;
+  const { undoable, remove, removeOne, restoreOne, undoRemove, exportData, exportImage } =
+    useGraphActions({
+      graph,
+      liveSet: lenses.liveSet,
+      viewRef,
+      removeEntities: explorer.removeEntities,
+      restoreEntities: explorer.restoreEntities,
+    });
+
+  const filtersActive = controls.filtersActive || focusUri !== null || pathMode;
 
   const clearEveryFilter = useCallback(() => {
-    controls.resetFilters();
+    resetFilters();
     clearFocus();
-    if (selection.pathMode) selection.togglePathMode();
-  }, [controls, clearFocus, selection]);
+    if (pathMode) togglePathMode();
+  }, [resetFilters, clearFocus, pathMode, togglePathMode]);
 
   const visibleCount = lenses.visibleNodes.length;
   const removeTypes = useMemo(
-    () => [...neighborTypes(library.graph, selection.anchors)],
-    [library.graph, selection.anchors],
+    () => [...neighborTypes(graph, selection.anchors)],
+    [graph, selection.anchors],
+  );
+  const removed = useMemo(
+    () => hidden.flatMap((uri) => view.graph.node(uri) ?? []),
+    [hidden, view],
   );
 
   return (
@@ -84,28 +115,32 @@ const GraphWorkspace = ({ explorer, library }: Props) => {
       <div className="relative min-w-0 flex-1 [--dock-w:18rem]">
         <GraphView
           ref={viewRef}
-          graph={library.graph}
-          images={library.images}
+          graph={graph}
+          images={images}
           revision={revision}
           visibleUris={lenses.visibleUris}
           nodeColor={lenses.nodeColor}
           extraLinks={lenses.extraLinks}
-          sizeByDegree={controls.sizeByDegree}
+          sizeByDegree={lensFlags.sizeByDegree}
           physics={physics.params}
           frozen={physics.frozen}
           marked={selection.marked}
           selectedUri={selected?.uri}
-          expanded={library.expanded}
+          expanded={expanded}
           expandingUri={expandingUri}
           pins={pins}
           reducedMotion={reducedMotion}
-          aria-label={t('a11y.canvas', { nodes: visibleCount, links: library.graph.linkCount })}
+          aria-label={t('a11y.canvas', { nodes: visibleCount, links: graph.linkCount })}
+          aria-describedby={hintId}
           onSelect={select}
-          onToggleMark={(node) => selection.toggleMark(node.uri)}
+          onToggleMark={toggleNodeMark}
           onBackgroundClick={selection.clearAll}
           onExpand={expand}
           onPin={pinNode}
         />
+        <p id={hintId} className="sr-only">
+          {t('guide.keyboard')}
+        </p>
 
         {/* Selection happens on a canvas, which announces nothing on its own. */}
         <span className="sr-only" aria-live="polite">
@@ -113,13 +148,13 @@ const GraphWorkspace = ({ explorer, library }: Props) => {
             t('a11y.selected', {
               label: selected.label,
               type: t(`type.${selected.type}`),
-              count: library.graph.degree(selected.uri),
+              count: graph.degree(selected.uri),
             })}
         </span>
 
         {visibleCount === 0 && (
           <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
-            <GraphPlaceholder
+            <EmptyState
               title={t('filters.noneVisibleTitle')}
               subtitle={t('filters.noneVisible')}
               className="pointer-events-auto"
@@ -128,18 +163,58 @@ const GraphWorkspace = ({ explorer, library }: Props) => {
           </div>
         )}
 
-        <GraphDock
-          explorer={explorer}
-          library={library}
-          controls={controls}
-          physics={physics}
-          lenses={lenses}
-          filtersActive={filtersActive}
-          onResetFilters={clearEveryFilter}
-          onFocus={focusOn}
-          onRemove={removeOne}
-          onRestore={restoreOne}
-        />
+        <div className="animate-fade-in-up pointer-events-none absolute bottom-14 start-3 top-3 z-10 flex w-[var(--dock-w)] flex-col gap-2 [&>*]:pointer-events-auto">
+          <NodeSearchBox nodes={lenses.visibleNodes} onPick={focusOn} />
+          <ControlDock
+            nodeCount={graph.size}
+            linkCount={graph.linkCount}
+            progress={explorer.expandProgress}
+            onCancelExpandAll={explorer.cancelExpandAll}
+            view={
+              <ViewTab
+                visibleTypes={controls.visibleTypes}
+                onToggleType={controls.toggleType}
+                lenses={lensFlags}
+                onToggleLens={controls.toggleLens}
+                timeBounds={lenses.timeBounds}
+                since={lenses.effectiveSince}
+                onSinceChange={controls.setSince}
+                visibleNodes={lenses.visibleNodes}
+                expanded={expanded}
+                pinnedCount={Object.keys(pins).length}
+                filtersActive={filtersActive}
+                refreshing={explorer.crawlPhase !== null}
+                onResetFilters={clearEveryFilter}
+                onExpandAll={expandAll}
+                onReleasePins={explorer.releaseAllPins}
+                onReload={explorer.reload}
+              />
+            }
+            physics={
+              <PhysicsTab
+                params={physics.params}
+                frozen={physics.frozen}
+                isDefault={physics.isDefault}
+                onChange={physics.setParam}
+                onToggleFrozen={physics.toggleFrozen}
+                onReset={physics.reset}
+              />
+            }
+            nodes={
+              <NodesTab
+                nodes={lenses.liveNodes}
+                rootUri={rootUri}
+                removed={removed}
+                adding={explorer.adding}
+                onAdd={explorer.addEntity}
+                onAdded={focusOn}
+                onRemove={removeOne}
+                onRestore={restoreOne}
+                onSelect={focusOn}
+              />
+            }
+          />
+        </div>
 
         <div className="animate-fade-in-up absolute end-3 top-3 z-10">
           <GraphExportToolbar onExportImage={exportImage} onExportData={exportData} />
@@ -162,8 +237,8 @@ const GraphWorkspace = ({ explorer, library }: Props) => {
             <SelectionBar
               count={selection.marked.size}
               undoCount={undoable.length}
-              pathMode={selection.pathMode}
-              onTogglePath={selection.togglePathMode}
+              pathMode={pathMode}
+              onTogglePath={togglePathMode}
               detour={selection.pathDetour}
               onDetourChange={selection.setPathDetour}
               removeTypes={removeTypes}
@@ -181,22 +256,22 @@ const GraphWorkspace = ({ explorer, library }: Props) => {
       {selected && (
         <Inspector
           node={selected}
-          graph={library.graph}
-          revision={revision}
-          images={library.images}
-          expanded={library.expanded}
-          expandingUri={expandingUri}
+          view={view}
+          image={images.get(selected.uri)}
+          expandable={canExpand(selected) && !expanded.has(selected.uri)}
+          expanding={expandingUri === selected.uri}
           focused={focusUri === selected.uri}
           pinned={selected.uri in pins}
           marked={selection.marked.has(selected.uri)}
+          removable={selected.uri !== rootUri}
           onExpand={expand}
           onFocus={focusNeighborhood}
           onSelect={focusOn}
-          onToggleMark={() => selection.toggleMark(selected.uri)}
+          onToggleMark={toggleNodeMark}
           onClearFocus={clearFocus}
-          onUnpin={() => unpinNode(selected.uri)}
-          onRemove={selected.uri === library.rootUri ? undefined : removeOne}
-          onClose={() => select(null)}
+          onUnpin={unpin}
+          onRemove={removeOne}
+          onClose={closeInspector}
         />
       )}
     </>

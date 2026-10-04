@@ -1,9 +1,9 @@
 import { NODE_TYPE } from '../constants';
-import { loadImage } from './node-paint';
-import type { MusicGraph } from './music-graph';
+import { loadImage } from '../graph/node-paint';
 import { resolveUriMetadata } from '@shared/api';
-import type { GraphCanvas } from './graph-canvas';
-import { useRef, useEffect, useDeferredValue } from 'react';
+import type { MusicGraph } from '../graph/music-graph';
+import type { GraphCanvas } from '../graph/graph-canvas';
+import { useRef, useState, useEffect, useDeferredValue } from 'react';
 
 const REPAINT_THROTTLE_MS = 250;
 
@@ -14,7 +14,7 @@ export const useNodeArtwork = (
   canvas: GraphCanvas | null,
   imageByUri: Map<string, string>,
 ): void => {
-  const attempted = useRef(new Set<string>()).current;
+  const [attempted] = useState(() => new Set<string>());
   const repaintPending = useRef(false);
   const lastGraph = useRef<MusicGraph | null>(null);
   const settledRevision = useDeferredValue(revision);
