@@ -27,7 +27,7 @@ if (!(Test-Path $customAppsDir)) {
 }
 
 Write-Host "Fetching latest release..."
-$releases = Invoke-RestMethod -Uri "https://api.github.com/repos/$repo/releases"
+$releases = Invoke-RestMethod -Uri "https://api.github.com/repos/$repo/releases?per_page=100"
 $latest = $releases | Where-Object {
   $_.tag_name -match "^$appName-v[0-9]+\.[0-9]+\.[0-9]+$"
 } | Select-Object -First 1
@@ -52,7 +52,12 @@ Invoke-WebRequest -Uri $asset.browser_download_url -OutFile $zipFile
 if (Test-Path $tempDir) { Remove-Item $tempDir -Recurse -Force }
 Expand-Archive -Path $zipFile -DestinationPath $tempDir -Force
 
-if (Test-Path $appDir) { Remove-Item $appDir -Recurse -Force }
+# A dev junction (pnpm symlink) must be unlinked, not recursed into, or its target is emptied.
+if (Test-Path $appDir) {
+  $item = Get-Item $appDir -Force
+  if ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) { $item.Delete() }
+  else { Remove-Item $appDir -Recurse -Force }
+}
 Move-Item -Path (Join-Path $tempDir $appName) -Destination $appDir
 
 spicetify config custom_apps $appName

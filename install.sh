@@ -3,8 +3,9 @@ set -e
 
 APP_NAME="${1:?Usage: curl -fsSL <url>/install.sh | bash -s <app-name>}"
 REPO="Prog-Jacob/spicetify-apps"
-TEMP_DIR="/tmp/spicetify-$APP_NAME"
-ZIP_FILE="/tmp/spicetify-$APP_NAME.zip"
+TEMP_DIR=$(mktemp -d)
+trap 'rm -rf "$TEMP_DIR"' EXIT
+ZIP_FILE="$TEMP_DIR/release.zip"
 
 # Resolve Spicetify CustomApps directory
 SPICETIFY_CONFIG_DIR=$(dirname "$(spicetify -c 2>/dev/null || true)" 2>/dev/null)
@@ -18,7 +19,7 @@ mkdir -p "$CUSTOM_APPS_DIR"
 
 echo "Fetching latest release..."
 # Match this app's tag (<app>-v*) so another app's asset can never be picked
-LATEST_RELEASE_URL=$(curl -s "https://api.github.com/repos/$REPO/releases" \
+LATEST_RELEASE_URL=$(curl -fsSL "https://api.github.com/repos/$REPO/releases?per_page=100" \
   | grep -o "https://[^\"]*/download/$APP_NAME-v[^\"]*/spicetify-$APP_NAME\.release\.zip" \
   | head -n1)
 
@@ -28,17 +29,14 @@ if [[ -z "$LATEST_RELEASE_URL" ]]; then
 fi
 
 echo "Downloading $LATEST_RELEASE_URL..."
-curl -L -o "$ZIP_FILE" "$LATEST_RELEASE_URL"
+curl -fL -o "$ZIP_FILE" "$LATEST_RELEASE_URL"
 
-rm -rf "$TEMP_DIR"
-unzip -q "$ZIP_FILE" -d "$TEMP_DIR"
+unzip -q "$ZIP_FILE" -d "$TEMP_DIR/out"
 
 rm -rf "$APP_DIR"
-mv "$TEMP_DIR/$APP_NAME" "$APP_DIR"
+mv "$TEMP_DIR/out/$APP_NAME" "$APP_DIR"
 
 spicetify config custom_apps "$APP_NAME"
 spicetify apply
-
-rm -rf "$ZIP_FILE" "$TEMP_DIR"
 
 echo "Done! $APP_NAME is installed."
