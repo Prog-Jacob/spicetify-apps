@@ -6,13 +6,22 @@
  *
  * Copies scripts/app-template/ into apps/<slug>/, replacing {{NAME}}/{{SLUG}}/
  * {{DESCRIPTION}}/{{REPO}} placeholders (escaped in JS/TS, raw in markdown).
- * Generates package.json, tsconfig, manifest entry, then runs pnpm install.
+ * Writes package.json and a manifest entry, then runs pnpm install (rolled back on failure).
  */
 
 import { join } from 'path';
 import { execSync } from 'child_process';
 import { ROOT, APPS_DIR, readPkg, prompt, readManifest, writeManifest } from './lib.mts';
-import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'fs';
+import {
+  rmSync,
+  statSync,
+  mkdirSync,
+  existsSync,
+  readdirSync,
+  copyFileSync,
+  readFileSync,
+  writeFileSync,
+} from 'fs';
 
 const TEMPLATE_DIR = join(import.meta.dirname, 'app-template');
 const TEMPLATE_SRC = join(TEMPLATE_DIR, 'src');
@@ -24,8 +33,8 @@ const titleCase = (s: string) =>
 console.log('\n  Create a new Spicetify app\n');
 
 const slug = await ask('App slug (kebab-case)');
-if (!slug || !/^[a-z][a-z0-9-]*$/.test(slug)) {
-  console.error('Invalid slug. Use lowercase letters, numbers, and hyphens.');
+if (!/^[a-z][a-z0-9]*(-[a-z0-9]+)*$/.test(slug)) {
+  console.error('Invalid slug. Use lowercase words joined by single hyphens, e.g. my-app.');
   process.exit(1);
 }
 if (existsSync(join(APPS_DIR, slug))) {
@@ -39,7 +48,7 @@ const tags = await ask('Tags (comma-separated)', '');
 close();
 
 const appDir = join(APPS_DIR, slug);
-const repo: string = readPkg().repository;
+const repo = readPkg().repository;
 const description = desc || 'A Spicetify custom app.';
 
 const replacements: Record<string, string> = {
@@ -74,6 +83,7 @@ function copyDir(src: string, dest: string) {
 }
 
 copyDir(TEMPLATE_SRC, join(appDir, 'src'));
+copyFileSync(join(TEMPLATE_DIR, 'tsconfig.json'), join(appDir, 'tsconfig.json'));
 
 const readme = applyReplacements(readFileSync(join(TEMPLATE_DIR, 'README.md'), 'utf-8'), false);
 writeFileSync(join(appDir, 'README.md'), readme);
@@ -86,35 +96,36 @@ json('package.json', {
   version: '0.1.0',
   private: true,
   main: 'dist/index.js',
-  scripts: {
-    typecheck: 'tsc --noEmit',
-    download: `curl -fsSL https://raw.githubusercontent.com/${repo}/main/install.sh | bash -s ${slug}`,
-    symlink: `DEST="$(dirname $(spicetify -c))/CustomApps/${slug}" && rm -rf "$DEST" && ln -sfn "$PWD/dist" "$DEST" && spicetify config custom_apps ${slug} >/dev/null`,
+  scripts: { typecheck: 'tsc --noEmit' },
+});
+
+const manifestPath = join(ROOT, 'manifest.json');
+const manifestBefore = readFileSync(manifestPath, 'utf-8');
+writeManifest([
+  ...readManifest(),
+  {
+    name,
+    ...(desc && { description: desc }),
+    preview: `apps/${slug}/preview/thumbnail.webp`,
+    readme: `apps/${slug}/README.md`,
+    tags: tags
+      ? tags
+          .split(',')
+          .map((t: string) => t.trim())
+          .filter(Boolean)
+      : [],
   },
-});
-
-json('tsconfig.json', {
-  extends: '../../tsconfig.base.json',
-  compilerOptions: { types: ['node'] },
-  include: ['src/**/*', '../../packages/shared/src/types/**/*'],
-});
-
-const manifest = readManifest();
-manifest.push({
-  name,
-  ...(desc && { description: desc }),
-  preview: `apps/${slug}/preview/thumbnail.webp`,
-  readme: `apps/${slug}/README.md`,
-  tags: tags
-    ? tags
-        .split(',')
-        .map((t: string) => t.trim())
-        .filter(Boolean)
-    : [],
-});
-writeManifest(manifest);
+]);
 
 console.log(`\n  Created apps/${slug}/\n`);
 console.log('  Installing dependencies...\n');
-execSync('pnpm install', { cwd: ROOT, stdio: 'inherit' });
+try {
+  execSync('pnpm exec prettier --write manifest.json', { cwd: ROOT, stdio: 'ignore' });
+  execSync('pnpm install', { cwd: ROOT, stdio: 'inherit' });
+} catch {
+  rmSync(appDir, { recursive: true, force: true });
+  writeFileSync(manifestPath, manifestBefore);
+  console.error(`\n  Setup failed; removed apps/${slug}/ and its manifest entry.\n`);
+  process.exit(1);
+}
 console.log(`\n  Ready! Run \`pnpm dev\` to start.\n`);
