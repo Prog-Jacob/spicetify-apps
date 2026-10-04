@@ -1,94 +1,117 @@
 #!/usr/bin/env tsx
 /**
- * Release script for monorepo apps.
+ * Release one app.
  *
- * Usage:
- *   tsx scripts/release.mts <app-name>
+ * Usage: pnpm release <app-name>
  *
- * Example:
- *   tsx scripts/release.mts data-porter
- *
- * If no pending changesets exist, a draft is generated from commits since
- * the last release tag and opened in $EDITOR. Then `changeset version`
- * bumps versions, writes CHANGELOGs, and commits. The script tags and pushes.
+ * Requires a clean tree on an up-to-date main. If no changeset is pending, a draft is
+ * generated from commits since the app's last tag and opened in $EDITOR. `changeset version`
+ * then bumps the version, writes the CHANGELOG and commits (via .changeset/commit.mts). The
+ * script tags `<app>-v<version>` and pushes commit and tag together; CI publishes the release.
  */
 
 import { join } from 'path';
-import { execSync, spawnSync } from 'child_process';
-import { ROOT, APPS_DIR, readPkg } from './lib.mts';
-import { existsSync, readdirSync, writeFileSync } from 'fs';
+import { tmpdir } from 'os';
+import { execFileSync, spawnSync } from 'child_process';
+import { ROOT, APPS_DIR, readPkg, requireApp } from './lib.mts';
+import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
 
 const CHANGESET_DIR = join(ROOT, '.changeset');
+// Shared code ships inside every app bundle, so its commits belong in each app's notes.
+const SHARED_PATHS = ['packages/shared', 'packages/ui'];
 
-const appName = process.argv[2];
-const run = (cmd: string) => execSync(cmd, { cwd: ROOT, stdio: 'inherit' });
-const hasChangesets = (): boolean =>
-  readdirSync(CHANGESET_DIR).some((f) => f.endsWith('.md') && f !== 'README.md');
-const capture = (cmd: string): string => execSync(cmd, { cwd: ROOT }).toString().trim();
-const tryCapture = (cmd: string): string => {
+const git = (...args: string[]) =>
+  execFileSync('git', args, { cwd: ROOT, encoding: 'utf-8' }).trim();
+const tryGit = (...args: string[]): string => {
   try {
-    return execSync(cmd, { cwd: ROOT, stdio: ['pipe', 'pipe', 'pipe'] })
-      .toString()
-      .trim();
+    return execFileSync('git', args, { cwd: ROOT, encoding: 'utf-8', stdio: 'pipe' }).trim();
   } catch {
     return '';
   }
 };
-
-if (!appName) {
-  console.error('Usage: tsx scripts/release.mts <app-name>');
+const pnpm = (...args: string[]) =>
+  execFileSync('pnpm', args, { cwd: ROOT, stdio: 'inherit', shell: process.platform === 'win32' });
+const fail = (msg: string): never => {
+  console.error(`\n  ${msg}\n`);
   process.exit(1);
-}
+};
+const pendingChangesets = () =>
+  readdirSync(CHANGESET_DIR).filter((f) => f.endsWith('.md') && f !== 'README.md');
 
+const appName = requireApp(process.argv[2], 'pnpm release <app-name>');
 const appDir = join(APPS_DIR, appName);
-if (!existsSync(appDir)) {
-  console.error(`App "${appName}" not found in apps/`);
-  process.exit(1);
-}
+const { name: pkgName, version: currentVersion } = readPkg(appDir);
 
-const pkg = readPkg(appDir);
-const currentVersion: string = pkg.version;
-const pkgName: string = pkg.name;
+// Preflight: the release commit must contain only release files, on top of origin/main.
+// Pending changesets are release input, so `pnpm changeset` may run right before this.
+if (git('status', '--porcelain', '--', '.', ':!.changeset/*.md'))
+  fail('Working tree is not clean. Commit or stash first.');
+if (git('branch', '--show-current') !== 'main') fail('Releases are cut from main.');
+execFileSync('git', ['pull', '--ff-only'], { cwd: ROOT, stdio: 'inherit' });
 
-// Draft a changeset from commits if none exist yet
-if (!hasChangesets()) {
-  const lastTag = tryCapture(`git describe --tags --match "${appName}-v*" --abbrev=0`);
+if (pendingChangesets().length === 0) {
+  const lastTag = tryGit('describe', '--tags', '--match', `${appName}-v*`, '--abbrev=0');
   const range = lastTag ? `${lastTag}..HEAD` : 'HEAD';
-  const log = capture(`git log ${range} --pretty=format:"%s" -- ${join('apps', appName)}`);
-  const draftPath = join(CHANGESET_DIR, `draft-${appName}.md`);
-
+  const paths = [`apps/${appName}`, ...SHARED_PATHS];
+  const log = git('log', range, '--pretty=format:%s', '--', ...paths);
   if (!log) {
     console.log('No commits since last release.');
     process.exit(0);
   }
 
+  const draftPath = join(CHANGESET_DIR, `draft-${appName}.md`);
   writeFileSync(draftPath, `---\n"${pkgName}": minor\n---\n\n${log}\n`);
-  spawnSync(process.env.EDITOR || 'vim', [draftPath], { stdio: 'inherit' });
-  console.log(
-    `\nDraft from ${log.split('\n').length} commit(s) since ${lastTag || 'the beginning'}.`,
-  );
+  console.log(`\nDraft from ${log.split('\n').length} commit(s) since ${lastTag || 'the start'}.`);
+  console.log('Edit the bump type and notes, save and quit. Delete the file to abort.\n');
+  // Through a shell so EDITOR may carry flags, e.g. "code --wait".
+  spawnSync(`${process.env.EDITOR || 'vim'} "${draftPath}"`, { stdio: 'inherit', shell: true });
 
-  if (!hasChangesets()) {
-    console.log('Aborted.');
+  if (pendingChangesets().length === 0) {
+    console.log('Aborted: draft deleted, nothing changed.');
     process.exit(0);
   }
 }
 
-run('pnpm changeset version');
+// Every bump gets committed, so refuse plans that would move another package's version untagged.
+const statusDir = mkdtempSync(join(tmpdir(), 'release-'));
+const statusFile = join(statusDir, 'status.json');
+pnpm('changeset', 'status', `--output=${statusFile}`);
+const { releases } = JSON.parse(readFileSync(statusFile, 'utf-8')) as {
+  releases: { name: string; newVersion: string }[];
+};
+rmSync(statusDir, { recursive: true, force: true });
 
-const newVersion: string = readPkg(appDir).version;
+const others = releases.filter((r) => r.name !== pkgName).map((r) => r.name);
+if (others.length > 0)
+  fail(
+    `Pending changesets also bump ${others.join(', ')}.\n` +
+      `  Release those apps first, or move their changesets out of .changeset/ and retry.`,
+  );
+if (!releases.some((r) => r.name === pkgName)) fail(`No pending changeset bumps ${pkgName}.`);
+
+const head = git('rev-parse', 'HEAD');
+pnpm('changeset', 'version');
+if (git('rev-parse', 'HEAD') === head || git('status', '--porcelain'))
+  fail(
+    'changeset version did not commit cleanly (a failing pre-commit hook is the usual\n' +
+      '  cause). Inspect `git status`, then undo with\n' +
+      `  git reset --hard ${head}`,
+  );
+
+const newVersion = readPkg(appDir).version;
 const tag = `${appName}-v${newVersion}`;
-console.log(`\n  ${appName}: ${currentVersion} → ${newVersion}  (tag: ${tag})\n`);
+console.log(`\n  ${appName}: ${currentVersion} -> ${newVersion}  (tag: ${tag})\n`);
 
-// Commit the version bump, CHANGELOG, and consumed changesets.
-// Skip if changeset's commit handler already committed (commit.mts is configured).
-if (capture('git status --porcelain')) {
-  run('git add -A');
-  run(`git commit -m "chore(${appName}): release v${newVersion}"`);
+git('tag', '-a', tag, '-m', `${appName} v${newVersion}`);
+try {
+  execFileSync('git', ['push', '--atomic', 'origin', 'HEAD', tag], { cwd: ROOT, stdio: 'inherit' });
+} catch {
+  fail(
+    `Push failed; nothing was published. Fix the cause, then either retry with\n` +
+      `  git push --atomic origin HEAD ${tag}\n` +
+      `or undo the release with\n` +
+      `  git tag -d ${tag} && git reset --hard ${head}`,
+  );
 }
 
-// Tag + push
-run(`git tag -a ${tag} -m "${appName} v${newVersion}"`);
-run('git push --follow-tags');
-
-console.log(`\nReleased ${tag} — GitHub Actions will publish the release.`);
+console.log(`\nReleased ${tag}. GitHub Actions will publish the release.`);
