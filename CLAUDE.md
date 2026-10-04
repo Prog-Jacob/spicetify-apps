@@ -1,88 +1,99 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
-## What This Is
-
-A pnpm monorepo of custom apps for the Spotify desktop client, powered by [Spicetify](https://spicetify.app). Apps run inside Spotify's Chromium shell and use React/JSX provided by the `Spicetify` global — React is **not** bundled, it's externalized to `Spicetify.React` / `Spicetify.ReactDOM` via esbuild.
+Custom apps for the Spotify desktop client, built on [Spicetify](https://spicetify.app). A pnpm monorepo meant to be forked: apps are thin, and reusable pieces live in `packages/`.
 
 ## Commands
 
-```sh
-pnpm dev                    # watch-build all apps + spicetify watch (CSS compiled once at startup)
-pnpm build                  # production build (all apps, minified, bundled locales)
-pnpm build:app data-porter  # build a single app
-pnpm typecheck              # typecheck scripts/ + all workspace packages
-pnpm lint                   # eslint (flat config)
-pnpm test                   # node:test via tsx (apps/*/src/**/*.test.ts)
-pnpm format                 # prettier
-pnpm precommit              # format + lint + typecheck + test (run before committing)
-pnpm create-app             # interactive scaffolder for a new app
-pnpm release data-porter    # interactive release: changeset → version bump → tag → push
-pnpm setup-fork             # point a fork at a new owner's repo (updates all references)
-```
+| Task                                   | Command                               |
+| -------------------------------------- | ------------------------------------- |
+| Develop (watch + live reload)          | `pnpm dev`                            |
+| Build all / one app                    | `pnpm build` / `pnpm build:app <app>` |
+| Check everything (the pre-commit hook) | `pnpm precommit`                      |
+| Format                                 | `pnpm format`                         |
+| New app                                | `pnpm create-app`                     |
+| Release an app                         | `pnpm release <app>`                  |
+| Point a fork at your repo              | `pnpm setup-fork`                     |
 
-## Architecture
+`pnpm precommit` runs prettier check, lint (fails on warnings), typecheck and tests.
+
+## Where things live
 
 ```
-apps/<name>/src/index.tsx   ← entry point: default-exports a render() returning JSX
-packages/shared/            ← API wrappers, i18n engine, hooks, types, utilities
-packages/ui/                ← shared UI components (shadcn/radix style, Tailwind v4)
-scripts/lib.mts             ← shared constants (ROOT, APPS_DIR) and helpers (readPkg, prompt)
-scripts/build.mts           ← esbuild bundler, auto-discovers apps in apps/
-scripts/create-app.mts      ← interactive scaffolder (template in scripts/app-template/)
-scripts/setup-fork.mts      ← updates all repo references for forks
-scripts/release.mts         ← changeset-based release per app (tags: <app>-v<ver>)
+apps/<app>/src/        an app: index.tsx (entry), app.tsx, components/, hooks/, services/, i18n/, styles/
+packages/shared/src/   api/, hooks/, lib/, i18n/, types/, styles/   (no UI)
+packages/ui/src/       components/, styles/, lib/, i18n/            (shared UI)
+scripts/               build, dev, release, create-app, setup-fork; app-template/ is what create-app copies
 ```
 
-**Build pipeline**: esbuild bundles each app as IIFE → `apps/<name>/dist/index.js`. Tailwind CSS is compiled separately via `@tailwindcss/cli` → `dist/style.css`. A `dist/manifest.json` is generated from the root `manifest.json` + SVG icons.
+`scripts/app-template/src/app.tsx` is the reference for wiring an app.
 
-**Path aliases** (configured in `tsconfig.base.json` and esbuild):
+## Rules that bite
 
-- `@shared/*` → `packages/shared/src/*`
-- `@ui/*` → `packages/ui/src/*`
+- **React comes from Spotify.** Never add `react` as a dependency; esbuild maps it to `Spicetify.React`. It is React 18.
+- **Import shared code from barrels** (`@shared/api`, `@shared/hooks`, `@shared/lib`, `@shared/types`, `@ui/components`, `@ui/styles`, `@ui/lib`), never deep paths.
+- **Check for a shared building block before writing a helper** (table below). If an app needs something generic, add it to `packages/`.
+- **Spotify endpoints go through `cosmos`** in `@shared/api`, not `fetch` or raw `Spicetify.CosmosAsync`.
+- **No raw strings in UI.** Add keys to `src/i18n/en.ts` and the same keys to every `<locale>.json` (a test fails otherwise).
+- **Use logical CSS** (`start`/`end`, `ps`/`pe`) so Arabic (RTL) works.
+- **Overlays use `Dialog`.** A `fixed` element inside an animated card gets pinned to the card.
+- **Dependencies:** app-only deps go in that app's `package.json`, shared-code deps in `packages/shared/package.json`, tooling in the root.
+- **Spicetify typings are hand-written** (`packages/shared/src/types/spicetify.d.ts`). Don't invent props for `Spicetify.ReactComponent.*`; check the running client first.
 
-**Build-time defines** (available as globals, typed in `packages/shared/src/types/globals.d.ts`):
+## Code style
 
-- `__APP_NAME__`, `__APP_DISPLAY_NAME__`, `__APP_VERSION__`, `__REPO__`, `__BUNDLED_LOCALES__`
+- Imports: single-line imports sorted by line length, shortest first; multi-line imports last, value imports before `import type`, with their names also sorted by length (`type X` counts in full). Barrel `export ... from` lines are sorted by length too.
+- Comments: rare, one line, stating a constraint the code can't show. No docblocks that restate a name.
 
-## Spicetify Runtime
+## Shared building blocks
 
-All code runs inside Spotify's renderer process. The `Spicetify` global provides:
+| Need                                         | Use                                                                   |
+| -------------------------------------------- | --------------------------------------------------------------------- |
+| Wait for Spicetify + locale before rendering | `useAppReady(loadTranslations)`                                       |
+| Read a paginated library endpoint            | `paginate()`                                                          |
+| Write many URIs in chunks                    | `batchedWrite()`                                                      |
+| Run async work with a concurrency limit      | `mapLimit()`                                                          |
+| Cancel the previous run of a task            | `useAbortController()`                                                |
+| Spotify internal or https endpoint           | `cosmos.get/post/put/del`                                             |
+| GraphQL query                                | `gql(name, vars)`                                                     |
+| Playlist, profile, friends                   | `getPlaylist`, `getProfile`, `listPublicPlaylists`, `listSocialGraph` |
+| Names and images for URIs                    | `resolveUriMetadata()`                                                |
+| Parse a link or URI                          | `parseSpotifyRef(input, types?)`, `parseUserId`                       |
+| Persist a setting                            | `usePersistentState(key, initial)`                                    |
+| Cache larger data                            | `idbStore(name)`                                                      |
+| Current route                                | `useLocationPath()`                                                   |
+| Theme colors in JS or canvas                 | `useThemeValue`, `cssVar`, `withAlpha`                                |
+| Toasts                                       | `notifyError(e, label)`, `notifyDone(msg)`                            |
+| Error message from `unknown`                 | `errorMessage(e)`                                                     |
 
-- `Spicetify.React` / `Spicetify.ReactDOM` — shared React instance (do NOT import react as a dep)
-- `Spicetify.Platform.*` — internal Spotify APIs (PlaylistAPI, LibraryAPI, RootlistAPI, UserAPI, etc.)
-- `Spicetify.CosmosAsync.*` — HTTP-like client for Spotify's internal endpoints (for https URLs, go through `cosmos` in `@shared/api`)
-- `Spicetify.URI` — URI parser/validator for `spotify:track:`, `spotify:playlist:`, etc.
-- `Spicetify.ReactComponent.*` — stock UI components (ButtonPrimary, Menu, TooltipWrapper, etc.)
-- `Spicetify.showNotification()` — toast notifications
+**UI** (`@ui/components`): `PageShell`, `ErrorBoundary`, `UpdateBanner`, `ProgressCard`, `ResultCard`, `ErrorCard`, `WarningBanner`, `EmptyState`, `Dialog`, `Artwork`, `ButtonPrimary`/`Secondary`/`Tertiary`, `ActionButton`, `IconButton`, `ToggleChip`, `Input`, `SearchField`, `FilterBar`, `SegmentedTabs`, `SummaryTile`, `Slider`/`InlineSlider`/`SliderTrack`, `TextComponent`, `SpicetifyIcon`.
 
-Types are in `packages/shared/src/types/spicetify.d.ts` and `platform-api.ts`. Call `Spicetify.Platform.*` APIs directly; they are fully typed.
-
-## API Layer (`packages/shared/src/api/`)
-
-- `cosmos.ts` — typed wrapper around `Spicetify.CosmosAsync` with error validation; https GETs skip Spicetify's broken version gate (Spotify's API hosts via `Platform.Transport`, others via Spicetify's CORS proxy)
-- `batch.ts` — `paginate()` for reading paginated library endpoints, `batchedWrite()` for chunked bulk writes. Both support `AbortSignal` and progress callbacks.
-- `profile-view.ts` / `social-graph.ts` — public profiles and playlists; `listSocialGraph()` returns who you follow and who follows you as user profiles
+**Style tokens** (`@ui/styles`): `FOCUS_RING`, `PANEL_SURFACE`, `SECTION_LABEL`, and others. **Helpers** (`@ui/lib`): `stagger(index)` for list entry delays, `rovingIndex()` for arrow-key groups.
 
 ## i18n
 
-Custom translator using ICU plural rules (`Intl.PluralRules`). Each app and `packages/ui` define translations in `src/i18n/en.ts` (default) + optional `<locale>.json` files. Arabic (`ar`) is the only bundled locale (embedded at build time via `__BUNDLED_LOCALES__`); other locales are fetched at runtime from GitHub.
-
-Apps call `createAppTranslator(en, ui)` (`packages/shared/src/i18n/`), which merges the app's messages over `packages/ui`'s and returns `{ t, loadTranslations }`. App keys shadow UI keys of the same name. The engine underneath is `createTranslator({ en })` → `t(key, params?)` with `.load()` for async locale loading.
+- Messages live in `src/i18n/en.ts`, typed as `Record<keyof typeof en, MessageValue>`.
+- Plurals: `{ one: '# item', other: '# items' }`, chosen by `params.count`.
+- Format with `t.number(n)` and `t.date(ms)`, not `toFixed` or ISO strings.
+- `createAppTranslator(en, ui)` layers app keys over `packages/ui` keys.
+- Locales in root `package.json#i18n.bundleLocales` (now `ar`) are bundled; others load from GitHub at runtime.
 
 ## Styling
 
-Tailwind CSS v4 with Spicetify theme variables mapped in `packages/shared/src/styles/spicetify-tailwind.css` (e.g., `--color-spice-text`, `--color-spice-button`). UI components use shadcn/new-york style via `components.json`. Use `cn()` from `@shared/lib/utils` for class merging (clsx + tailwind-merge).
+Tailwind v4 with theme colors as `spice-*` classes (`text-spice-text`, `bg-spice-card`). Merge classes with `cn()`. In `pnpm dev`, CSS is built once at startup, so new classes need `pnpm build:app <app>` or a dev restart.
 
-## Adding a New App
+## Adding an app
 
-Run `pnpm create-app` for an interactive scaffolder that generates the entry point, app shell, i18n setup, README, package.json, and tsconfig. It also adds a manifest entry and runs `pnpm install`. Template source files live in `scripts/app-template/` as real `.ts`/`.tsx` with `{{NAME}}`, `{{SLUG}}`, `{{DESCRIPTION}}`, `{{REPO}}` placeholders. JS/TS files get escaped replacements (backslashes, quotes); markdown gets raw values. The build script auto-discovers apps by scanning for `apps/*/src/index.tsx`.
+`pnpm create-app` does everything. By hand you need: `src/index.tsx`, `src/styles/{index.css,icon.svg,icon-filled.svg}`, a `package.json`, a `tsconfig.json` like the template's, and a root `manifest.json` entry. Without the manifest entry and icons, the release fails.
 
-## Forking
+## Tests
 
-`package.json#repository` is the single source of truth for repo identity. The build injects it as `__REPO__`, used at runtime for update checks and i18n locale fetching. `pnpm setup-fork` rewrites all references (package.json, install scripts, READMEs) from the original repo to the fork's repo in one step.
+`node:test`, files named `*.test.ts` next to the code. They run in plain Node with `scripts/test-globals.mts`; a test that touches the platform sets its own `globalThis.Spicetify`.
 
-## Release
+## Release and forking
 
-Uses [changesets](https://github.com/changesets/changesets) with custom changelog and commit handlers (`.changeset/changelog.mts`, `.changeset/commit.mts`). Tags follow `<app-name>-v<version>` format. `pnpm release <app-name>` handles the full flow.
+- `pnpm release <app>`: run from a clean `main`. It drafts or uses a changeset, bumps the version, tags `<app>-v<version>` and pushes. CI builds and publishes the release from the tag.
+- `pnpm setup-fork`: rewrites repo references and the author, and can remove the existing apps. `package.json#repository` is the source of truth (injected as `__REPO__`).
+
+## Debugging
+
+`pnpm dev` runs Spotify with DevTools on port 9222. Build-time globals: `__APP_NAME__`, `__APP_VERSION__`, `__APP_DISPLAY_NAME__`, `__REPO__`, `__BUNDLED_LOCALES__`.
