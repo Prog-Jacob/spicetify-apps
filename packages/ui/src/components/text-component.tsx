@@ -1,5 +1,10 @@
 import { resolveNativeComponent } from '../lib/resolve-native-component';
-import React, { forwardRef, type CSSProperties, type ComponentProps } from 'react';
+import React, {
+  forwardRef,
+  type ElementType,
+  type CSSProperties,
+  type ComponentProps,
+} from 'react';
 
 const toVar = (sc: string) => `var(--${sc.replace(/([A-Z])/g, '-$1').toLowerCase()})`;
 const WEIGHTS = { book: 400, bold: 700, black: 900 } as const;
@@ -12,18 +17,20 @@ const VARIANTS = {
   minuet: { fontSize: 11, lineHeight: '16px', letterSpacing: '0.2px', fontWeight: 400 },
 } as const satisfies Record<string, CSSProperties>;
 
-type TextProps = ComponentProps<'span'> & {
+export type TextProps = ComponentProps<'span'> & {
+  /** Element to render, e.g. `h1` for a page title. Spotify's Encore `Text` takes the same prop. */
+  as?: ElementType;
   variant?: keyof typeof VARIANTS;
   weight?: keyof typeof WEIGHTS;
   semanticColor?: string;
 };
 
-const FallbackText = forwardRef<React.ElementRef<'span'>, TextProps>(
-  ({ variant = 'viola', weight, semanticColor, style, className, ...rest }, ref) => (
-    <span
+const FallbackText = forwardRef<HTMLElement, TextProps>(
+  ({ as: Tag = 'span', variant = 'viola', weight, semanticColor, style, ...rest }, ref) => (
+    <Tag
       ref={ref}
-      className={className}
       style={{
+        margin: 0,
         ...VARIANTS[variant],
         ...(weight && { fontWeight: WEIGHTS[weight] }),
         ...(semanticColor && { color: toVar(semanticColor) }),
@@ -35,6 +42,4 @@ const FallbackText = forwardRef<React.ElementRef<'span'>, TextProps>(
 );
 FallbackText.displayName = 'TextComponent';
 
-const TextComponent = resolveNativeComponent<TextProps>('TextComponent', FallbackText);
-
-export default TextComponent;
+export const TextComponent = resolveNativeComponent<TextProps>('TextComponent', FallbackText);

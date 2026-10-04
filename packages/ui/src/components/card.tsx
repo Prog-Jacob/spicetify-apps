@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { cn } from '@shared/lib';
 
-const Card = ({ className, ...props }: React.ComponentProps<'div'>) => (
+export const Card = ({ className, ...props }: React.ComponentProps<'div'>) => (
   <div
     data-slot="card"
     className={cn(
@@ -12,8 +12,6 @@ const Card = ({ className, ...props }: React.ComponentProps<'div'>) => (
   />
 );
 
-const CardContent = ({ className, ...props }: React.ComponentProps<'div'>) => (
+export const CardContent = ({ className, ...props }: React.ComponentProps<'div'>) => (
   <div data-slot="card-content" className={cn('px-6', className)} {...props} />
 );
-
-export { Card, CardContent };

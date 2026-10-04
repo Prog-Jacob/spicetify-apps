@@ -12,10 +12,8 @@ type PillProps = {
   children: React.ReactNode;
 };
 
-const Pill = ({ variant = 'neutral', className, children }: PillProps) => (
-  <span className={cn('rounded-full px-2 py-0.5 text-[10px]', VARIANT_STYLES[variant], className)}>
+export const Pill = ({ variant = 'neutral', className, children }: PillProps) => (
+  <span className={cn('rounded-full px-2 py-0.5 text-[11px]', VARIANT_STYLES[variant], className)}>
     {children}
   </span>
 );
-
-export default Pill;

@@ -1,36 +1,37 @@
 import * as React from 'react';
 import { cn } from '@shared/lib';
-import SpicetifyIcon from './icon';
+import { FOCUS_RING } from '../styles/surfaces';
+import { SpicetifyIcon } from './spicetify-icon';
 
-type Props = {
+type IconButtonProps = Omit<React.ComponentProps<'button'>, 'children'> & {
   icon: Spicetify.Icon;
+  /** Accessible name and tooltip; an icon-only button has no other. */
   label: string;
-  onClick: () => void;
   size?: number;
-  disabled?: boolean;
   active?: boolean;
-  className?: string;
+  shape?: 'square' | 'round';
 };
 
-const IconButton = ({ icon, label, onClick, size = 16, disabled, active, className }: Props) => (
-  <button
-    type="button"
-    onClick={onClick}
-    disabled={disabled}
-    title={label}
-    aria-label={label}
-    aria-pressed={active}
-    className={cn(
-      'flex h-8 w-8 items-center justify-center rounded-lg border border-transparent bg-transparent text-spice-subtext transition-colors',
-      'hover:bg-spice-text/[0.1] hover:text-spice-text',
-      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-spice-button focus-visible:ring-offset-1 focus-visible:ring-offset-spice-card',
-      'disabled:pointer-events-none disabled:opacity-40',
-      active && 'bg-spice-button/20 text-spice-text',
-      className,
-    )}
-  >
-    <SpicetifyIcon icon={icon} size={size} />
-  </button>
+export const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(
+  ({ icon, label, size = 16, active, shape = 'square', className, ...rest }, ref) => (
+    <button
+      ref={ref}
+      type="button"
+      title={label}
+      aria-label={label}
+      aria-pressed={active}
+      className={cn(
+        'flex size-8 shrink-0 items-center justify-center border border-transparent bg-transparent text-spice-subtext transition-colors',
+        shape === 'round' ? 'rounded-full' : 'rounded-lg',
+        'hover:bg-spice-text/[0.1] hover:text-spice-text disabled:pointer-events-none disabled:opacity-40',
+        FOCUS_RING,
+        active && 'bg-spice-button/20 text-spice-text',
+        className,
+      )}
+      {...rest}
+    >
+      <SpicetifyIcon icon={icon} size={size} />
+    </button>
+  ),
 );
-
-export default IconButton;
+IconButton.displayName = 'IconButton';

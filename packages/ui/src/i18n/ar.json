@@ -11,5 +11,6 @@
   "update.copyCommand": "نسخ أمر التثبيت",
   "update.viewRelease": "عرض الإصدار",
   "update.dismiss": "إغلاق",
-  "filter.clear": "مسح البحث"
+  "filter.clear": "مسح البحث",
+  "progress.label": "{label}…"
 }

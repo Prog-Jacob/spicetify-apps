@@ -11,6 +11,7 @@ const en = {
   'update.update': 'Update',
   'update.release': 'Release',
   'progress.counter': '{current} / {total}',
+  'progress.label': '{label}…',
   'update.copyCommand': 'Copy install command',
   'update.viewRelease': 'View release',
   'update.dismiss': 'Dismiss',

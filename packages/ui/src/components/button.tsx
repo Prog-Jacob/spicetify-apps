@@ -1,8 +1,9 @@
 import { cn } from '@shared/lib';
+import { FOCUS_RING } from '../styles/surfaces';
 import { resolveNativeComponent } from '../lib/resolve-native-component';
 import React, { forwardRef, type ComponentProps, type ComponentType } from 'react';
 
-type ButtonProps = ComponentProps<'button'> & {
+export type ButtonProps = ComponentProps<'button'> & {
   buttonSize?: 'sm' | 'md' | 'lg';
   iconLeading?: () => React.ReactNode;
   iconTrailing?: () => React.ReactNode;
@@ -11,8 +12,10 @@ type ButtonProps = ComponentProps<'button'> & {
 type Variant = 'primary' | 'secondary' | 'tertiary';
 
 const SIZES = { sm: 'px-3 py-1 text-xs', md: 'px-4 py-1.5 text-sm', lg: 'px-6 py-2 text-base' };
-const BASE =
-  'inline-flex items-center justify-center rounded-full font-semibold transition-colors disabled:pointer-events-none disabled:opacity-50';
+const BASE = cn(
+  'inline-flex items-center justify-center gap-1.5 rounded-full font-semibold transition-colors disabled:pointer-events-none disabled:opacity-50',
+  FOCUS_RING,
+);
 const VARIANTS: Record<Variant, string> = {
   primary: 'bg-spice-button text-spice-main hover:opacity-90',
   secondary:
@@ -26,7 +29,7 @@ const makeFallback = (variant: Variant): ComponentType<ButtonProps> => {
       <button
         ref={ref}
         type="button"
-        className={cn(BASE, 'gap-1.5', SIZES[buttonSize], VARIANTS[variant], className)}
+        className={cn(BASE, SIZES[buttonSize], VARIANTS[variant], className)}
         {...rest}
       >
         {iconLeading?.()}
@@ -39,6 +42,7 @@ const makeFallback = (variant: Variant): ComponentType<ButtonProps> => {
   return Fallback as ComponentType<ButtonProps>;
 };
 
+/** Spotify's own buttons when available (they track the theme exactly), with matching fallbacks. */
 export const ButtonPrimary = resolveNativeComponent<ButtonProps>(
   'ButtonPrimary',
   makeFallback('primary'),

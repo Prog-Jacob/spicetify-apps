@@ -1,12 +1,12 @@
 import React from 'react';
 import { cn } from '@shared/lib';
 
-type Props = {
+type DividerProps = {
   orientation?: 'vertical' | 'horizontal';
   className?: string;
 };
 
-const Divider = ({ orientation = 'vertical', className }: Props) => (
+export const Divider = ({ orientation = 'vertical', className }: DividerProps) => (
   <span
     aria-hidden
     className={cn(
@@ -16,5 +16,3 @@ const Divider = ({ orientation = 'vertical', className }: Props) => (
     )}
   />
 );
-
-export default Divider;

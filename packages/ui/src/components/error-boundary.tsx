@@ -1,8 +1,8 @@
 import React from 'react';
-import ErrorCard from './error-card';
+import { ErrorCard } from './error-card';
+import { errorMessage } from '@shared/lib';
 
 type ErrorBoundaryProps = {
-  scope: string;
   title: string;
   /** Replaces the state that crashed before Try Again re-renders it. */
   onReset?: () => void;
@@ -11,7 +11,7 @@ type ErrorBoundaryProps = {
 
 type ErrorBoundaryState = { hasError: boolean; error: unknown };
 
-class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
   state: ErrorBoundaryState = { hasError: false, error: null };
 
   static getDerivedStateFromError(error: unknown): ErrorBoundaryState {
@@ -19,16 +19,15 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
   }
 
   componentDidCatch(error: unknown, info: React.ErrorInfo) {
-    console.error(`[${this.props.scope}] Uncaught render error:`, error, info.componentStack);
+    console.error(`[${__APP_NAME__}] Uncaught render error:`, error, info.componentStack);
   }
 
   render() {
-    const { hasError, error } = this.state;
-    if (!hasError) return this.props.children;
+    if (!this.state.hasError) return this.props.children;
     return (
       <ErrorCard
         title={this.props.title}
-        warnings={[error instanceof Error ? error.message : String(error)]}
+        warnings={[errorMessage(this.state.error)]}
         onRetry={() => {
           this.props.onReset?.();
           this.setState({ hasError: false, error: null });
@@ -37,5 +36,3 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
     );
   }
 }
-
-export default ErrorBoundary;

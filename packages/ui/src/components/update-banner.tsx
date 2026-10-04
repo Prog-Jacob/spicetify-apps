@@ -1,55 +1,36 @@
-import Pill from './pill';
 import { t } from '../i18n';
-import TextComponent from './text';
-import SpicetifyIcon from './icon';
-import { REPO_RAW } from '@shared/lib';
-import { ButtonSecondary, ButtonTertiary } from './button';
+import { Pill } from './pill';
+import { cn, REPO_RAW } from '@shared/lib';
+import { IconButton } from './icon-button';
+import { ButtonSecondary } from './button';
+import { FOCUS_RING } from '../styles/surfaces';
+import { SpicetifyIcon } from './spicetify-icon';
+import { TextComponent } from './text-component';
 import React, { useRef, useState, useEffect } from 'react';
-import { usePersistentState, type Codec } from '@shared/hooks';
+import { usePersistentState, useUpdateCheck } from '@shared/hooks';
 
 const COPY_FEEDBACK_MS = 2000;
-
-const dismissedCodec: Codec<string | null> = {
-  parse: (raw) => {
-    try {
-      return JSON.parse(raw) as string | null;
-    } catch {
-      return raw;
-    }
-  },
-  serialize: JSON.stringify,
-};
 
 const INSTALL_COMMAND = navigator.userAgent.toLowerCase().includes('windows')
   ? `iex "& { $(iwr -useb ${REPO_RAW}/install.ps1) } ${__APP_NAME__}"`
   : `curl -fsSL ${REPO_RAW}/install.sh | bash -s ${__APP_NAME__}`;
 
-type UpdateBannerProps = {
-  releaseUrl: string;
-  version: string;
-  className?: string;
-};
-
-const UpdateBanner = ({ releaseUrl, version, className }: UpdateBannerProps) => {
-  const [dismissedRelease, setDismissedRelease] = usePersistentState<string | null>(
-    'update-dismissed',
-    null,
-    dismissedCodec,
-  );
+/** Fetches GitHub releases itself; renders nothing until a newer version exists. */
+export const UpdateBanner = ({ className }: { className?: string }) => {
+  const update = useUpdateCheck();
+  const [dismissed, setDismissed] = usePersistentState<string | null>('update-dismissed', null);
   const [copied, setCopied] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout>>();
   useEffect(() => () => clearTimeout(timerRef.current), []);
 
-  if (dismissedRelease === releaseUrl) return null;
+  if (!update || dismissed === update.url) return null;
 
   const handleCopy = () => {
-    Spicetify.Platform.ClipboardAPI.copy(INSTALL_COMMAND);
+    void Spicetify.Platform.ClipboardAPI.copy(INSTALL_COMMAND);
     setCopied(true);
     clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => setCopied(false), COPY_FEEDBACK_MS);
   };
-
-  const handleDismiss = () => setDismissedRelease(releaseUrl);
 
   return (
     <div className={className}>
@@ -65,7 +46,7 @@ const UpdateBanner = ({ releaseUrl, version, className }: UpdateBannerProps) => 
             {t('update.available', { appName: __APP_DISPLAY_NAME__ })}
           </TextComponent>
           <Pill className="shrink-0 text-spice-subtext">
-            <span dir="ltr">{`v${__APP_VERSION__} → v${version}`}</span>
+            <span dir="ltr">{`v${__APP_VERSION__} → v${update.version}`}</span>
           </Pill>
         </div>
 
@@ -73,32 +54,35 @@ const UpdateBanner = ({ releaseUrl, version, className }: UpdateBannerProps) => 
           <ButtonSecondary
             buttonSize="sm"
             onClick={handleCopy}
-            aria-label={copied ? t('update.copied') : t('update.copyCommand')}
+            title={t('update.copyCommand')}
+            iconLeading={() => <SpicetifyIcon icon={copied ? 'check' : 'copy'} size={14} />}
           >
-            <span className="flex items-center gap-1.5">
-              <SpicetifyIcon icon={copied ? 'check' : 'copy'} size={14} />
-              {copied ? t('update.copied') : t('update.update')}
-            </span>
+            <span aria-live="polite">{copied ? t('update.copied') : t('update.update')}</span>
           </ButtonSecondary>
 
-          <ButtonTertiary
-            buttonSize="sm"
-            onClick={() => window.open(releaseUrl, '_blank')}
-            aria-label={t('update.viewRelease')}
+          <a
+            href={update.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            title={t('update.viewRelease')}
+            className={cn(
+              'inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold text-spice-text no-underline transition-colors hover:bg-spice-highlight/20',
+              FOCUS_RING,
+            )}
           >
-            <span className="flex items-center gap-1.5">
-              <SpicetifyIcon icon="external-link" size={14} />
-              {t('update.release')}
-            </span>
-          </ButtonTertiary>
+            <SpicetifyIcon icon="external-link" size={14} />
+            {t('update.release')}
+          </a>
 
-          <ButtonTertiary buttonSize="sm" onClick={handleDismiss} aria-label={t('update.dismiss')}>
-            <SpicetifyIcon icon="x" size={14} />
-          </ButtonTertiary>
+          <IconButton
+            icon="x"
+            size={14}
+            shape="round"
+            label={t('update.dismiss')}
+            onClick={() => setDismissed(update.url)}
+          />
         </div>
       </div>
     </div>
   );
 };
-
-export default UpdateBanner;

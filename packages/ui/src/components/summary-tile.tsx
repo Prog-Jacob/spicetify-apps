@@ -1,7 +1,9 @@
 import React from 'react';
 import { cn } from '@shared/lib';
-import TextComponent from './text';
-import SpicetifyIcon from './icon';
+import { stagger } from '../lib/stagger';
+import { FOCUS_RING } from '../styles/surfaces';
+import { SpicetifyIcon } from './spicetify-icon';
+import { TextComponent } from './text-component';
 
 type SummaryTileProps = {
   icon: Spicetify.Icon;
@@ -10,33 +12,33 @@ type SummaryTileProps = {
   label: string;
   active?: boolean;
   trailing?: React.ReactNode;
-  animationDelay?: string;
+  index?: number;
   onClick?: () => void;
 };
 
-const SummaryTile = ({
+export const SummaryTile = ({
   icon,
   iconClassName,
   value,
   label,
   active,
   trailing,
-  animationDelay,
+  index = 0,
   onClick,
 }: SummaryTileProps) => {
   const Tag = onClick ? 'button' : 'div';
   return (
     <Tag
-      {...(onClick && { type: 'button' as const, onClick })}
+      {...(onClick && { type: 'button' as const, onClick, 'aria-pressed': active })}
       className={cn(
         'flex animate-fade-in-up items-center gap-3 rounded-lg border-0 p-3 text-start transition-colors',
-        onClick && 'cursor-pointer',
+        onClick && cn('cursor-pointer', FOCUS_RING),
         active
           ? 'bg-spice-highlight-elevated ring-1 ring-spice-button/40'
           : 'bg-spice-highlight/50',
         onClick && !active && 'hover:bg-spice-highlight/80',
       )}
-      style={animationDelay ? { animationDelay } : undefined}
+      style={stagger(index, 80)}
     >
       <SpicetifyIcon
         icon={icon}
@@ -54,5 +56,3 @@ const SummaryTile = ({
     </Tag>
   );
 };
-
-export default SummaryTile;

@@ -1,31 +1,54 @@
 import { cn } from '@shared/lib';
 import React, { useRef } from 'react';
+import { rovingIndex } from '../lib/roving';
+import { SpicetifyIcon } from './spicetify-icon';
 import { FOCUS_RING, INSET_SURFACE } from '../styles/surfaces';
 
-export type Segment<T extends string> = { id: T; label: string };
+export type Segment<T extends string> = { id: T; label: string; icon?: Spicetify.Icon };
 
-type Props<T extends string> = {
+type SegmentedTabsProps<T extends string> = {
   segments: Segment<T>[];
   active: T;
   onChange: (id: T) => void;
+  /** Id of the panel each tab controls; the tab itself gets `${panelId(id)}-tab`. */
   panelId?: (id: T) => string;
+  /** `inset` fills its container (dense panels); `pill` sizes to content (page-level mode switch). */
+  variant?: 'inset' | 'pill';
+  disabled?: boolean;
+  label?: string;
 };
 
-const SegmentedTabs = <T extends string>({ segments, active, onChange, panelId }: Props<T>) => {
-  const listRef = useRef<HTMLDivElement>(null);
+const STYLES = {
+  inset: {
+    list: cn(INSET_SURFACE, 'flex gap-0.5 p-0.5'),
+    tab: 'flex-1 rounded-md px-2 py-1 text-xs font-semibold',
+    on: 'bg-spice-text/[0.10] text-spice-text shadow-sm shadow-spice-shadow/40',
+    off: 'text-spice-subtext hover:text-spice-text',
+  },
+  pill: {
+    list: 'flex w-fit gap-1 rounded-full bg-spice-highlight/60 p-1',
+    tab: 'rounded-full px-4 py-1.5 text-sm font-medium',
+    on: 'bg-spice-text text-spice-main',
+    off: 'text-spice-subtext hover:bg-spice-highlight hover:text-spice-text',
+  },
+} as const;
 
-  const onKeyDown = (event: React.KeyboardEvent) => {
-    const rtl = listRef.current && getComputedStyle(listRef.current).direction === 'rtl';
-    const arrow = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0;
+/** WAI-ARIA tabs with arrow/Home/End keys that follow the reading direction. */
+export const SegmentedTabs = <T extends string>({
+  segments,
+  active,
+  onChange,
+  panelId,
+  variant = 'inset',
+  disabled,
+  label,
+}: SegmentedTabsProps<T>) => {
+  const listRef = useRef<HTMLDivElement>(null);
+  const style = STYLES[variant];
+
+  const onKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     const index = segments.findIndex((segment) => segment.id === active);
-    const target =
-      event.key === 'Home'
-        ? 0
-        : event.key === 'End'
-          ? segments.length - 1
-          : arrow
-            ? (index + arrow * (rtl ? -1 : 1) + segments.length) % segments.length
-            : -1;
+    const target = rovingIndex(event, index, segments.length);
     if (target < 0) return;
     event.preventDefault();
     const next = segments[target];
@@ -37,8 +60,9 @@ const SegmentedTabs = <T extends string>({ segments, active, onChange, panelId }
     <div
       ref={listRef}
       role="tablist"
+      aria-label={label}
       onKeyDown={onKeyDown}
-      className={cn(INSET_SURFACE, 'flex gap-0.5 p-0.5')}
+      className={style.list}
     >
       {segments.map((segment) => {
         const selected = segment.id === active;
@@ -52,15 +76,16 @@ const SegmentedTabs = <T extends string>({ segments, active, onChange, panelId }
             aria-selected={selected}
             aria-controls={panelId?.(segment.id)}
             tabIndex={selected ? 0 : -1}
+            disabled={disabled}
             onClick={() => onChange(segment.id)}
             className={cn(
-              'flex-1 rounded-md border border-transparent px-2 py-1 text-xs font-semibold transition-colors',
+              'flex items-center justify-center gap-1.5 border border-transparent bg-transparent transition-colors disabled:pointer-events-none disabled:opacity-60',
+              style.tab,
               FOCUS_RING,
-              selected
-                ? 'bg-spice-text/[0.10] text-spice-text shadow-[0_1px_2px_rgba(0,0,0,0.25)]'
-                : 'bg-transparent text-spice-subtext hover:text-spice-text',
+              selected ? style.on : style.off,
             )}
           >
+            {segment.icon && <SpicetifyIcon icon={segment.icon} size={14} />}
             {segment.label}
           </button>
         );
@@ -68,5 +93,3 @@ const SegmentedTabs = <T extends string>({ segments, active, onChange, panelId }
     </div>
   );
 };
-
-export default SegmentedTabs;

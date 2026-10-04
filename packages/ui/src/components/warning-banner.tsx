@@ -1,19 +1,24 @@
 import React from 'react';
-import TextComponent from './text';
+import { TextComponent } from './text-component';
 
-type WarningBannerProps = { warnings: string[] };
+export const WarningList = ({ warnings }: { warnings: string[] }) => (
+  <>
+    {warnings.map((w, i) => (
+      <TextComponent key={i} variant="mesto" semanticColor="textNegative">
+        {w}
+      </TextComponent>
+    ))}
+  </>
+);
 
-const WarningBanner = ({ warnings }: WarningBannerProps) => {
+export const WarningBanner = ({ warnings }: { warnings: string[] }) => {
   if (warnings.length === 0) return null;
   return (
-    <div className="flex flex-col gap-1.5 rounded-lg bg-spice-notification-error/10 p-3">
-      {warnings.map((w, i) => (
-        <TextComponent key={i} variant="minuet" semanticColor="textNegative">
-          {w}
-        </TextComponent>
-      ))}
+    <div
+      role="alert"
+      className="flex flex-col gap-1.5 rounded-lg bg-spice-notification-error/10 p-3"
+    >
+      <WarningList warnings={warnings} />
     </div>
   );
 };
-
-export default WarningBanner;

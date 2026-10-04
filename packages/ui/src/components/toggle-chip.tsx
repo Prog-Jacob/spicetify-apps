@@ -1,12 +1,12 @@
 import React from 'react';
 import { cn } from '@shared/lib';
+import { FOCUS_RING } from '../styles/surfaces';
 
-type Props = {
+type ToggleChipProps = Omit<React.ComponentProps<'button'>, 'onClick'> & {
   active: boolean;
   onToggle: () => void;
+  /** `accent` fills when on (primary options); `outline` stays quiet (filters). */
   variant?: 'accent' | 'outline';
-  className?: string;
-  children: React.ReactNode;
 };
 
 const STYLE = {
@@ -20,20 +20,21 @@ const STYLE = {
   },
 } as const;
 
-const ToggleChip = ({ active, onToggle, variant = 'accent', className, children }: Props) => (
-  <button
-    type="button"
-    aria-pressed={active}
-    onClick={onToggle}
-    className={cn(
-      'rounded-full border px-3 py-1 text-xs font-semibold transition-colors',
-      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-spice-button',
-      STYLE[variant][active ? 'on' : 'off'],
-      className,
-    )}
-  >
-    {children}
-  </button>
+export const ToggleChip = React.forwardRef<HTMLButtonElement, ToggleChipProps>(
+  ({ active, onToggle, variant = 'accent', className, ...rest }, ref) => (
+    <button
+      ref={ref}
+      type="button"
+      aria-pressed={active}
+      onClick={onToggle}
+      className={cn(
+        'inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-colors disabled:pointer-events-none disabled:opacity-60',
+        FOCUS_RING,
+        STYLE[variant][active ? 'on' : 'off'],
+        className,
+      )}
+      {...rest}
+    />
+  ),
 );
-
-export default ToggleChip;
+ToggleChip.displayName = 'ToggleChip';

@@ -1,8 +1,8 @@
 import React from 'react';
 import { t } from '../i18n';
-import TextComponent from './text';
-import ResultCard from './result-card';
 import { ButtonPrimary } from './button';
+import { ResultCard } from './result-card';
+import { WarningList } from './warning-banner';
 
 type ErrorCardProps = {
   title: string;
@@ -10,25 +10,20 @@ type ErrorCardProps = {
   onRetry?: () => void;
 };
 
-const ErrorCard = ({ title, warnings, onRetry }: ErrorCardProps) => (
+export const ErrorCard = ({ title, warnings = [], onRetry }: ErrorCardProps) => (
   <ResultCard
     variant="error"
     title={title}
+    role="alert"
     className="bg-spice-notification-error/10"
     actions={
-      onRetry ? (
+      onRetry && (
         <ButtonPrimary onClick={onRetry} buttonSize="md">
           {t('tryAgain')}
         </ButtonPrimary>
-      ) : null
+      )
     }
   >
-    {warnings?.map((w, i) => (
-      <TextComponent key={i} variant="mesto" semanticColor="textNegative">
-        {w}
-      </TextComponent>
-    ))}
+    <WarningList warnings={warnings} />
   </ResultCard>
 );
-
-export default ErrorCard;
