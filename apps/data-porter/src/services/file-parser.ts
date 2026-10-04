@@ -26,36 +26,35 @@ const field = (o: Record<string, unknown>, ...keys: string[]): string =>
   String(keys.map((k) => o[k]).find((v) => v != null) ?? '');
 
 function normalizeLibrary(raw: ExportedLibrary | Record<string, unknown>): ExportedLibrary {
+  // hand-edited files can hold null or non-object entries in any array
   const arr = <K extends keyof ExportedLibrary>(k: K): ExportedLibrary[K] =>
-    (Array.isArray(raw[k]) ? raw[k] : []) as ExportedLibrary[K];
+    (Array.isArray(raw[k]) ? raw[k] : []).filter(
+      (o: unknown) => typeof o === 'object' && o !== null,
+    ) as ExportedLibrary[K];
+  const banned = (k: 'bannedTracks' | 'bannedArtists' | 'excludedFromTaste') =>
+    arr(k).filter((o) => typeof o.uri === 'string' && o.uri);
 
   return {
-    tracks: arr('tracks')
-      .filter((o) => o != null)
-      .map((o) => ({
-        name: field(o, 'name', 'trackName', 'track'),
-        artist: field(o, 'artist', 'artistName'),
-        album: field(o, 'album', 'albumName'),
-        uri: field(o, 'uri', 'trackUri'),
-      })),
-    albums: arr('albums')
-      .filter((o) => o != null)
-      .map((o) => ({
-        artist: field(o, 'artist', 'artistName'),
-        album: field(o, 'album', 'albumName', 'name'),
-        uri: field(o, 'uri', 'albumUri'),
-      })),
+    tracks: arr('tracks').map((o) => ({
+      name: field(o, 'name', 'trackName', 'track'),
+      artist: field(o, 'artist', 'artistName'),
+      album: field(o, 'album', 'albumName'),
+      uri: field(o, 'uri', 'trackUri'),
+    })),
+    albums: arr('albums').map((o) => ({
+      artist: field(o, 'artist', 'artistName'),
+      album: field(o, 'album', 'albumName', 'name'),
+      uri: field(o, 'uri', 'albumUri'),
+    })),
     shows: arr('shows'),
-    episodes: arr('episodes')
-      .filter((o) => o != null)
-      .map((o) => ({
-        name: field(o, 'name', 'episodeName'),
-        uri: field(o, 'uri', 'episodeUri'),
-      })),
-    bannedTracks: arr('bannedTracks'),
+    episodes: arr('episodes').map((o) => ({
+      name: field(o, 'name', 'episodeName'),
+      uri: field(o, 'uri', 'episodeUri'),
+    })),
+    bannedTracks: banned('bannedTracks'),
     artists: arr('artists'),
-    bannedArtists: arr('bannedArtists'),
-    excludedFromTaste: arr('excludedFromTaste'),
+    bannedArtists: banned('bannedArtists'),
+    excludedFromTaste: banned('excludedFromTaste'),
   };
 }
 

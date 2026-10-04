@@ -1,13 +1,6 @@
 import { t } from '../i18n';
-import { BAN_SET, DATA_TYPE } from '../constants';
-import {
-  paginate,
-  getProfile,
-  BATCH_DELAY_MS,
-  type PlaylistRef,
-  PLAYLIST_BATCH_SIZE,
-  fetchRootlistPlaylists,
-} from '@shared/api';
+import { BAN_SET, DATA_TYPE, BATCH_DELAY_MS, PLAYLIST_BATCH_SIZE } from '../constants';
+import { gql, paginate, getProfile, getPlaylist, fetchRootlistPlaylists } from '@shared/api';
 import {
   sleep,
   toEpochMs,
@@ -131,36 +124,32 @@ async function fetchUserProfile() {
   };
 }
 
+type RecentSearchItem = {
+  data?: {
+    __typename?: string;
+    uri?: string;
+    name?: string;
+    // artists and users carry their display name in nested objects
+    profile?: { name?: string };
+    displayName?: string;
+  };
+};
+
 async function fetchSearchHistory(): Promise<SearchHistoryItem[]> {
-  const res = await Spicetify.GraphQL.Request(Spicetify.GraphQL.Definitions.recentSearches, {
-    limit: 50,
-    includeAuthors: false,
-  });
+  const res = await gql<{
+    data?: { recentSearches?: { recentSearchesItems?: { items?: RecentSearchItem[] } } };
+  }>('recentSearches', { limit: 50, includeAuthors: false });
   const items = res?.data?.recentSearches?.recentSearchesItems?.items ?? [];
 
-  return items.map(
-    (item: {
-      data?: {
-        __typename?: string;
-        uri?: string;
-        name?: string;
-        // artists and users carry their display name in nested objects
-        profile?: { name?: string };
-        displayName?: string;
-      };
-    }) => {
-      const d = item.data ?? {};
-      return {
-        type: String(d.__typename ?? '').toLowerCase(),
-        name: String(d.name ?? d.profile?.name ?? d.displayName ?? ''),
-        uri: String(d.uri ?? ''),
-      };
-    },
-  );
+  return items.map(({ data: d = {} }) => ({
+    type: String(d.__typename ?? '').toLowerCase(),
+    name: String(d.name ?? d.profile?.name ?? d.displayName ?? ''),
+    uri: String(d.uri ?? ''),
+  }));
 }
 
 export async function buildPlaylists(
-  playlistItems: PlaylistRef[],
+  playlistItems: { name: string; uri: string }[],
   onProgress?: (progress: ProgressInfo) => void,
   signal?: AbortSignal,
 ): Promise<{ playlists: ExportedPlaylist[]; warning?: string }> {
@@ -178,8 +167,8 @@ export async function buildPlaylists(
       label: t('progress.playlist', { name: row.name }),
     });
 
-    const detail = await Spicetify.Platform.PlaylistAPI.getPlaylist(row.uri).catch(() => null);
-    if (!detail || detail.error || !detail.contents) {
+    const detail = await getPlaylist(row.uri).catch(() => null);
+    if (!detail?.contents) {
       skipped.push(row.name);
       continue;
     }
@@ -302,7 +291,7 @@ export async function exportData(
   if (selected.has(DATA_TYPE.EPISODES)) {
     onProgress({ current: 0, total: 0, label: t('progress.fetchingEpisodes') });
     const eps = await tryFetch(t('dataType.episodes'), async () => {
-      const detail = await Spicetify.Platform.PlaylistAPI.getPlaylist(SPOTIFY_URI.YOUR_EPISODES);
+      const detail = await getPlaylist(SPOTIFY_URI.YOUR_EPISODES);
       return (detail?.contents?.items ?? []).map((ep) => ({
         name: ep.name,
         uri: ep.uri,

@@ -1,30 +1,9 @@
 import { t } from '../i18n';
+import type { ProgressInfo } from '@shared/types';
 import { buildPlaylists, emptyLibrary } from './exporter';
-import type { ProgressInfo, LibraryContentItem } from '@shared/types';
 import type { ExportResult, ExportedPlaylist } from '../types/export';
 import { parseUserId, ValidationError, SPOTIFY_URI } from '@shared/lib';
-import { PAGE_SIZE, getProfile, getFollowing, getPublicPlaylists } from '@shared/api';
-
-async function fetchUserPlaylists(
-  userId: string,
-  total: number,
-  onProgress: (p: ProgressInfo) => void,
-  signal: AbortSignal,
-): Promise<LibraryContentItem[]> {
-  const items: LibraryContentItem[] = [];
-
-  for (let offset = 0; ;) {
-    signal?.throwIfAborted();
-    onProgress({ current: offset, total, label: t('progress.fetchingPlaylistList') });
-
-    const page = await getPublicPlaylists(userId, { offset, limit: PAGE_SIZE });
-    items.push(...page.map((p) => ({ uri: p.uri, name: p.name, type: 'playlist' as const })));
-    offset += page.length;
-    if (page.length < PAGE_SIZE) break;
-  }
-
-  return items;
-}
+import { getProfile, getFollowing, listPublicPlaylists } from '@shared/api';
 
 export async function exportPublicProfile(
   userInput: string,
@@ -42,12 +21,11 @@ export async function exportPublicProfile(
   const profile = await getProfile(userId);
 
   const userName = profile.name;
-  const playlistItems = await fetchUserPlaylists(
-    userId,
-    profile.total_public_playlists_count ?? 0,
-    onProgress,
-    signal,
-  );
+  const total = profile.total_public_playlists_count;
+  const progress = (current: number) =>
+    onProgress({ current, total: total ?? 0, label: t('progress.fetchingPlaylistList') });
+  progress(0);
+  const playlistItems = await listPublicPlaylists(userId, { signal, onProgress: progress });
 
   if (playlistItems.length > 0) {
     onProgress({ current: 0, total: playlistItems.length, label: t('progress.fetchingPlaylists') });

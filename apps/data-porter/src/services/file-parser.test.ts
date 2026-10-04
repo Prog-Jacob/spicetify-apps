@@ -25,6 +25,35 @@ test('drops null/garbage entries inside playlist items', () => {
   assert.deepEqual(parsed.data.playlists?.[0].items, [{ track: null }]);
 });
 
+test('drops null entries from every library array and banned items without a uri', () => {
+  const garbage = [null, 'junk'];
+  const parsed = parseImportText(
+    JSON.stringify({
+      library: {
+        tracks: garbage,
+        albums: garbage,
+        episodes: garbage,
+        shows: [...garbage, { name: 'S', publisher: 'P', uri: 'spotify:show:s' }],
+        artists: [...garbage, { name: 'A', uri: 'spotify:artist:a' }],
+        bannedTracks: [...garbage, { uri: '' }, { uri: 'spotify:track:t' }],
+        bannedArtists: [...garbage, {}],
+        excludedFromTaste: garbage,
+      },
+    }),
+    'f.json',
+  );
+  assert.deepEqual(parsed.data.library, {
+    tracks: [],
+    albums: [],
+    episodes: [],
+    shows: [{ name: 'S', publisher: 'P', uri: 'spotify:show:s' }],
+    artists: [{ name: 'A', uri: 'spotify:artist:a' }],
+    bannedTracks: [{ uri: 'spotify:track:t' }],
+    bannedArtists: [],
+    excludedFromTaste: [],
+  });
+});
+
 test('normalizes library field aliases and tags the source format', () => {
   const cases: {
     json: Record<string, unknown>;

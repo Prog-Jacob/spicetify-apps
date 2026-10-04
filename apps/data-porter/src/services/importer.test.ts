@@ -1,8 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { importData } from './importer';
-import { DATA_TYPE } from '../constants';
 import type { ExportData } from '../types/export';
+import { DATA_TYPE, CONFLICT_RESOLUTION } from '../constants';
 
 const track = (n: number) => ({ name: `t${n}`, artist: '', album: '', uri: `spotify:track:${n}` });
 
@@ -60,4 +60,81 @@ test('a cancel mid-playlist still makes the created playlist private and keeps t
     'the half-filled playlist is logged with what landed',
   );
   assert.equal(result.warnings.length, 1, 'the cancel is explained');
+});
+
+const playlist = (description: string | null) => ({
+  name: 'p',
+  lastModifiedDate: '',
+  description,
+  numberOfFollowers: 0,
+  items: [
+    {
+      track: { trackName: '', artistName: '', albumName: '', trackUri: 'spotify:track:a' },
+      episode: null,
+      localTrack: null,
+      addedDate: '',
+    },
+  ],
+});
+
+test('a playlist whose writes all fail is logged as an error only', async () => {
+  Object.assign(globalThis, {
+    Spicetify: {
+      Platform: {
+        RootlistAPI: { createPlaylist: async () => 'spotify:playlist:new' },
+        PlaylistAPI: {
+          add: async () => {
+            throw new Error('nope');
+          },
+        },
+        PlaylistPermissionsAPI: { setBasePermission: async () => {} },
+      },
+      showNotification: () => {},
+    },
+  });
+
+  const result = await importData(
+    { playlists: [playlist(null)] } as ExportData,
+    new Set([DATA_TYPE.PLAYLISTS]),
+    new Map(),
+    new Map(),
+    () => {},
+    new AbortController().signal,
+  );
+
+  assert.deepEqual(
+    result.log.map((e) => e.status),
+    ['error'],
+  );
+});
+
+test('merging leaves the existing playlist description alone', async () => {
+  const described: string[] = [];
+  Object.assign(globalThis, {
+    Spicetify: {
+      Platform: {
+        PlaylistAPI: {
+          add: async () => {},
+          getPlaylist: async () => ({ contents: { items: [] } }),
+          updateDetails: async (uri: string) => void described.push(uri),
+        },
+      },
+      showNotification: () => {},
+    },
+  });
+
+  const result = await importData(
+    { playlists: [playlist('mine')] } as ExportData,
+    new Set([DATA_TYPE.PLAYLISTS]),
+    new Map([[0, CONFLICT_RESOLUTION.MERGE]]),
+    new Map([['p', 'spotify:playlist:old']]),
+    () => {},
+    new AbortController().signal,
+  );
+
+  assert.deepEqual(described, []);
+  assert.deepEqual(
+    result.log.map((e) => e.status),
+    ['ok'],
+  );
 });
