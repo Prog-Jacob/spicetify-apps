@@ -7,7 +7,7 @@ import { IMPORTABLE_DATA_TYPES, type DataTypeConfig } from '../data-types';
 
 type DataTypeGridProps = {
   selected: Set<DataType>;
-  onToggle: (next: Set<DataType>) => void;
+  onChange: (next: Set<DataType>) => void;
   disabled?: boolean;
   counts?: Map<DataType, number>;
   dataTypes?: DataTypeConfig[];
@@ -16,7 +16,7 @@ type DataTypeGridProps = {
 
 const DataTypeGrid = ({
   selected,
-  onToggle,
+  onChange,
   disabled,
   counts,
   dataTypes = IMPORTABLE_DATA_TYPES,
@@ -39,7 +39,7 @@ const DataTypeGrid = ({
           description={t(descKey)}
           selected={selected.has(type)}
           disabled={disabled}
-          onToggle={() => onToggle(toggleInSet(selected, type))}
+          onToggle={() => onChange(toggleInSet(selected, type))}
           onPreview={onPreview && count ? () => onPreview(type) : undefined}
           count={count}
           badge={exportOnly ? t('dataType.exportOnly') : undefined}

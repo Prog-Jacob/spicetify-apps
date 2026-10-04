@@ -1,7 +1,9 @@
 import { cn } from '@shared/lib';
+import { FOCUS_RING } from '@ui/styles';
 import { t, type MessageKey } from '../i18n';
+import { stagger, rovingIndex } from '@ui/lib';
 import React, { useMemo, useState } from 'react';
-import { ANIMATION_STAGGER_MS, CONFLICT_RESOLUTION } from '../constants';
+import { CONFLICT_RESOLUTION } from '../constants';
 import type { PlaylistReviewItem, PlaylistConflictResolution } from '../types/import';
 import {
   Pill,
@@ -35,18 +37,41 @@ const ResolutionPicker = ({
   const options = canMerge
     ? RESOLUTIONS
     : RESOLUTIONS.filter((r) => r.value !== CONFLICT_RESOLUTION.MERGE);
+  const activeIndex = options.findIndex((o) => o.value === active);
+
+  const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    const target = rovingIndex(e, activeIndex, options.length);
+    if (target < 0) return;
+    e.preventDefault();
+    const next = options[target];
+    onChange(next.value);
+    e.currentTarget.querySelector<HTMLElement>(`[data-value="${next.value}"]`)?.focus();
+  };
+
   return (
-    <div className="flex items-center gap-2" role="radiogroup" aria-label={ariaLabel}>
+    <div
+      className="flex items-center gap-2"
+      role="radiogroup"
+      aria-label={ariaLabel}
+      onKeyDown={onKeyDown}
+    >
       {options.map(({ value, labelKey }, i) => (
         <React.Fragment key={value}>
-          {i > 0 && <span className="text-spice-subtext/50">&middot;</span>}
+          {i > 0 && (
+            <span aria-hidden="true" className="text-spice-subtext/50">
+              &middot;
+            </span>
+          )}
           <button
             type="button"
             role="radio"
+            data-value={value}
             aria-checked={active === value}
+            tabIndex={i === Math.max(activeIndex, 0) ? 0 : -1}
             onClick={() => onChange(value)}
             className={cn(
-              'cursor-pointer border-0 bg-transparent p-0 text-sm',
+              'cursor-pointer rounded-sm border-0 bg-transparent p-0 text-sm',
+              FOCUS_RING,
               active === value
                 ? 'font-semibold text-spice-button'
                 : 'text-spice-subtext hover:text-spice-text',
@@ -63,8 +88,7 @@ const ResolutionPicker = ({
 type PlaylistReviewCardProps = {
   items: PlaylistReviewItem[];
   resolutions: Map<number, PlaylistConflictResolution>;
-  onResolutionChange: (index: number, value: PlaylistConflictResolution) => void;
-  onApplyAll: (value: PlaylistConflictResolution, indices: number[]) => void;
+  onResolve: (value: PlaylistConflictResolution, indices: number[]) => void;
   onContinue: () => void;
   onCancel: () => void;
 };
@@ -72,8 +96,7 @@ type PlaylistReviewCardProps = {
 const PlaylistReviewCard = ({
   items,
   resolutions,
-  onResolutionChange,
-  onApplyAll,
+  onResolve,
   onContinue,
   onCancel,
 }: PlaylistReviewCardProps) => {
@@ -112,7 +135,7 @@ const PlaylistReviewCard = ({
           className="px-4 py-3"
         />
 
-        <div className="overflow-y-auto" role="list">
+        <div className="overflow-y-auto">
           {filtered.length >= 2 && (
             <div className="sticky top-0 z-10 mx-4 flex items-center justify-between border-b border-spice-subtext/40 bg-spice-card pb-3">
               <TextComponent variant="ballad" semanticColor="textSubdued">
@@ -121,7 +144,7 @@ const PlaylistReviewCard = ({
               <ResolutionPicker
                 active={allSame}
                 onChange={(v) =>
-                  onApplyAll(
+                  onResolve(
                     v,
                     filtered.map((item) => item.index),
                   )
@@ -132,35 +155,37 @@ const PlaylistReviewCard = ({
             </div>
           )}
 
-          {filtered.map(({ index, name, trackCount, existingUri }, i) => (
-            <div
-              role="listitem"
-              key={index}
-              className="animate-fade-in-up flex items-center justify-between px-4 py-2.5 hover:bg-spice-highlight/10"
-              style={{ animationDelay: `${i * ANIMATION_STAGGER_MS.LIST_ITEM}ms` }}
-            >
-              <div className="flex min-w-0 items-center gap-2.5">
-                <SpicetifyIcon icon="playlist" size={16} className="text-spice-subtext" />
-                <TextComponent variant="mesto" weight="bold" className="truncate">
-                  {name}
-                </TextComponent>
-                <TextComponent variant="minuet" semanticColor="textSubdued" className="shrink-0">
-                  {t('dataType.itemCount', { count: trackCount })}
-                </TextComponent>
-                {existingUri && (
-                  <Pill variant="error" className="shrink-0">
-                    {t('conflict.exists')}
-                  </Pill>
-                )}
+          <div role="list">
+            {filtered.map(({ index, name, trackCount, existingUri }, i) => (
+              <div
+                role="listitem"
+                key={index}
+                className="animate-fade-in-up flex items-center justify-between px-4 py-2.5 hover:bg-spice-highlight/10"
+                style={stagger(i)}
+              >
+                <div className="flex min-w-0 items-center gap-2.5">
+                  <SpicetifyIcon icon="playlist" size={16} className="text-spice-subtext" />
+                  <TextComponent variant="mesto" weight="bold" className="truncate">
+                    {name}
+                  </TextComponent>
+                  <TextComponent variant="minuet" semanticColor="textSubdued" className="shrink-0">
+                    {t('dataType.itemCount', { count: trackCount })}
+                  </TextComponent>
+                  {existingUri && (
+                    <Pill variant="error" className="shrink-0">
+                      {t('conflict.exists')}
+                    </Pill>
+                  )}
+                </div>
+                <ResolutionPicker
+                  active={resolutions.get(index)}
+                  onChange={(v) => onResolve(v, [index])}
+                  canMerge={!!existingUri}
+                  ariaLabel={t('conflict.resolutionFor', { name })}
+                />
               </div>
-              <ResolutionPicker
-                active={resolutions.get(index)}
-                onChange={(v) => onResolutionChange(index, v)}
-                canMerge={!!existingUri}
-                ariaLabel={t('conflict.resolutionFor', { name })}
-              />
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
     </ResultCard>

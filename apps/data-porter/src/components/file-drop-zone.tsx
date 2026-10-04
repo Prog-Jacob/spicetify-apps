@@ -1,8 +1,8 @@
 import { t } from '../i18n';
-import { cn, notifyError } from '@shared/lib';
+import { FOCUS_RING } from '@ui/styles';
 import React, { useState, useRef } from 'react';
 import type { ParsedFile } from '../types/import';
-import { isProfileInput } from '../services/spotify-urls';
+import { cn, notifyError, parseSpotifyRef } from '@shared/lib';
 import { TextComponent, Input, SpicetifyIcon } from '@ui/components';
 import { parseImportFile, parseImportText, checkFileSize } from '../services/file-parser';
 
@@ -10,6 +10,10 @@ type FileDropZoneProps = {
   onFileSelected: (parsed: ParsedFile) => void;
   onProfileImport: (input: string) => void;
 };
+
+// a profile is fetched in-memory; any other http(s) URL is downloaded as an export file
+const isProfileInput = (input: string): boolean =>
+  !!parseSpotifyRef(input, ['user']) || !/^https?:\/\//i.test(input);
 
 const FileDropZone = ({ onFileSelected, onProfileImport }: FileDropZoneProps) => {
   const [url, setUrl] = useState('');
@@ -65,7 +69,7 @@ const FileDropZone = ({ onFileSelected, onProfileImport }: FileDropZoneProps) =>
           e.preventDefault();
           setDragOver(false);
           const file = e.dataTransfer.files[0];
-          if (file) handleFile(file);
+          if (file) void handleFile(file);
         }}
         onClick={() => inputRef.current?.click()}
         onKeyDown={(e) =>
@@ -73,6 +77,7 @@ const FileDropZone = ({ onFileSelected, onProfileImport }: FileDropZoneProps) =>
         }
         className={cn(
           'flex min-h-[40vh] cursor-pointer flex-col items-center justify-center gap-4 rounded-xl border-2 border-dashed px-12 transition-colors',
+          FOCUS_RING,
           dragOver
             ? 'border-spice-button bg-spice-button/10'
             : 'border-spice-subtext/30 bg-spice-card hover:border-spice-subtext/60 hover:bg-spice-highlight',
@@ -103,7 +108,7 @@ const FileDropZone = ({ onFileSelected, onProfileImport }: FileDropZoneProps) =>
           aria-hidden="true"
           onChange={(e) => {
             const file = e.target.files?.[0];
-            if (file) handleFile(file);
+            if (file) void handleFile(file);
             e.target.value = '';
           }}
           className="hidden"
@@ -132,9 +137,17 @@ const FileDropZone = ({ onFileSelected, onProfileImport }: FileDropZoneProps) =>
           type="button"
           onClick={handleUrl}
           disabled={!url.trim() || fetching}
-          className="flex items-center gap-1.5 border-0 bg-transparent text-sm font-bold text-spice-subtext transition-colors hover:text-spice-text disabled:opacity-50"
+          aria-busy={fetching}
+          className={cn(
+            'flex items-center gap-1.5 rounded-md border-0 bg-transparent text-sm font-bold text-spice-subtext transition-colors hover:text-spice-text disabled:opacity-50',
+            FOCUS_RING,
+          )}
         >
-          <SpicetifyIcon icon={fetching ? 'repeat' : 'download'} size={14} />
+          <SpicetifyIcon
+            icon={fetching ? 'repeat' : 'download'}
+            size={14}
+            className={cn(fetching && 'motion-safe:animate-spin')}
+          />
           {fetching ? t('dropZone.fetching') : t('dropZone.fetch')}
         </button>
       </div>

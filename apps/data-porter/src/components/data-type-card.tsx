@@ -1,6 +1,7 @@
 import React from 'react';
 import { t } from '../i18n';
 import { cn } from '@shared/lib';
+import { FOCUS_RING } from '@ui/styles';
 import { Pill, TextComponent, SpicetifyIcon } from '@ui/components';
 
 type DataTypeCardProps = {
@@ -32,8 +33,7 @@ const DataTypeCard = ({
 }: DataTypeCardProps) => (
   <div
     className={cn(
-      'group relative flex items-center gap-4 rounded-xl border p-4 transition-all duration-150',
-      !disabled && 'hover:-translate-y-0.5 hover:scale-[1.02]',
+      'group relative flex items-center gap-4 rounded-xl border p-4 transition-[background-color,border-color,box-shadow] duration-150',
       selected
         ? 'border-spice-button/40 bg-spice-highlight-elevated hover:shadow-lg hover:shadow-spice-shadow/30'
         : 'border-transparent bg-spice-card hover:bg-spice-highlight hover:shadow-md hover:shadow-spice-shadow/20',
@@ -46,7 +46,8 @@ const DataTypeCard = ({
       disabled={disabled}
       onClick={onToggle}
       className={cn(
-        'absolute inset-0 rounded-xl border-0 bg-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-spice-button',
+        'absolute inset-0 rounded-xl border-0 bg-transparent',
+        FOCUS_RING,
         disabled ? 'cursor-default' : 'cursor-pointer',
       )}
     />
@@ -60,13 +61,13 @@ const DataTypeCard = ({
       <SpicetifyIcon icon={icon} size={20} />
     </div>
 
-    {badge && <Pill className="pointer-events-none absolute right-2 bottom-2">{badge}</Pill>}
+    {badge && <Pill className="pointer-events-none absolute end-2 bottom-2">{badge}</Pill>}
 
     <div className="pointer-events-none flex min-w-0 flex-1 flex-col gap-0.5">
       <TextComponent variant="viola" weight="bold">
         {label}
       </TextComponent>
-      <TextComponent variant="minuet" semanticColor="textSubdued" className="opacity-50">
+      <TextComponent variant="minuet" semanticColor="textSubdued">
         {description}
       </TextComponent>
       {count !== undefined &&
@@ -75,7 +76,10 @@ const DataTypeCard = ({
             type="button"
             onClick={onPreview}
             aria-label={t('preview.open', { label })}
-            className="pointer-events-auto z-10 mt-0.5 flex cursor-pointer items-center gap-1 self-start rounded-full border-0 bg-spice-subtext/10 px-2 py-0.5 text-xs text-spice-subtext transition-colors hover:bg-spice-button/20 hover:text-spice-button"
+            className={cn(
+              'pointer-events-auto z-10 mt-0.5 flex cursor-pointer items-center gap-1 self-start rounded-full border-0 bg-spice-subtext/10 px-2 py-0.5 text-xs text-spice-subtext transition-colors hover:bg-spice-button/20 hover:text-spice-button',
+              FOCUS_RING,
+            )}
           >
             {t('dataType.itemCount', { count })}
             <SpicetifyIcon icon="chevron-right" size={10} className="rtl:rotate-180" />
@@ -89,7 +93,7 @@ const DataTypeCard = ({
 
     <div
       className={cn(
-        'pointer-events-none flex size-6 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-150',
+        'pointer-events-none flex size-6 shrink-0 items-center justify-center rounded-full border-2 transition-colors duration-150',
         selected
           ? 'animate-scale-in border-spice-button bg-spice-button text-spice-main'
           : 'border-spice-subtext/30 bg-transparent group-hover:border-spice-subtext/60',

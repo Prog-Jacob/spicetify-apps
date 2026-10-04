@@ -92,7 +92,10 @@ const en = {
   'dataType.searchHistory': 'Search History',
   'dataType.searchHistory.desc': 'Your recent searches',
   'dataType.exportOnly': 'Export Only',
-  'dataType.itemCount': '{count} items',
+  'dataType.itemCount': {
+    one: '# item',
+    other: '# items',
+  } as PluralEntry,
   'dataType.include': 'Include {label}',
 
   // Progress labels
@@ -120,14 +123,32 @@ const en = {
   'progress.fetchingSearchHistory': 'Fetching search history',
 
   // Importer log entries
-  'log.localTracks': '{count} local tracks skipped',
+  'log.localTracks': {
+    one: '# local track skipped',
+    other: '# local tracks skipped',
+  } as PluralEntry,
   'log.playlistSkipped': '"{name}" skipped',
   'log.playlistFailed': '"{name}" failed',
-  'log.playlistCreated': 'Created "{name}" \u2014 {count} tracks',
-  'log.playlistMerged': 'Merged into "{name}" \u2014 {count} tracks',
-  'log.localSkipped': '"{name}": {count} local tracks skipped',
-  'log.episodesNoUri': '"{name}": {count} episodes skipped (no URI in Spotify export)',
-  'log.duplicatesSkipped': '"{name}": {count} duplicates skipped',
+  'log.playlistCreated': {
+    one: 'Created "{name}" \u2014 # track',
+    other: 'Created "{name}" \u2014 # tracks',
+  } as PluralEntry,
+  'log.playlistMerged': {
+    one: 'Merged into "{name}" \u2014 # track',
+    other: 'Merged into "{name}" \u2014 # tracks',
+  } as PluralEntry,
+  'log.localSkipped': {
+    one: '"{name}": # local track skipped',
+    other: '"{name}": # local tracks skipped',
+  } as PluralEntry,
+  'log.episodesNoUri': {
+    one: '"{name}": # episode skipped (no URI in Spotify export)',
+    other: '"{name}": # episodes skipped (no URI in Spotify export)',
+  } as PluralEntry,
+  'log.duplicatesSkipped': {
+    one: '"{name}": # duplicate skipped',
+    other: '"{name}": # duplicates skipped',
+  } as PluralEntry,
   'log.mergeReadFailed': '"{name}": could not read for merge, duplicates may exist',
   'log.saved': '{count} {noun}',
   'log.failed': 'Failed: {label}',
@@ -135,7 +156,10 @@ const en = {
   'log.permissionFailed': '"{name}": failed to set permissions',
 
   // Warnings and errors
-  'warn.playlistsFailed': '{count} playlists failed to load: {names}',
+  'warn.playlistsFailed': {
+    one: '# playlist failed to load: {names}',
+    other: '# playlists failed to load: {names}',
+  } as PluralEntry,
   'warn.noPublicData': 'This user has no public playlists or followed artists to export.',
   'warn.fetchFailed': 'Failed to fetch {label}',
   'warn.cancelled': 'Import cancelled. Everything listed above was already added and stays.',
@@ -168,5 +192,5 @@ const en = {
   'preview.badgeTier': 'Tier',
 } as const;
 
-export type DataPorterMessages = Record<keyof typeof en, MessageValue>;
+export type AppMessages = Record<keyof typeof en, MessageValue>;
 export default en;

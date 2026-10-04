@@ -1,6 +1,6 @@
-export const ROUTE = { IMPORT: '/import' } as const;
-
 export const PERMISSION_SETTLE_MS = 1000;
+export const PLAYLIST_BATCH_SIZE = 10;
+export const BATCH_DELAY_MS = 500;
 
 // Spotify collection sets used by both exporter and importer; must stay in sync
 export const BAN_SET = {
@@ -12,8 +12,6 @@ export const BAN_SET = {
 export const EXPORT_FILENAME_PREFIX = 'spotify-export';
 
 export const LOG_STATUS = { OK: 'ok', SKIPPED: 'skipped', ERROR: 'error' } as const;
-
-export const ANIMATION_STAGGER_MS = { LIST_ITEM: 45, SUMMARY_ITEM: 80 } as const;
 
 export const SOURCE_FORMAT = {
   OUR_EXPORT: 'our-export',
@@ -38,20 +36,4 @@ export const DATA_TYPE = {
   BANNED_CONTENT: 'bannedContent',
   PROFILE: 'profile',
   SEARCH_HISTORY: 'searchHistory',
-} as const;
-
-export const EXPORT_STATUS = {
-  IDLE: 'idle',
-  DONE: 'done',
-  ERROR: 'error',
-  FETCHING: 'fetching',
-} as const;
-
-export const IMPORT_STEP = {
-  DONE: 'done',
-  ERROR: 'error',
-  UPLOAD: 'upload',
-  PREVIEW: 'preview',
-  PLAYLISTS: 'playlists',
-  IMPORTING: 'importing',
 } as const;

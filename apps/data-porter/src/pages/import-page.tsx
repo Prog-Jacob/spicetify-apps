@@ -1,18 +1,19 @@
+import React, { useReducer } from 'react';
 import { t, type MessageKey } from '../i18n';
 import type { DataType } from '../types/export';
-import React, { useState, useRef } from 'react';
 import { importData } from '../services/importer';
 import type { ProgressInfo } from '@shared/types';
 import { getAvailableCounts } from '../data-types';
 import { useAbortController } from '@shared/hooks';
+import { fetchRootlistPlaylists } from '@shared/api';
 import DataTypeGrid from '../components/data-type-grid';
 import FileDropZone from '../components/file-drop-zone';
 import ImportSummary from '../components/import-summary';
 import ContentPreview from '../components/content-preview';
-import { notifyError, ValidationError } from '@shared/lib';
 import { exportPublicProfile } from '../services/profile-export';
 import PlaylistReviewCard from '../components/playlist-review-card';
-import { fetchExistingPlaylists } from '../services/playlist-lookup';
+import { errorMessage, notifyError, ValidationError } from '@shared/lib';
+import { DATA_TYPE, LOG_STATUS, SOURCE_FORMAT, CONFLICT_RESOLUTION } from '../constants';
 import {
   ErrorCard,
   PageShell,
@@ -22,13 +23,6 @@ import {
   ButtonTertiary,
   ButtonSecondary,
 } from '@ui/components';
-import {
-  DATA_TYPE,
-  LOG_STATUS,
-  IMPORT_STEP,
-  SOURCE_FORMAT,
-  CONFLICT_RESOLUTION,
-} from '../constants';
 import type {
   ParsedFile,
   SourceFormat,
@@ -37,148 +31,194 @@ import type {
   PlaylistConflictResolution,
 } from '../types/import';
 
-type Step = (typeof IMPORT_STEP)[keyof typeof IMPORT_STEP];
-
 const SOURCE_LABEL: Record<SourceFormat, MessageKey> = {
   [SOURCE_FORMAT.SPOTIFY_OFFICIAL]: 'import.sourceSpotify',
   [SOURCE_FORMAT.OUR_EXPORT]: 'import.sourceDataPorter',
   [SOURCE_FORMAT.PROFILE]: 'import.sourceProfile',
 };
 
+type Source = { parsed: ParsedFile; selected: Set<DataType> };
+
+type State =
+  | { step: 'upload' }
+  | (Source & { step: 'preview'; previewing: DataType | null })
+  | (Source & {
+      step: 'playlists';
+      review: PlaylistReviewItem[];
+      resolutions: Map<number, PlaylistConflictResolution>;
+    })
+  // `writing`: the import itself runs, so a cancel waits for its summary instead of going back
+  | { step: 'busy'; progress: ProgressInfo; writing: boolean; source?: Source }
+  | { step: 'done'; result: ImportResult }
+  | { step: 'error'; warnings: string[] };
+
+type Action =
+  | { type: 'load'; parsed: ParsedFile }
+  | { type: 'select'; selected: Set<DataType> }
+  | { type: 'preview'; previewing: DataType | null }
+  | { type: 'start'; label: MessageKey; writing?: boolean }
+  | { type: 'progress'; progress: ProgressInfo }
+  | { type: 'review'; review: PlaylistReviewItem[] }
+  | { type: 'resolve'; indices: number[]; value: PlaylistConflictResolution }
+  | { type: 'back' }
+  | { type: 'finish'; result: ImportResult }
+  | { type: 'fail'; warnings: string[] }
+  | { type: 'reset' };
+
+const sourceOf = (state: State): Source | undefined =>
+  state.step === 'preview' || state.step === 'playlists'
+    ? { parsed: state.parsed, selected: state.selected }
+    : state.step === 'busy'
+      ? state.source
+      : undefined;
+
+function reducer(state: State, action: Action): State {
+  switch (action.type) {
+    case 'load': {
+      const selected = new Set(getAvailableCounts(action.parsed.data).keys());
+      return { step: 'preview', parsed: action.parsed, selected, previewing: null };
+    }
+    case 'select':
+      return state.step === 'preview' ? { ...state, selected: action.selected } : state;
+    case 'preview':
+      return state.step === 'preview' ? { ...state, previewing: action.previewing } : state;
+    case 'start':
+      return {
+        step: 'busy',
+        progress: { current: 0, total: 0, label: t(action.label) },
+        writing: !!action.writing,
+        source: sourceOf(state),
+      };
+    case 'progress':
+      return state.step === 'busy' ? { ...state, progress: action.progress } : state;
+    case 'review': {
+      const source = sourceOf(state);
+      if (!source) return state;
+      const resolutions = new Map(
+        action.review.map(({ index, existingUri }) => [
+          index,
+          existingUri ? CONFLICT_RESOLUTION.SKIP : CONFLICT_RESOLUTION.CREATE_NEW,
+        ]),
+      );
+      return { step: 'playlists', ...source, review: action.review, resolutions };
+    }
+    case 'resolve':
+      if (state.step !== 'playlists') return state;
+      return {
+        ...state,
+        resolutions: new Map([
+          ...state.resolutions,
+          ...action.indices.map((i) => [i, action.value] as const),
+        ]),
+      };
+    case 'back': {
+      const source = sourceOf(state);
+      return source ? { step: 'preview', ...source, previewing: null } : { step: 'upload' };
+    }
+    case 'finish': {
+      const { result } = action;
+      const allFailed =
+        !result.cancelled &&
+        result.log.length > 0 &&
+        result.log.every((e) => e.status === LOG_STATUS.ERROR);
+      return allFailed ? { step: 'error', warnings: result.warnings } : { step: 'done', result };
+    }
+    case 'fail':
+      return { step: 'error', warnings: action.warnings };
+    case 'reset':
+      return { step: 'upload' };
+  }
+}
+
 const ImportPage = () => {
-  const [step, setStep] = useState<Step>(IMPORT_STEP.UPLOAD);
-  const [parsed, setParsed] = useState<ParsedFile | null>(null);
-  const [selected, setSelected] = useState<Set<DataType>>(new Set());
-  const [reviewItems, setReviewItems] = useState<PlaylistReviewItem[]>([]);
-  const [resolutions, setResolutions] = useState<Map<number, PlaylistConflictResolution>>(
-    new Map(),
-  );
-  const [existingUris, setExistingUris] = useState<Map<string, string>>(new Map());
-  const [previewing, setPreviewing] = useState<DataType | null>(null);
+  const [state, dispatch] = useReducer(reducer, { step: 'upload' });
   const aborter = useAbortController();
-  const importing = useRef(false);
-  const [result, setResult] = useState<ImportResult | null>(null);
-  const [progress, setProgress] = useState<ProgressInfo | null>(null);
 
   const runImport = async (
-    resolvedConflicts: Map<number, PlaylistConflictResolution>,
-    existingMap: Map<string, string>,
+    { parsed, selected }: Source,
+    resolutions: Map<number, PlaylistConflictResolution> = new Map(),
+    existingUris: Map<string, string> = new Map(),
   ) => {
-    if (!parsed) return;
+    const { signal } = aborter.start();
+    dispatch({ type: 'start', label: 'progress.starting', writing: true });
 
-    const controller = aborter.start();
-
-    setStep(IMPORT_STEP.IMPORTING);
-    setResult(null);
-    setProgress({ current: 0, total: 0, label: t('progress.starting') });
-
-    importing.current = true;
     try {
-      const importResult = await importData(
+      const result = await importData(
         parsed.data,
         selected,
-        resolvedConflicts,
-        existingMap,
-        (p) => {
-          if (!controller.signal.aborted) setProgress(p);
+        resolutions,
+        existingUris,
+        (progress) => {
+          if (!signal.aborted) dispatch({ type: 'progress', progress });
         },
-        controller.signal,
+        signal,
         parsed.sourceFormat === SOURCE_FORMAT.OUR_EXPORT,
       );
-      setResult(importResult);
-      const allFailed =
-        !importResult.cancelled &&
-        importResult.log.length > 0 &&
-        importResult.log.every((e) => e.status === LOG_STATUS.ERROR);
-      setStep(allFailed ? IMPORT_STEP.ERROR : IMPORT_STEP.DONE);
+      dispatch({ type: 'finish', result });
     } catch (e) {
       console.error(`[${__APP_NAME__}] Import failed:`, e);
-      setResult({ log: [], warnings: [e instanceof Error ? e.message : String(e)] });
-      setStep(IMPORT_STEP.ERROR);
-    } finally {
-      importing.current = false;
-      setProgress(null);
+      dispatch({ type: 'fail', warnings: [errorMessage(e)] });
     }
   };
 
-  const detectConflictsAndImport = async () => {
-    const controller = aborter.start();
-    const playlists = parsed?.data.playlists;
+  const detectConflictsAndImport = async (source: Source) => {
+    const playlists = source.parsed.data.playlists;
+    if (!source.selected.has(DATA_TYPE.PLAYLISTS) || !playlists?.length) return runImport(source);
 
-    if (!parsed || !selected.has(DATA_TYPE.PLAYLISTS) || !playlists?.length) {
-      await runImport(new Map(), new Map());
-      return;
-    }
-
-    setProgress({ current: 0, total: 0, label: t('progress.checkingPlaylists') });
-    setStep(IMPORT_STEP.IMPORTING);
+    const { signal } = aborter.start();
+    dispatch({ type: 'start', label: 'progress.checkingPlaylists' });
 
     try {
-      const existing = await fetchExistingPlaylists(controller.signal);
-
-      const items: PlaylistReviewItem[] = playlists.map(({ name, items: playlistItems }, i) => ({
-        index: i,
-        name,
-        trackCount: playlistItems.length,
-        existingUri: existing.get(name),
-      }));
-
-      setReviewItems(items);
-      setResolutions(
-        new Map(
-          items.map((item) => [
-            item.index,
-            item.existingUri ? CONFLICT_RESOLUTION.SKIP : CONFLICT_RESOLUTION.CREATE_NEW,
-          ]),
-        ),
-      );
-      setExistingUris(existing);
-      setProgress(null);
-      setStep(IMPORT_STEP.PLAYLISTS);
+      const existing = new Map<string, string>();
+      for (const { name, uri } of await fetchRootlistPlaylists(signal))
+        if (!existing.has(name)) existing.set(name, uri);
+      if (signal.aborted) return;
+      dispatch({
+        type: 'review',
+        review: playlists.map(({ name, items }, index) => ({
+          index,
+          name,
+          trackCount: items.length,
+          existingUri: existing.get(name),
+        })),
+      });
     } catch (e) {
-      if (controller.signal.aborted) return;
+      if (signal.aborted) return;
       notifyError(e, t('progress.checkingPlaylists'));
-      setProgress(null);
-      setStep(IMPORT_STEP.PREVIEW);
+      dispatch({ type: 'back' });
     }
   };
 
   const importFromProfile = async (input: string) => {
-    const controller = aborter.start();
-
-    setStep(IMPORT_STEP.IMPORTING);
-    setResult(null);
-    setProgress({ current: 0, total: 0, label: t('progress.starting') });
+    const { signal } = aborter.start();
+    dispatch({ type: 'start', label: 'progress.starting' });
 
     try {
-      const { data, userName } = await exportPublicProfile(input, setProgress, controller.signal);
-      setParsed({ data, sourceFormat: SOURCE_FORMAT.PROFILE, fileName: userName ?? input });
-      setSelected(new Set(getAvailableCounts(data).keys()));
-      setStep(IMPORT_STEP.PREVIEW);
+      const { data, userName } = await exportPublicProfile(
+        input,
+        (progress) => {
+          if (!signal.aborted) dispatch({ type: 'progress', progress });
+        },
+        signal,
+      );
+      if (signal.aborted) return;
+      dispatch({
+        type: 'load',
+        parsed: { data, sourceFormat: SOURCE_FORMAT.PROFILE, fileName: userName ?? input },
+      });
     } catch (e) {
-      if (controller.signal.aborted) return;
+      if (signal.aborted) return;
       if (e instanceof ValidationError) {
         notifyError(e);
-        setStep(IMPORT_STEP.UPLOAD);
+        dispatch({ type: 'reset' });
       } else {
-        setResult({ log: [], warnings: [e instanceof Error ? e.message : String(e)] });
-        setStep(IMPORT_STEP.ERROR);
+        dispatch({ type: 'fail', warnings: [errorMessage(e)] });
       }
-    } finally {
-      setProgress(null);
     }
   };
 
-  const reset = () => {
-    setStep(IMPORT_STEP.UPLOAD);
-    setParsed(null);
-    setSelected(new Set());
-    setReviewItems([]);
-    setResolutions(new Map());
-    setResult(null);
-  };
-
-  const counts = parsed ? getAvailableCounts(parsed.data) : new Map();
+  const reset = () => dispatch({ type: 'reset' });
+  const goToExport = () => Spicetify.Platform.History.push(`/${__APP_NAME__}`);
 
   return (
     <PageShell
@@ -186,35 +226,28 @@ const ImportPage = () => {
       subtitle={t('import.subtitle')}
       version={__APP_VERSION__}
       navButton={
-        <ButtonSecondary
-          onClick={() => Spicetify.Platform.History.push(`/${__APP_NAME__}`)}
-          buttonSize="md"
-        >
+        <ButtonSecondary onClick={goToExport} buttonSize="md">
           {t('nav.export')}
         </ButtonSecondary>
       }
     >
-      {step === IMPORT_STEP.UPLOAD && (
+      {state.step === 'upload' && (
         <FileDropZone
           onProfileImport={importFromProfile}
-          onFileSelected={(file) => {
-            setParsed(file);
-            setSelected(new Set(getAvailableCounts(file.data).keys()));
-            setStep(IMPORT_STEP.PREVIEW);
-          }}
+          onFileSelected={(parsed) => dispatch({ type: 'load', parsed })}
         />
       )}
 
-      {step === IMPORT_STEP.PREVIEW && parsed && (
+      {state.step === 'preview' && (
         <>
           <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between">
               <div className="flex flex-col gap-1">
                 <TextComponent variant="ballad" weight="bold">
-                  {t('import.foundIn', { fileName: parsed.fileName })}
+                  {t('import.foundIn', { fileName: state.parsed.fileName })}
                 </TextComponent>
                 <TextComponent variant="minuet" semanticColor="textSubdued">
-                  {t(SOURCE_LABEL[parsed.sourceFormat])}
+                  {t(SOURCE_LABEL[state.parsed.sourceFormat])}
                 </TextComponent>
               </div>
               <ButtonTertiary onClick={reset} buttonSize="sm">
@@ -223,74 +256,69 @@ const ImportPage = () => {
             </div>
 
             <DataTypeGrid
-              selected={selected}
-              onToggle={setSelected}
-              counts={counts}
-              onPreview={setPreviewing}
+              selected={state.selected}
+              onChange={(selected) => dispatch({ type: 'select', selected })}
+              counts={getAvailableCounts(state.parsed.data)}
+              onPreview={(previewing) => dispatch({ type: 'preview', previewing })}
             />
           </div>
 
           <ButtonPrimary
-            onClick={detectConflictsAndImport}
-            disabled={selected.size === 0}
+            onClick={() => detectConflictsAndImport(state)}
+            disabled={state.selected.size === 0}
             buttonSize="md"
           >
             {t('import.importSelected')}
           </ButtonPrimary>
 
-          {previewing && (
+          {state.previewing && (
             <ContentPreview
-              type={previewing}
-              data={parsed.data}
-              onClose={() => setPreviewing(null)}
+              type={state.previewing}
+              data={state.parsed.data}
+              onClose={() => dispatch({ type: 'preview', previewing: null })}
             />
           )}
         </>
       )}
 
-      {step === IMPORT_STEP.PLAYLISTS && (
+      {state.step === 'playlists' && (
         <PlaylistReviewCard
-          items={reviewItems}
-          resolutions={resolutions}
-          onResolutionChange={(index, value) =>
-            setResolutions((prev) => new Map(prev).set(index, value))
-          }
-          onApplyAll={(value, indices) =>
-            setResolutions(
-              (prev) => new Map([...prev, ...indices.map((idx) => [idx, value] as const)]),
+          items={state.review}
+          resolutions={state.resolutions}
+          onResolve={(value, indices) => dispatch({ type: 'resolve', value, indices })}
+          onContinue={() =>
+            runImport(
+              state,
+              state.resolutions,
+              new Map(
+                state.review.flatMap((r) => (r.existingUri ? [[r.name, r.existingUri]] : [])),
+              ),
             )
           }
-          onContinue={() => runImport(resolutions, existingUris)}
-          onCancel={() => setStep(IMPORT_STEP.PREVIEW)}
+          onCancel={() => dispatch({ type: 'back' })}
         />
       )}
 
-      {step === IMPORT_STEP.IMPORTING && progress && (
+      {state.step === 'busy' && (
         <ProgressCard
-          progress={progress}
+          progress={state.progress}
           onCancel={() => {
             aborter.abort();
-            // a running import stops on its summary of what was already written
-            if (importing.current) {
-              setProgress((p) => p && { ...p, label: t('progress.cancelling') });
-              return;
-            }
-            setStep(parsed ? IMPORT_STEP.PREVIEW : IMPORT_STEP.UPLOAD);
-            setProgress(null);
+            if (!state.writing) return dispatch({ type: 'back' });
+            dispatch({
+              type: 'progress',
+              progress: { ...state.progress, label: t('progress.cancelling') },
+            });
           }}
         />
       )}
 
-      {step === IMPORT_STEP.DONE && result && (
-        <ImportSummary
-          result={result}
-          onImportAgain={reset}
-          onGoToExport={() => Spicetify.Platform.History.push(`/${__APP_NAME__}`)}
-        />
+      {state.step === 'done' && (
+        <ImportSummary result={state.result} onImportAgain={reset} onGoToExport={goToExport} />
       )}
 
-      {step === IMPORT_STEP.ERROR && (
-        <ErrorCard title={t('import.failed')} warnings={result?.warnings} onRetry={reset} />
+      {state.step === 'error' && (
+        <ErrorCard title={t('import.failed')} warnings={state.warnings} onRetry={reset} />
       )}
     </PageShell>
   );

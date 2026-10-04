@@ -35,7 +35,7 @@
   "dropZone.browse": "أو انقر للتصفح",
   "dropZone.orUrl": "أو ألصق رابطاً أو ملف تعريف سبوتيفاي",
   "dropZone.fetch": "جلب",
-  "dropZone.fetching": "جارٍ الجلب\u2026",
+  "dropZone.fetching": "جارٍ الجلب…",
   "dropZone.urlPlaceholder": "رابط أو ملف تعريف أو اسم مستخدم",
   "dropZone.urlLabel": "رابط الاستيراد أو ملف تعريف سبوتيفاي",
 
@@ -86,7 +86,14 @@
   "dataType.searchHistory": "سجل البحث",
   "dataType.searchHistory.desc": "عمليات البحث الأخيرة",
   "dataType.exportOnly": "للتصدير فقط",
-  "dataType.itemCount": "{count} عنصر",
+  "dataType.itemCount": {
+    "zero": "لا عناصر",
+    "one": "عنصر واحد",
+    "two": "عنصران",
+    "few": "# عناصر",
+    "many": "# عنصرًا",
+    "other": "# عنصر"
+  },
   "dataType.include": "تضمين {label}",
 
   "progress.starting": "جارٍ البدء",
@@ -112,21 +119,70 @@
   "progress.fetchingUserProfile": "جلب الملف الشخصي",
   "progress.fetchingSearchHistory": "جلب سجل البحث",
 
-  "log.localTracks": "{count} مقطع محلي تم تخطيه",
+  "log.localTracks": {
+    "zero": "لم يُتخطَّ أي مقطع محلي",
+    "one": "تم تخطي مقطع محلي واحد",
+    "two": "تم تخطي مقطعين محليين",
+    "few": "تم تخطي # مقاطع محلية",
+    "many": "تم تخطي # مقطعًا محليًا",
+    "other": "تم تخطي # مقطع محلي"
+  },
   "log.playlistSkipped": "تم تخطي \"{name}\"",
   "log.playlistFailed": "فشل \"{name}\"",
-  "log.playlistCreated": "تم إنشاء \"{name}\" — {count} مقطع",
-  "log.playlistMerged": "تم الدمج في \"{name}\" — {count} مقطع",
-  "log.localSkipped": "\"{name}\": {count} مقطع محلي تم تخطيه",
-  "log.episodesNoUri": "\"{name}\": {count} حلقة تم تخطيها (لا يوجد URI في تصدير سبوتيفاي)",
-  "log.duplicatesSkipped": "\"{name}\": {count} مكرر تم تخطيه",
+  "log.playlistCreated": {
+    "zero": "تم إنشاء \"{name}\" — بلا مقاطع",
+    "one": "تم إنشاء \"{name}\" — مقطع واحد",
+    "two": "تم إنشاء \"{name}\" — مقطعان",
+    "few": "تم إنشاء \"{name}\" — # مقاطع",
+    "many": "تم إنشاء \"{name}\" — # مقطعًا",
+    "other": "تم إنشاء \"{name}\" — # مقطع"
+  },
+  "log.playlistMerged": {
+    "zero": "تم الدمج في \"{name}\" — بلا مقاطع",
+    "one": "تم الدمج في \"{name}\" — مقطع واحد",
+    "two": "تم الدمج في \"{name}\" — مقطعان",
+    "few": "تم الدمج في \"{name}\" — # مقاطع",
+    "many": "تم الدمج في \"{name}\" — # مقطعًا",
+    "other": "تم الدمج في \"{name}\" — # مقطع"
+  },
+  "log.localSkipped": {
+    "zero": "\"{name}\": لم يُتخطَّ أي مقطع محلي",
+    "one": "\"{name}\": تم تخطي مقطع محلي واحد",
+    "two": "\"{name}\": تم تخطي مقطعين محليين",
+    "few": "\"{name}\": تم تخطي # مقاطع محلية",
+    "many": "\"{name}\": تم تخطي # مقطعًا محليًا",
+    "other": "\"{name}\": تم تخطي # مقطع محلي"
+  },
+  "log.episodesNoUri": {
+    "zero": "\"{name}\": لم تُتخطَّ أي حلقة (لا يوجد URI في تصدير سبوتيفاي)",
+    "one": "\"{name}\": تم تخطي حلقة واحدة (لا يوجد URI في تصدير سبوتيفاي)",
+    "two": "\"{name}\": تم تخطي حلقتين (لا يوجد URI في تصدير سبوتيفاي)",
+    "few": "\"{name}\": تم تخطي # حلقات (لا يوجد URI في تصدير سبوتيفاي)",
+    "many": "\"{name}\": تم تخطي # حلقة (لا يوجد URI في تصدير سبوتيفاي)",
+    "other": "\"{name}\": تم تخطي # حلقة (لا يوجد URI في تصدير سبوتيفاي)"
+  },
+  "log.duplicatesSkipped": {
+    "zero": "\"{name}\": لم يُتخطَّ أي مكرر",
+    "one": "\"{name}\": تم تخطي مكرر واحد",
+    "two": "\"{name}\": تم تخطي مكررين",
+    "few": "\"{name}\": تم تخطي # مكررات",
+    "many": "\"{name}\": تم تخطي # مكررًا",
+    "other": "\"{name}\": تم تخطي # مكرر"
+  },
   "log.mergeReadFailed": "\"{name}\": تعذرت القراءة للدمج، قد توجد مكررات",
   "log.saved": "{count} {noun}",
   "log.failed": "فشل: {label}",
   "log.descriptionFailed": "\"{name}\": فشل تعيين الوصف",
   "log.permissionFailed": "\"{name}\": فشل تعيين الأذونات",
 
-  "warn.playlistsFailed": "{count} قائمة تشغيل فشل تحميلها: {names}",
+  "warn.playlistsFailed": {
+    "zero": "لم يفشل تحميل أي قائمة تشغيل: {names}",
+    "one": "فشل تحميل قائمة تشغيل واحدة: {names}",
+    "two": "فشل تحميل قائمتي تشغيل: {names}",
+    "few": "فشل تحميل # قوائم تشغيل: {names}",
+    "many": "فشل تحميل # قائمة تشغيل: {names}",
+    "other": "فشل تحميل # قائمة تشغيل: {names}"
+  },
   "warn.noPublicData": "لا توجد قوائم تشغيل عامة أو فنانون متابَعون لهذا المستخدم.",
   "warn.fetchFailed": "فشل جلب {label}",
   "warn.cancelled": "أُلغي الاستيراد. كل ما يظهر أعلاه أُضيف بالفعل وسيبقى.",

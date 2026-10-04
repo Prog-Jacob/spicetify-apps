@@ -1,8 +1,8 @@
-import { t } from '../i18n';
 import { cn } from '@shared/lib';
+import { LOG_STATUS } from '../constants';
+import { t, type MessageKey } from '../i18n';
 import React, { useMemo, useState } from 'react';
 import type { ImportResult, LogStatus } from '../types/import';
-import { LOG_STATUS, ANIMATION_STAGGER_MS } from '../constants';
 import {
   FilterBar,
   ResultCard,
@@ -16,17 +16,27 @@ import {
 
 const FILTER_BAR_THRESHOLD = 10;
 
-const STATUS_CONFIG: Record<LogStatus, { icon: Spicetify.Icon; colorClass: string }> = {
-  [LOG_STATUS.OK]: { icon: 'check-alt-fill', colorClass: 'text-spice-button' },
-  [LOG_STATUS.SKIPPED]: { icon: 'minus', colorClass: 'text-spice-subtext' },
-  [LOG_STATUS.ERROR]: { icon: 'x', colorClass: 'text-spice-notification-error' },
+// key order is the tile order
+const STATUS_CONFIG: Record<
+  LogStatus,
+  { icon: Spicetify.Icon; colorClass: string; labelKey: MessageKey }
+> = {
+  [LOG_STATUS.OK]: {
+    icon: 'check-alt-fill',
+    colorClass: 'text-spice-button',
+    labelKey: 'summary.succeeded',
+  },
+  [LOG_STATUS.SKIPPED]: {
+    icon: 'minus',
+    colorClass: 'text-spice-subtext',
+    labelKey: 'summary.skipped',
+  },
+  [LOG_STATUS.ERROR]: {
+    icon: 'x',
+    colorClass: 'text-spice-notification-error',
+    labelKey: 'summary.failed',
+  },
 };
-
-const TILE_DEFS: { status: LogStatus; labelKey: Parameters<typeof t>[0] }[] = [
-  { status: LOG_STATUS.OK, labelKey: 'summary.succeeded' },
-  { status: LOG_STATUS.SKIPPED, labelKey: 'summary.skipped' },
-  { status: LOG_STATUS.ERROR, labelKey: 'summary.failed' },
-];
 
 type ImportSummaryProps = {
   result: ImportResult;
@@ -53,12 +63,13 @@ const ImportSummary = ({ result, onImportAgain, onGoToExport }: ImportSummaryPro
 
   const tiles = useMemo(
     () =>
-      TILE_DEFS.map(({ status, labelKey }) => ({
-        status,
-        labelKey,
-        ...STATUS_CONFIG[status],
-        count: counts[status] ?? 0,
-      })).filter((tile) => tile.count > 0),
+      (Object.keys(STATUS_CONFIG) as LogStatus[])
+        .map((status) => ({
+          status,
+          ...STATUS_CONFIG[status],
+          count: counts[status] ?? 0,
+        }))
+        .filter((tile) => tile.count > 0),
     [counts],
   );
 
@@ -105,7 +116,7 @@ const ImportSummary = ({ result, onImportAgain, onGoToExport }: ImportSummaryPro
               value={t.number(count)}
               label={t(labelKey)}
               active={activeFilter === status}
-              animationDelay={`${i * ANIMATION_STAGGER_MS.SUMMARY_ITEM}ms`}
+              index={i}
               onClick={() => {
                 setActiveFilter((prev) => (prev === status ? null : status));
                 setFilterText('');
@@ -143,12 +154,15 @@ const ImportSummary = ({ result, onImportAgain, onGoToExport }: ImportSummaryPro
 };
 
 const LogEntry = React.memo(({ entry }: { entry: ImportResult['log'][number] }) => {
-  const { icon, colorClass } = STATUS_CONFIG[entry.status];
+  const { icon, colorClass, labelKey } = STATUS_CONFIG[entry.status];
   return (
     <div role="listitem" className="flex items-start gap-2.5 px-4 py-2">
       <SpicetifyIcon icon={icon} size={14} className={cn('mt-0.5 shrink-0', colorClass)} />
       <div className="flex min-w-0 flex-col">
-        <TextComponent variant="mesto">{entry.label}</TextComponent>
+        <TextComponent variant="mesto">
+          <span className="sr-only">{t(labelKey)}: </span>
+          {entry.label}
+        </TextComponent>
         {entry.detail && (
           <TextComponent variant="minuet" semanticColor="textSubdued">
             {entry.detail}

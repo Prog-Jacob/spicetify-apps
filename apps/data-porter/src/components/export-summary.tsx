@@ -2,7 +2,6 @@ import { t } from '../i18n';
 import React, { useState } from 'react';
 import { ALL_DATA_TYPES } from '../data-types';
 import ContentPreview from './content-preview';
-import { ANIMATION_STAGGER_MS } from '../constants';
 import type { DataType, ExportData } from '../types/export';
 import {
   ResultCard,
@@ -59,7 +58,7 @@ const ExportSummary = ({ result, warnings, onDownload, onNewExport }: ExportSumm
               icon={icon}
               value={t.number(count)}
               label={label}
-              animationDelay={`${i * ANIMATION_STAGGER_MS.SUMMARY_ITEM}ms`}
+              index={i}
               onClick={() => setPreviewing(type)}
               trailing={
                 <SpicetifyIcon
