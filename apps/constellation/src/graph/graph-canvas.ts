@@ -1,7 +1,6 @@
 import ForceGraph from 'force-graph';
 import { EDGE_TYPE } from '../constants';
 import type { GraphPalette } from './theme';
-import type { MutableRefObject } from 'react';
 import { openUriInClient } from '@shared/lib';
 import type { MusicGraph } from './music-graph';
 import { neighborhoodUris } from './node-query';
@@ -59,7 +58,7 @@ export class GraphCanvas {
   private readonly fg: ForceGraph<RenderNode, RenderLink>;
   private readonly observer: ResizeObserver;
   private readonly renderNodes: Map<string, RenderNode>;
-  private readonly latest: MutableRefObject<LiveProps>;
+  private readonly latest: { readonly current: LiveProps };
 
   private hoverUri: string | null = null;
   private focusUri: string | null = null;
@@ -71,7 +70,7 @@ export class GraphCanvas {
 
   constructor(
     el: HTMLDivElement,
-    latest: MutableRefObject<LiveProps>,
+    latest: { readonly current: LiveProps },
     renderNodes: Map<string, RenderNode>,
     images: Map<string, string>,
   ) {
@@ -129,7 +128,7 @@ export class GraphCanvas {
         this.dragOffset = { x: 0, y: 0 };
         // A click with a shaky hand must not silently pin: pins persist across sessions.
         if (isDragSlop(x, y, this.fg.zoom())) {
-          if (this.live.pins[node.uri]) return;
+          if (this.live.pins[node.uri] || this.live.frozen) return;
           node.fx = undefined;
           node.fy = undefined;
           return;

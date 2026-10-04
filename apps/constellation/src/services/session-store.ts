@@ -1,4 +1,4 @@
-import { get, set, createStore } from 'idb-keyval';
+import { idbStore } from '@shared/lib';
 
 export type Point = { x: number; y: number };
 export type PinnedPositions = Record<string, Point>;
@@ -7,9 +7,10 @@ export type PinnedPositions = Record<string, Point>;
  * What you personally hid (`hidden`) and what anchors the graph besides your own node (`seeds`:
  * externally added entities, plus `anchors`: subtrees kept when their owner was removed, keyed by
  * that owner so restoring it frees them). Everything else is derived by reachability, so removal
- * stores no snapshot and restoring is just un-hiding a uri.
+ * stores no snapshot and restoring is just un-hiding a uri. `owner` is the account it belongs to.
  */
 export type ExplorerSession = {
+  owner?: string;
   seeds: string[];
   anchors: Record<string, string[]>;
   hidden: string[];
@@ -17,7 +18,7 @@ export type ExplorerSession = {
 };
 
 const KEY = 'session';
-const store = createStore('constellation-session', 'session');
+const store = idbStore('session');
 
 export const emptySession = (): ExplorerSession => ({
   seeds: [],
@@ -33,6 +34,7 @@ export const mergeSessions = (
   base: ExplorerSession,
   current: ExplorerSession,
 ): ExplorerSession => ({
+  owner: base.owner ?? current.owner,
   seeds: union(base.seeds, current.seeds),
   anchors: { ...base.anchors, ...current.anchors },
   hidden: union(base.hidden, current.hidden),
@@ -57,13 +59,17 @@ const anchorsOf = (raw: unknown, hidden: string[]): Record<string, string[]> => 
   );
 };
 
-export const normalizeSession = (raw: unknown): ExplorerSession => {
+/** Another account's session is dropped; one saved before sessions had owners goes to `owner`. */
+export const normalizeSession = (raw: unknown, owner?: string): ExplorerSession => {
   const saved = (raw ?? {}) as Partial<ExplorerSession> & { removed?: unknown };
+  const savedOwner = typeof saved.owner === 'string' ? saved.owner : undefined;
+  if (owner && savedOwner && savedOwner !== owner) return { ...emptySession(), owner };
   const hidden =
     saved.hidden !== undefined
       ? strings(saved.hidden)
       : strings((Array.isArray(saved.removed) ? saved.removed : []).map(uriOf));
   return {
+    owner: owner ?? savedOwner,
     seeds: strings(saved.seeds),
     anchors: anchorsOf(saved.anchors, hidden),
     hidden,
@@ -71,8 +77,12 @@ export const normalizeSession = (raw: unknown): ExplorerSession => {
   };
 };
 
-export const loadSession = async (): Promise<ExplorerSession> =>
-  normalizeSession(await get<ExplorerSession>(KEY, store).catch(() => undefined));
+export const loadSession = async (): Promise<ExplorerSession> => {
+  const [raw, me] = await Promise.all([
+    store.get(KEY),
+    Spicetify.Platform.UserAPI.getUser().catch(() => null),
+  ]);
+  return normalizeSession(raw, me?.uri);
+};
 
-export const persistSession = (session: ExplorerSession): Promise<void> =>
-  set(KEY, session, store).catch(() => {});
+export const persistSession = (session: ExplorerSession): Promise<void> => store.set(KEY, session);

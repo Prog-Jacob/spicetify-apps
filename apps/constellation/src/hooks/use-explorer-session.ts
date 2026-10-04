@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useCallback, useRef, useMemo } from 'react';
 import {
   union,
   loadSession,
@@ -13,22 +13,17 @@ export const useExplorerSession = () => {
   const sessionRef = useRef(session);
   const dirty = useRef(false);
 
-  const seedsReady = useRef<Promise<ExplorerSession>>();
-  if (!seedsReady.current) seedsReady.current = loadSession();
+  // Edits made before the stored session arrives layer over it rather than being lost to it.
+  const ready = useRef<Promise<void>>();
+  ready.current ??= loadSession().then((loaded) => {
+    const next = dirty.current ? mergeSessions(loaded, sessionRef.current) : loaded;
+    sessionRef.current = next;
+    setSession(next);
+    if (dirty.current) void persistSession(next);
+  });
 
-  useEffect(() => {
-    let alive = true;
-    void seedsReady.current?.then((loaded) => {
-      if (!alive) return;
-      const next = dirty.current ? mergeSessions(loaded, sessionRef.current) : loaded;
-      sessionRef.current = next;
-      setSession(next);
-      if (dirty.current) void persistSession(next);
-    });
-    return () => {
-      alive = false;
-    };
-  }, []);
+  /** The session as it is now, once the stored one has loaded. */
+  const readSession = useCallback(() => ready.current!.then(() => sessionRef.current), []);
 
   const mutate = useCallback((fn: (s: ExplorerSession) => ExplorerSession) => {
     const next = fn(sessionRef.current);
@@ -104,7 +99,7 @@ export const useExplorerSession = () => {
     anchors,
     hidden: session.hidden,
     pins: session.pins,
-    seedsReady: seedsReady.current,
+    readSession,
     addSeed,
     hide,
     unhide,

@@ -1,8 +1,9 @@
-import { paginate } from '@shared/api';
+import { SPOTIFY_URI, mapLimit } from '@shared/lib';
+import { NODE_TYPE, EDGE_TYPE } from '../constants';
 import type { LibraryTrackItem } from '@shared/types';
 import type { MusicGraph } from '../graph/music-graph';
+import { gql, paginate, getPlaylist } from '@shared/api';
 import type { NodeType, GraphNode } from '../types/graph';
-import { NODE_TYPE, EDGE_TYPE, LIKED_SONGS_URI } from '../constants';
 import { parseAlbumTracks, parseArtistOverview } from './graphql-enrichment';
 import {
   ingestTrack,
@@ -14,17 +15,16 @@ import {
 
 type Expander = (graph: MusicGraph, node: GraphNode, signal?: AbortSignal) => Promise<void>;
 
-const graphqlQuery = (name: Spicetify.GraphQL.Query, variables: Record<string, unknown>) =>
-  Spicetify.GraphQL.Request(Spicetify.GraphQL.Definitions[name], variables);
-
 const expandPlaylist: Expander = async (graph, node, signal) => {
-  const detail = await Spicetify.Platform.PlaylistAPI.getPlaylist(node.uri);
+  const detail = await getPlaylist(node.uri);
   signal?.throwIfAborted();
-  ingestPlaylistTracks(graph, node.uri, detail?.contents?.items ?? []);
+  // an unreadable playlist must fail, or it would be marked expanded with nothing in it
+  if (!detail) throw new Error(`Could not read ${node.uri}`);
+  ingestPlaylistTracks(graph, node.uri, detail.contents?.items ?? []);
 };
 
 const expandArtist: Expander = async (graph, node, signal) => {
-  const raw = await graphqlQuery('queryArtistOverview', { uri: node.uri, locale: '' });
+  const raw = await gql('queryArtistOverview', { uri: node.uri, locale: '' });
   signal?.throwIfAborted();
   const { related, albums } = parseArtistOverview(raw);
   ingestArtists(graph, node.uri, EDGE_TYPE.RELATED_TO, related);
@@ -32,7 +32,7 @@ const expandArtist: Expander = async (graph, node, signal) => {
 };
 
 const expandAlbum: Expander = async (graph, node, signal) => {
-  const raw = await graphqlQuery('getAlbum', { uri: node.uri, locale: '', offset: 0, limit: 50 });
+  const raw = await gql('getAlbum', { uri: node.uri, locale: '', offset: 0, limit: 50 });
   signal?.throwIfAborted();
   for (const track of parseAlbumTracks(raw).tracks) ingestAlbumTrack(graph, node.uri, track);
 };
@@ -55,7 +55,7 @@ const BY_TYPE: Partial<Record<NodeType, Expander>> = {
   [NODE_TYPE.ALBUM]: expandAlbum,
 };
 
-const BY_URI: Record<string, Expander> = { [LIKED_SONGS_URI]: expandLikedSongs };
+const BY_URI: Record<string, Expander> = { [SPOTIFY_URI.LIKED_SONGS]: expandLikedSongs };
 
 const expanderFor = (node: GraphNode): Expander | undefined =>
   BY_URI[node.uri] ?? BY_TYPE[node.type];
@@ -70,28 +70,33 @@ export const expandNode = (
 
 export const EXPAND_CONCURRENCY = 3;
 
-/** Replays expansions onto a fresh crawl in rounds: one can bring back the node of the next. */
+/**
+ * Replays expansions onto a fresh crawl in rounds: one can bring back the node of the next.
+ * `source` is re-read every round, and after `settle`, so expansions landing meanwhile still replay.
+ */
 export const reexpand = async (
   graph: MusicGraph,
-  uris: string[],
+  source: Iterable<string>,
   expanded: Set<string>,
   signal?: AbortSignal,
+  settle?: () => unknown,
 ): Promise<void> => {
-  let pending = uris;
+  const tried = new Set<string>();
   for (;;) {
-    const ready = pending.filter((uri) => graph.node(uri));
+    await settle?.();
+    const ready = [...source].filter((uri) => !tried.has(uri) && graph.node(uri));
     if (!ready.length) return;
-    pending = pending.filter((uri) => !graph.node(uri));
-    for (let i = 0; i < ready.length; i += EXPAND_CONCURRENCY) {
-      signal?.throwIfAborted();
-      await Promise.all(
-        ready.slice(i, i + EXPAND_CONCURRENCY).map((uri) =>
-          expandNode(graph, graph.node(uri)!, signal).then(
-            () => expanded.add(uri),
-            () => undefined,
-          ),
+    for (const uri of ready) tried.add(uri);
+    await mapLimit(
+      ready,
+      EXPAND_CONCURRENCY,
+      (uri) =>
+        expandNode(graph, graph.node(uri)!, signal).then(
+          () => void expanded.add(uri),
+          () => undefined,
         ),
-      );
-    }
+      { signal },
+    );
+    signal?.throwIfAborted();
   }
 };

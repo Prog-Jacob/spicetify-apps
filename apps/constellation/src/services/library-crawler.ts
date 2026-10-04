@@ -1,13 +1,12 @@
 import { t } from '../i18n';
-import { ingestArtists } from './ingest';
 import { addLikedSongs } from './liked-songs';
 import { MusicGraph } from '../graph/music-graph';
-import { rememberFirstImage } from './node-images';
 import { NODE_TYPE, EDGE_TYPE } from '../constants';
-import { notifyError, toEpochMs } from '@shared/lib';
 import { attachUserPlaylists } from './user-playlists';
+import { ingestArtists, rememberImage } from './ingest';
 import type { LibraryContentItem } from '@shared/types';
-import { paginate, fetchRootlistPlaylists, listSocialGraph, type ProfileRef } from '@shared/api';
+import { notifyError, toEpochMs, firstImageUrl, mapLimit } from '@shared/lib';
+import { paginate, fetchRootlistPlaylists, listSocialGraph } from '@shared/api';
 
 export type LibraryGraph = {
   graph: MusicGraph;
@@ -15,6 +14,8 @@ export type LibraryGraph = {
   /** Your own node: what the rest of the graph hangs off, and what a prune measures from. */
   rootUri: string;
   expanded: Set<string>;
+  /** When the library was last read from Spotify; expanding or adding does not refresh it. */
+  crawledAt?: number;
 };
 
 const FRIEND_PLAYLIST_CONCURRENCY = 5;
@@ -45,7 +46,7 @@ export async function buildLibraryGraph(
     ]),
     listSocialGraph().catch((e: unknown) => {
       notifyError(e, t('app.friendsFailed'));
-      return { following: [], followers: [] };
+      return { following: [], followers: [], friends: [] };
     }),
   ]);
 
@@ -55,15 +56,12 @@ export async function buildLibraryGraph(
     type: NODE_TYPE.USER,
     label: user.displayName ?? user.name ?? t('graph.you'),
   });
-  if (user.imageUrl) images.set(userUri, user.imageUrl);
+  rememberImage(images, userUri, user.imageUrl);
 
-  const people = new Map<string, ProfileRef>();
-  for (const person of [...social.following, ...social.followers]) {
-    if (person.uri !== userUri) people.set(person.uri, person);
-  }
-  for (const person of people.values()) {
+  const people = social.friends.filter((person) => person.uri !== userUri);
+  for (const person of people) {
     graph.addNode({ uri: person.uri, type: NODE_TYPE.USER, label: person.name });
-    if (person.imageUrl) images.set(person.uri, person.imageUrl);
+    rememberImage(images, person.uri, person.imageUrl);
   }
   for (const person of social.following) graph.addEdge(userUri, person.uri, EDGE_TYPE.FOLLOWS);
   for (const person of social.followers) graph.addEdge(person.uri, userUri, EDGE_TYPE.FOLLOWS);
@@ -71,7 +69,7 @@ export async function buildLibraryGraph(
   for (const playlist of playlists) {
     graph.addNode({ uri: playlist.uri, type: NODE_TYPE.PLAYLIST, label: playlist.name });
     graph.addEdge(userUri, playlist.uri, EDGE_TYPE.OWNS);
-    rememberFirstImage(images, playlist.uri, playlist.images);
+    rememberImage(images, playlist.uri, firstImageUrl(playlist.images));
   }
 
   for (const item of contents) {
@@ -83,7 +81,7 @@ export async function buildLibraryGraph(
         addedAt: toEpochMs(item.addedAt),
       });
       graph.addEdge(userUri, item.uri, EDGE_TYPE.SAVED);
-      rememberFirstImage(images, item.uri, item.images);
+      rememberImage(images, item.uri, firstImageUrl(item.images));
     } else if (item.type === NODE_TYPE.ALBUM) {
       graph.addNode({
         uri: item.uri,
@@ -93,22 +91,21 @@ export async function buildLibraryGraph(
       });
       graph.addEdge(userUri, item.uri, EDGE_TYPE.SAVED);
       ingestArtists(graph, item.uri, EDGE_TYPE.MADE_BY, item.artists);
-      rememberFirstImage(images, item.uri, item.images);
+      rememberImage(images, item.uri, firstImageUrl(item.images));
     }
   }
 
   addLikedSongs(graph, userUri);
 
-  const profiles = [...people.keys()];
-  onProgress?.({ stage: 'profiles', done: 0, total: profiles.length });
-  for (let i = 0; i < profiles.length; i += FRIEND_PLAYLIST_CONCURRENCY) {
-    signal?.throwIfAborted();
-    const chunk = profiles.slice(i, i + FRIEND_PLAYLIST_CONCURRENCY);
-    await Promise.all(
-      chunk.map((uri) => attachUserPlaylists(graph, images, uri, signal).catch(() => undefined)),
-    );
-    onProgress?.({ stage: 'profiles', done: i + chunk.length, total: profiles.length });
-  }
+  const total = people.length;
+  onProgress?.({ stage: 'profiles', done: 0, total });
+  await mapLimit(
+    people,
+    FRIEND_PLAYLIST_CONCURRENCY,
+    (person) => attachUserPlaylists(graph, images, person.uri, signal).catch(() => undefined),
+    { signal, onDone: (done) => onProgress?.({ stage: 'profiles', done, total }) },
+  );
+  signal?.throwIfAborted();
 
-  return { graph, images, rootUri: userUri, expanded: new Set<string>() };
+  return { graph, images, rootUri: userUri, expanded: new Set<string>(), crawledAt: Date.now() };
 }
