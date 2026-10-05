@@ -24,21 +24,23 @@
 
 </div>
 
+<!-- Open with the question this app answers, then one line on how. -->
+
 ## Features
 
-<!-- TODO: describe what this app does -->
-
----
+<!-- One section per feature. Use a table for parallel facts and a screenshot from preview/. -->
 
 ## Install
 
-**Linux / macOS:**
+You need [Spicetify](https://spicetify.app/docs/advanced-usage/installation). Run the line again to update.
+
+**macOS / Linux**
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/{{REPO}}/main/install.sh | bash -s {{SLUG}}
 ```
 
-**Windows (PowerShell):**
+**Windows (PowerShell)**
 
 ```ps1
 iex "& { $(iwr -useb https://raw.githubusercontent.com/{{REPO}}/main/install.ps1) } {{SLUG}}"
@@ -49,23 +51,23 @@ iex "& { $(iwr -useb https://raw.githubusercontent.com/{{REPO}}/main/install.ps1
 
 <br />
 
-Download the zip from the [latest release](https://github.com/{{REPO}}/releases?q={{SLUG}}&expanded=true), then place the `{{SLUG}}` folder into your Spicetify `CustomApps` directory:
+1. Download the zip from the [latest release](https://github.com/{{REPO}}/releases?q={{SLUG}}&expanded=true).
+2. Put the `{{SLUG}}` folder in your Spicetify `CustomApps` folder:
 
-```
-spicetify/CustomApps
-  marketplace/
-  {{SLUG}}/
-    index.js
-    manifest.json
-    style.css
-```
+   ```
+   spicetify/CustomApps/
+     {{SLUG}}/
+       index.js
+       manifest.json
+       style.css
+   ```
 
-Then apply:
+3. Turn it on:
 
-```sh
-spicetify config custom_apps {{SLUG}}
-spicetify apply
-```
+   ```sh
+   spicetify config custom_apps {{SLUG}}
+   spicetify apply
+   ```
 
 </details>
 

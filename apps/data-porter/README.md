@@ -16,9 +16,11 @@
 
 <a href="#install">Install</a>
 <span>&nbsp;&middot;&nbsp;</span>
-<a href="#features">Features</a>
+<a href="#export">Export</a>
 <span>&nbsp;&middot;&nbsp;</span>
-<a href="#limitations">Limitations</a>
+<a href="#import">Import</a>
+<span>&nbsp;&middot;&nbsp;</span>
+<a href="#limits">Limits</a>
 <span>&nbsp;&middot;&nbsp;</span>
 <a href="https://github.com/Prog-Jacob/spicetify-apps/issues">Report a Bug</a>
 
@@ -26,91 +28,81 @@
 
 </div>
 
-## Features
+**Three steps to move a library:** export on the old account, sign in to the new one, import the file. Data Porter runs inside Spotify, so it needs no login, API key or rate-limit wait.
 
-### Export
+## Export
 
-Pick what you want to include, then download it all as a single JSON file.
+Choose what to include. Data Porter saves it all as one JSON file.
 
-| Data             | Importable | Notes                                                            |
-| ---------------- | :--------: | ---------------------------------------------------------------- |
-| Playlists        |    Yes     | Includes folder-nested playlists, tracks, episodes, descriptions |
-| Liked Songs      |    Yes     |                                                                  |
-| Albums           |    Yes     |                                                                  |
-| Artists          |    Yes     |                                                                  |
-| Shows / Podcasts |    Yes     |                                                                  |
-| Episodes         |    Yes     | Saved podcast episodes ("Your Episodes")                         |
-| Banned Content   |    Yes     | Blocked tracks, artists, and taste exclusions                    |
-| Recently Played  |  &mdash;   | ~3 months of listening history (music and podcasts)              |
-| Search History   |  &mdash;   | Up to 50 recent searches                                         |
-| Profile          |  &mdash;   | Display name, username, country, subscription tier               |
+| Data            | Can import | What you get                                           |
+| --------------- | :--------: | ------------------------------------------------------ |
+| Playlists       |     ✓      | Tracks, episodes and descriptions, also inside folders |
+| Liked Songs     |     ✓      | Import keeps their original order                      |
+| Albums          |     ✓      |                                                        |
+| Artists         |     ✓      | Artists you follow                                     |
+| Shows           |     ✓      | Podcasts you follow                                    |
+| Episodes        |     ✓      | Saved podcast episodes ("Your Episodes")               |
+| Banned Content  |     ✓      | Blocked tracks and artists, taste exclusions           |
+| Recently Played |     –      | About 3 months of music and podcast history            |
+| Search History  |     –      | Up to 50 recent searches                               |
+| Profile         |     –      | Display name, username, country, plan                  |
 
-You can also export **another user's** public playlists and followed artists. Pick one of your friends, or paste their profile URL or user ID.
+**Another user:** export a friend's public playlists and followed artists. Pick a friend from the list, or paste a profile link or username.
 
----
+**Preview first:** click the item count on any card. You can search, open a playlist to see its tracks, and page through large lists.
 
-### Content Preview
+## Import
 
-Before exporting or importing, click any data type's item count to open a preview panel. Browse your playlists, liked songs, albums, and everything else with:
+Give Data Porter one of these:
 
-- **Search and filter** across all fields
-- **Drill-down** into playlists to see individual tracks
-- **Artwork and metadata** fetched on-the-fly from Spotify
-- **Pagination** for large collections
+| Source                         | How                                         |
+| ------------------------------ | ------------------------------------------- |
+| A Data Porter export           | Drop the file, or paste a link to it        |
+| Spotify's official data export | Drop `YourLibrary.json` or `Playlist1.json` |
+| A public profile               | Paste the profile link or username          |
 
----
-
-### Import
-
-Drop in a JSON file to restore your data. Works with **Data Porter exports** and **Spotify's official data exports** (YourLibrary.json, Playlist1.json).
-
-You'll see a preview of what's inside before anything gets written. Click into any data type to inspect its contents before committing to the import.
-
-Imported playlists are always created private, and Liked Songs from Data Porter exports keep their original order. You can cancel at any time: the summary shows what was already added, and that stays in your library.
+Nothing changes until you confirm. First you see what the file holds, and you can open each type to check it.
 
 <img src="preview/import.webp" width="100%" alt="Import preview" />
 
----
+### Review each playlist
 
-### Playlist Review
+Before Data Porter creates a playlist, you decide what happens to it.
 
-Before any playlists are created, you review every one. Each playlist shows its track count and whether it already exists in your library.
+| Playlist               | Your choices                                      |
+| ---------------------- | ------------------------------------------------- |
+| New to this account    | Create, or Skip                                   |
+| Already in the library | Skip, Merge (add only missing tracks), Create New |
 
-- **New playlists** &rarr; Create or Skip
-- **Existing playlists** &rarr; Skip, Merge (add missing tracks), or Create New
-
-Apply one choice to all at once, or decide per playlist. Filter by name to find what you need.
+Apply one choice to all playlists, or choose one by one. Filter by name to find a playlist.
 
 <img src="preview/import-conflict.webp" width="100%" alt="Playlist review step" />
 
----
+- **Private by default.** Every imported playlist is private.
+- **Safe to cancel.** The summary lists what was added before you stopped. Those items stay.
 
-### More
+## Limits
 
-- **English and Arabic**, auto-detected from Spotify's language setting
-- **Automatic update check** on launch
+- **Local files are skipped.** Spotify has no API to add local files.
+- **Some episodes from Spotify's official export are skipped.** That export leaves out the URI for some episodes. The log names each one.
+- **Files over 20 MB are refused.**
 
----
+## More
 
-## Limitations
-
-> **Local tracks are skipped.** Spotify has no API for adding local files programmatically.
-
-> **Some episodes from Spotify's official export can't be matched.** If they're missing URIs in Spotify's export format, they're skipped with a log entry.
-
-- Max import file size is **20 MB**.
-
----
+- English and Arabic. The app follows Spotify's language setting.
+- An update banner shows when a new version is out.
 
 ## Install
 
-**Linux / macOS:**
+You need [Spicetify](https://spicetify.app/docs/advanced-usage/installation). Run the line again to update.
+
+**macOS / Linux**
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/Prog-Jacob/spicetify-apps/main/install.sh | bash -s data-porter
 ```
 
-**Windows (PowerShell):**
+**Windows (PowerShell)**
 
 ```ps1
 iex "& { $(iwr -useb https://raw.githubusercontent.com/Prog-Jacob/spicetify-apps/main/install.ps1) } data-porter"
@@ -121,23 +113,23 @@ iex "& { $(iwr -useb https://raw.githubusercontent.com/Prog-Jacob/spicetify-apps
 
 <br />
 
-Download the zip from the [latest release](https://github.com/Prog-Jacob/spicetify-apps/releases?q=data-porter&expanded=true), then place the `data-porter` folder into your Spicetify `CustomApps` directory:
+1. Download the zip from the [latest release](https://github.com/Prog-Jacob/spicetify-apps/releases?q=data-porter&expanded=true).
+2. Put the `data-porter` folder in your Spicetify `CustomApps` folder:
 
-```
-spicetify/CustomApps
-  marketplace/
-  data-porter/
-    index.js
-    manifest.json
-    style.css
-```
+   ```
+   spicetify/CustomApps/
+     data-porter/
+       index.js
+       manifest.json
+       style.css
+   ```
 
-Then apply:
+3. Turn it on:
 
-```sh
-spicetify config custom_apps data-porter
-spicetify apply
-```
+   ```sh
+   spicetify config custom_apps data-porter
+   spicetify apply
+   ```
 
 </details>
 

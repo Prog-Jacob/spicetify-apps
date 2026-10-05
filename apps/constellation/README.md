@@ -16,7 +16,9 @@
 
 <a href="#install">Install</a>
 <span>&nbsp;&middot;&nbsp;</span>
-<a href="#features">Features</a>
+<a href="#explore">Explore</a>
+<span>&nbsp;&middot;&nbsp;</span>
+<a href="#controls">Controls</a>
 <span>&nbsp;&middot;&nbsp;</span>
 <a href="https://github.com/Prog-Jacob/spicetify-apps/issues">Report a Bug</a>
 
@@ -24,91 +26,103 @@
 
 </div>
 
-## Features
+**Which artist links your two favorite playlists? How does a friend's playlist lead to an album you love?** Constellation draws your library as a graph, like Obsidian does for notes, and lets you see the answer.
 
-Constellation renders your library as an interactive, Obsidian-style graph. Nodes are your
-tracks, artists, albums, playlists, and the people you follow; edges are the relationships
-Spotify already stores: who performed a track, which album it's on, who made a playlist,
-what you've saved. Entities render as avatars using their real artwork, sized by how
-connected they are.
+- **Items** are your tracks, artists, albums, playlists, and the people you follow. Each one shows its real artwork.
+- **Links** are facts Spotify already stores: who plays a track, which album holds it, who made a playlist, what you saved.
+- **Size** grows with the number of links.
 
----
+## Explore
 
-### Explore
+| To                       | Do this                                       |
+| ------------------------ | --------------------------------------------- |
+| Inspect an item          | Click it                                      |
+| Pull in its links        | Double-click it                               |
+| Pin it in place          | Drag it                                       |
+| Highlight its neighbours | Hover over it                                 |
+| Open it in Spotify       | Right-click it                                |
+| Select it for a path     | Shift-click it                                |
+| Zoom / pan               | Scroll or use +/&minus; / drag the background |
+| Jump to an item          | Type its name in search, then press Enter     |
 
-- **Click** a node to open the inspector: its connection breakdown, plus actions to play, queue, open in Spotify, or focus its neighborhood.
-- **Double-click** a node to expand its connections into the graph.
-- **Drag** a node to pin it in place; **hover** to highlight its neighbours.
-- **Scroll** or the +/&minus; buttons to zoom, drag the background to pan, and fit the whole graph to view.
-- **Search nodes** by name to jump straight to any entity.
-- **Liked Songs** arrives as a playlist like any other: double-click to pull your saved tracks in.
+The inspector shows an item's links by type. From there you can play, queue, open, expand, or show only its neighbourhood.
+
+**Liked Songs** is a playlist like any other. Double-click it to bring in your saved tracks.
 
 <img src="preview/graph.webp" width="100%" alt="Inspecting a node and focusing its neighborhood" />
 
----
+## Paths between items
 
-### Lenses & filters
+Shift-click two or more items, then turn on **Paths between**. Only the items on a route from one pick to another stay.
 
-Open **Controls &rarr; View** to reshape the graph without rebuilding it:
+The result is exact. An item stays only if a route passes through it without going back. A playlist that hangs off one pick does not count as a link. The **Detour** slider allows routes that are longer than the shortest one, in extra hops.
 
-- **Show** chips toggle each node type (User, Artist, Album, Playlist, Track).
-- **Size by connections** scales nodes by how linked they are.
-- **Color by cluster** tints the communities detected in the graph.
-- **Collaborations** surfaces artist-to-artist links.
-- **Hide dead ends** drops items reachable only one way, leaving the interconnected core.
-- **Added since** filters to entities you saved after a chosen date.
-- **Expand visible** pulls connections across the visible graph, with cancellable progress; **Refresh library** re-crawls without reloading Spotify; **Release pins** frees everything you've pinned.
+## Controls
 
----
+Open **Controls** for three tabs.
 
-### Physics
+<details open>
+<summary><strong>View: change what you see</strong></summary>
 
-**Controls &rarr; Physics** tunes the force layout live: **Repulsion**, **Link length**, **Gravity**, and **Node spacing** sliders, plus **Freeze** to lock the layout and **Reset** to return to defaults.
+<br />
 
----
+| Control                 | Effect                                                         |
+| ----------------------- | -------------------------------------------------------------- |
+| **Show**                | Turn each type on or off: User, Artist, Album, Playlist, Track |
+| **Size by connections** | Make well-linked items larger                                  |
+| **Color by cluster**    | Color each group of closely linked items                       |
+| **Collaborations**      | Show links between artists who work together                   |
+| **Hide dead ends**      | Hide items with fewer than two visible links                   |
+| **Added since**         | Show only items you saved after a date                         |
+| **Expand visible**      | Pull in links for every visible item. You can cancel.          |
+| **Refresh library**     | Read your library again without a Spotify restart              |
+| **Release pins**        | Free every pinned item                                         |
 
-### Paths between nodes
+</details>
 
-**Shift-click** two or more nodes, then toggle **Paths between** to keep only what sits on a route from one pick to another.
+<details>
+<summary><strong>Physics: tune the layout</strong></summary>
 
-It is exact rather than approximate: a node survives only if you could actually travel through it without doubling back, so a playlist dangling off one of your picks is never mistaken for a link between them. The **Detour** slider allows routes longer than the direct one, measured in extra hops.
+<br />
 
----
+Sliders for **Repulsion**, **Link length**, **Gravity** and **Spacing** change the layout live. **Freeze** stops all movement. **Reset** sets the defaults again.
 
-### Build your graph
+</details>
 
-**Controls &rarr; Items** grows the graph beyond your own library:
+<details>
+<summary><strong>Items: grow or trim the graph</strong></summary>
 
-- **Add** any profile, artist, album, or playlist by pasting its Spotify link or URI.
-- Friends and followed profiles, along with their public playlists, are crawled in automatically.
-- **Remove** anything you don't want. Whatever was only reachable through it goes with it, unless you untick its type under **Also remove connected**. **Undo** reverts a removal right away, and **Restore** brings the whole branch back later, edges and all. Your own node always stays.
+<br />
 
----
+- **Add** a profile, artist, album, or playlist. Paste its Spotify link or URI.
+- **Friends** and the profiles you follow come in by themselves, with their public playlists.
+- **Remove** an item. Items you can reach only through it go too. To keep a type, clear it under **Also remove connected**.
+- **Undo** a removal at once, or **Restore** the full branch later, with its links. Your own item always stays.
 
-### Export
+</details>
 
-**Export &rarr; Image** saves the current view as a PNG; **Export &rarr; Data** saves the graph as JSON.
+## Export
 
----
+**Export &rarr; Image** saves the view as `constellation.png`. **Export &rarr; Data** saves the graph as `constellation.json`. Both go to your Downloads folder.
 
-### More
+## More
 
-- **Your last graph is restored instantly** when you return. After six hours it re-crawls in the background and re-applies your expansions; **Refresh library** starts fresh whenever you want.
-- **Pins, physics, and view settings persist** between sessions.
-- **English and Arabic**, auto-detected from Spotify's language setting.
-- **Automatic update check** on launch.
-
----
+- **Fast return.** Your last graph opens at once. After 6 hours, the app reads your library again in the background and keeps your expansions.
+- **Your setup stays.** Pins, physics and view settings are kept between sessions.
+- **English and Arabic.** The app follows Spotify's language setting.
+- **Update banner** when a new version is out.
 
 ## Install
 
-**Linux / macOS:**
+You need [Spicetify](https://spicetify.app/docs/advanced-usage/installation). Run the line again to update.
+
+**macOS / Linux**
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/Prog-Jacob/spicetify-apps/main/install.sh | bash -s constellation
 ```
 
-**Windows (PowerShell):**
+**Windows (PowerShell)**
 
 ```ps1
 iex "& { $(iwr -useb https://raw.githubusercontent.com/Prog-Jacob/spicetify-apps/main/install.ps1) } constellation"
@@ -119,23 +133,23 @@ iex "& { $(iwr -useb https://raw.githubusercontent.com/Prog-Jacob/spicetify-apps
 
 <br />
 
-Download the zip from the [latest release](https://github.com/Prog-Jacob/spicetify-apps/releases?q=constellation&expanded=true), then place the `constellation` folder into your Spicetify `CustomApps` directory:
+1. Download the zip from the [latest release](https://github.com/Prog-Jacob/spicetify-apps/releases?q=constellation&expanded=true).
+2. Put the `constellation` folder in your Spicetify `CustomApps` folder:
 
-```
-spicetify/CustomApps
-  marketplace/
-  constellation/
-    index.js
-    manifest.json
-    style.css
-```
+   ```
+   spicetify/CustomApps/
+     constellation/
+       index.js
+       manifest.json
+       style.css
+   ```
 
-Then apply:
+3. Turn it on:
 
-```sh
-spicetify config custom_apps constellation
-spicetify apply
-```
+   ```sh
+   spicetify config custom_apps constellation
+   spicetify apply
+   ```
 
 </details>
 

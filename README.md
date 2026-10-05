@@ -1,7 +1,7 @@
 <div align="center">
   <h1>Spicetify Apps</h1>
 
-  <p>Custom apps for the <a href="https://spicetify.app">Spotify desktop client</a>, powered by Spicetify.</p>
+  <p><strong>New pages for the Spotify desktop app. Move your library anywhere, or see it as a map.</strong></p>
 
   <p>
     <a href="https://github.com/Prog-Jacob/spicetify-apps/releases"><img src="https://img.shields.io/github/v/release/Prog-Jacob/spicetify-apps?style=for-the-badge&colorA=1e1e2e&colorB=a6e3a1&label=latest" alt="Latest release" /></a>
@@ -23,70 +23,65 @@
 
 ## Apps
 
-### Data Porter
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <a href="apps/data-porter"><img src="apps/data-porter/preview/preview.webp" width="100%" alt="Data Porter" /></a>
+      <h3><a href="apps/data-porter">Data Porter</a></h3>
+      Back up your library to one JSON file. Restore it, or move it to another account.
+      <br /><br />
+      <sub>Playlists · Liked Songs · Albums · Artists · Podcasts</sub>
+    </td>
+    <td width="50%" valign="top">
+      <a href="apps/constellation"><img src="apps/constellation/preview/preview.webp" width="100%" alt="Constellation" /></a>
+      <h3><a href="apps/constellation">Constellation</a></h3>
+      See your library as a live graph. Find how your songs, artists and friends connect.
+      <br /><br />
+      <sub>Graph · Paths · Lenses · PNG and JSON export</sub>
+    </td>
+  </tr>
+</table>
 
-Export and import your Spotify library: playlists, liked songs, albums, artists, podcasts, and more.
-
-<a href="apps/data-porter"><img src="apps/data-porter/preview/preview.webp" width="100%" alt="Data Porter demo" /></a>
-
-<p align="center"><a href="apps/data-porter">Read more</a></p>
-
-### Constellation
-
-A graph of your Spotify universe: songs, artists, albums, playlists, and people, drawn from your library.
-
-<a href="apps/constellation"><img src="apps/constellation/preview/preview.webp" width="100%" alt="Constellation demo" /></a>
-
-<p align="center"><a href="apps/constellation">Read more</a></p>
+Both apps run inside Spotify. They need no login, API key or extra account.
 
 ## Install
 
-You need [Spicetify](https://spicetify.app/docs/advanced-usage/installation). Replace `data-porter` with `constellation` for the other app.
-
-**macOS / Linux**
+First install [Spicetify](https://spicetify.app/docs/advanced-usage/installation). Then run one line. Use `constellation` in place of `data-porter` for the other app.
 
 ```sh
+# macOS / Linux
 curl -fsSL https://raw.githubusercontent.com/Prog-Jacob/spicetify-apps/main/install.sh | bash -s data-porter
 ```
 
-**Windows (PowerShell)**
-
 ```powershell
+# Windows (PowerShell)
 iex "& { $(iwr -useb https://raw.githubusercontent.com/Prog-Jacob/spicetify-apps/main/install.ps1) } data-porter"
 ```
 
-Run the same command again to update. Apps also tell you in-app when a new version is out.
+- **Update:** run the same line again. Each app also shows a banner when a new version is out.
+- **Manual install or uninstall:** see the app's own page.
 
 ## Build your own
 
-This repo is a starting point for your own Spicetify apps. It comes with a shared library (Spotify API wrappers, hooks, i18n, themed UI components) so a new app starts working, not empty.
-
-**Requirements:** Node.js 22+, pnpm 11+, Spicetify.
+This repo is also a kit for your own Spicetify apps. A shared library supplies Spotify API wrappers, hooks, translations and themed UI. A new app works on its first run.
 
 ```sh
 git clone https://github.com/Prog-Jacob/spicetify-apps.git
 cd spicetify-apps
 pnpm install
-pnpm dev          # opens Spotify with the apps loaded and rebuilds on save
+pnpm dev            # opens Spotify with every app loaded, rebuilds on save
 ```
 
-| I want to                    | Run                     |
-| ---------------------------- | ----------------------- |
-| Create a new app             | `pnpm create-app`       |
-| Build one app                | `pnpm build:app <name>` |
-| Check before committing      | `pnpm precommit`        |
-| Release an app               | `pnpm release <name>`   |
-| Make a fork publish as yours | `pnpm setup-fork`       |
+You need Node.js 22+, pnpm 11+ and Spicetify.
 
-**New app:** `pnpm create-app` asks for a name and description, then creates a working starter in `apps/<name>/`. Run `pnpm dev` and it appears in Spotify's sidebar.
+| I want to                   | Run                  |
+| --------------------------- | -------------------- |
+| Start a new app             | `pnpm create-app`    |
+| Make a fork publish as mine | `pnpm setup-fork`    |
+| Check before I commit       | `pnpm precommit`     |
+| Ship a release              | `pnpm release <app>` |
 
-**Fork:** `pnpm setup-fork` points links, update checks and install commands at your repo and sets you as the author. It can also remove the existing apps.
-
-**Release:** `pnpm release <name>` from a clean `main` bumps the version, tags it and pushes. GitHub Actions builds and publishes the release.
-
-**Translations:** each app has `src/i18n/en.ts`; add a language as `<locale>.json` with the same keys.
-
-For the code map, shared building blocks and conventions, see [CLAUDE.md](CLAUDE.md).
+**Next:** the [developer guide](CONTRIBUTING.md) explains the layout, the shared building blocks and the release flow.
 
 ---
 
