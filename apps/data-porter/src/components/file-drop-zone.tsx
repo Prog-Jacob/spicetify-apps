@@ -1,5 +1,6 @@
 import { t } from '../i18n';
 import { FOCUS_RING } from '@ui/styles';
+import FriendPicker from './friend-picker';
 import React, { useState, useRef } from 'react';
 import type { ParsedFile } from '../types/import';
 import { cn, notifyError, parseSpotifyRef } from '@shared/lib';
@@ -151,6 +152,7 @@ const FileDropZone = ({ onFileSelected, onProfileImport }: FileDropZoneProps) =>
           {fetching ? t('dropZone.fetching') : t('dropZone.fetch')}
         </button>
       </div>
+      <FriendPicker value={url} disabled={fetching} onPick={setUrl} />
     </div>
   );
 };

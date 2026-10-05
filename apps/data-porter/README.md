@@ -55,11 +55,11 @@ Choose what to include. Data Porter saves it all as one JSON file.
 
 Give Data Porter one of these:
 
-| Source                         | How                                         |
-| ------------------------------ | ------------------------------------------- |
-| A Data Porter export           | Drop the file, or paste a link to it        |
-| Spotify's official data export | Drop `YourLibrary.json` or `Playlist1.json` |
-| A public profile               | Paste the profile link or username          |
+| Source                         | How                                                |
+| ------------------------------ | -------------------------------------------------- |
+| A Data Porter export           | Drop the file, or paste a link to it               |
+| Spotify's official data export | Drop `YourLibrary.json` or `Playlist1.json`        |
+| A public profile               | Pick a friend, or paste a profile link or username |
 
 Nothing changes until you confirm. First you see what the file holds, and you can open each type to check it.
 
